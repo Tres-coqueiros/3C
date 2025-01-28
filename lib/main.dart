@@ -5,6 +5,7 @@ import 'package:senior/data/src/layout/base_layout.dart';
 import 'package:senior/data/src/page/home_page.dart';
 import 'package:senior/data/src/page/list_hora_extra.dart';
 import 'package:senior/data/src/page/login.dart';
+import 'package:senior/data/src/page/profile_page.dart';
 
 void main() {
   configureDio();
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
             body: ListHoraExtra(
                 colaborador:
                     ModalRoute.of(context)!.settings.arguments as Colaborador)),
+        '/profile': (context) => BaseLayout(body: ProfilePage()),
       },
     );
   }

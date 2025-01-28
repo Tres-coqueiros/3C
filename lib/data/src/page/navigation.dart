@@ -37,6 +37,8 @@ class _ModernNavigationBarState extends State<ModernNavigationBar> {
           case 0:
             Navigator.pushReplacementNamed(context, '/homepage');
             break;
+          case 1:
+            Navigator.pushReplacementNamed(context, '/profile');
           case 2:
             Navigator.pushNamed(context, '/exit');
             break;
