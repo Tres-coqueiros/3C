@@ -14,9 +14,9 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
 
   void login(BuildContext context) async {
-    final Matricula = _crachaController.text.trim();
+    final matricula = _crachaController.text.trim();
 
-    if (Matricula.isEmpty) {
+    if (matricula.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Por favor, insira o número do crachá.')),
       );
@@ -27,12 +27,15 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      bool success = await postAuth.AuthUser(Matricula);
+      bool success = await postAuth.authuser(matricula);
 
       if (success) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage()),
+        Navigator.pushReplacementNamed(context, '/homepage');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Usuário não encontrado ou senha inválida!'),
+          ),
         );
       }
       _crachaController.clear();
