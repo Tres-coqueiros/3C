@@ -35,7 +35,6 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (context) => HomePage()),
         );
       }
-
       _crachaController.clear();
     } catch (error) {
       print('erro ao fazer login $error');
