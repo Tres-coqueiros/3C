@@ -3,7 +3,7 @@ import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 
 final dio = Dio(BaseOptions(
-  baseUrl: 'https://teste200.vercel.app/api/',
+  baseUrl: 'https://localhost:3000/api/',
   headers: {
     'Content-Type': 'application/json',
   },

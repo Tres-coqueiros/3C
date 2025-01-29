@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:senior/data/src/page/home_page.dart';
+import 'package:senior/data/src/services/auth_services.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -7,21 +8,41 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final PostAuth postAuth = PostAuth();
   final _crachaController = TextEditingController();
 
-  void _login() {
-    final cracha = _crachaController.text.trim();
+  bool isLoading = false;
 
-    if (cracha.isNotEmpty) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
-    } else {
+  void login(BuildContext context) async {
+    final Matricula = _crachaController.text.trim();
+
+    if (Matricula.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Por favor, insira o número do crachá.')),
       );
     }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      bool success = await postAuth.AuthUser(Matricula);
+
+      if (success) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
+      }
+
+      _crachaController.clear();
+    } catch (error) {
+      print('erro ao fazer login $error');
+    }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -65,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     SizedBox(height: 30.0),
                     ElevatedButton(
-                      onPressed: _login,
+                      onPressed: () => login(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         padding: EdgeInsets.symmetric(vertical: 14.0),

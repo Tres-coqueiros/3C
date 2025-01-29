@@ -4,7 +4,7 @@ import 'package:senior/data/src/components/list_colaboradores.dart';
 import 'package:senior/data/src/layout/base_layout.dart';
 import 'package:senior/data/src/page/home_page.dart';
 import 'package:senior/data/src/page/list_hora_extra.dart';
-import 'package:senior/data/src/page/login.dart';
+import 'package:senior/data/src/page/login_page.dart';
 import 'package:senior/data/src/page/profile_page.dart';
 
 void main() {

@@ -10,18 +10,18 @@ class _ProfilePage extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Perfil'),
-        centerTitle: true,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () {
-              // Navegar para a tela de configurações
-            },
+          // title: Text('Perfil'),
+          // centerTitle: true,
+          // elevation: 0,
+          // actions: [
+          //   IconButton(
+          //     icon: Icon(Icons.settings),
+          //     onPressed: () {
+          //       // Navegar para a tela de configurações
+          //     },
+          //   ),
+          // ],
           ),
-        ],
-      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -37,17 +37,17 @@ class _ProfilePage extends State<ProfilePage> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.green,
+        color: Color.fromARGB(255, 0, 204, 51),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
         ),
       ),
       child: Column(
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundColor: Colors.blue.shade100,
+            backgroundColor: const Color.fromARGB(255, 235, 241, 246),
             child: Icon(
               Icons.person,
               size: 50,
@@ -68,7 +68,7 @@ class _ProfilePage extends State<ProfilePage> {
             'joao.silva@example.com',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white70,
+              color: Colors.white,
             ),
           ),
         ],
