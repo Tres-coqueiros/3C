@@ -10,13 +10,13 @@ class BaseLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RH'),
+        title: const Text('HORA EXTRA COLABORADORES'),
         backgroundColor: const Color.fromARGB(255, 0, 204, 51),
         centerTitle: true,
         elevation: 0,
         titleTextStyle: const TextStyle(
           color: Colors.white,
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
       ),

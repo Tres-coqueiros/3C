@@ -1,36 +1,48 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:senior/data/src/page/home_page.dart';
 
-class NotificationService {
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+class NotificationServices {
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  Future<void> initialize() async {
+  static Future<void> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
     final InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
 
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    // Inicializa o plugin de notificações
+    await _notificationsPlugin.initialize(initializationSettings,
+        onDidReceiveNotificationResponse:
+            (NotificationResponse response) async {
+      if (response != null) {
+        Navigator.of(globalNavigatorKey.currentContext!).push(MaterialPageRoute(
+          builder: (context) => HomePage(),
+        ));
+      }
+    });
   }
 
-  Future<void> showOvertimeNotification() async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+  static Future<void> showNotification(
+      {required String title, required String body}) async {
+    const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
-      'overtime_channel_id',
-      'Overtime Channel',
+      'hora_extra_id',
+      'Notificações de Hora Extra',
       importance: Importance.max,
       priority: Priority.high,
     );
 
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    const NotificationDetails notificationDetails =
+        NotificationDetails(android: androidDetails);
 
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      'Notificação Simples',
-      'Esta é uma notificação de exemplo!',
-      platformChannelSpecifics,
-    );
+    await _notificationsPlugin.show(0, title, body, notificationDetails);
   }
 }
+
+// Para facilitar o uso do Navigator em qualquer lugar do aplicativo,
+// crie uma chave global para o Navigator
+final GlobalKey<NavigatorState> globalNavigatorKey =
+    GlobalKey<NavigatorState>();

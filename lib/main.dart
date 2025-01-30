@@ -1,61 +1,41 @@
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:senior/data/dio/api_client.dart';
-import 'package:senior/data/src/components/list_colaboradores.dart';
 import 'package:senior/data/src/layout/base_layout.dart';
 import 'package:senior/data/src/page/home_page.dart';
-import 'package:senior/data/src/page/list_hora_extra.dart';
 import 'package:senior/data/src/page/login_page.dart';
 import 'package:senior/data/src/page/profile_page.dart';
 import 'package:senior/data/src/services/notification_services.dart';
+import 'package:senior/data/src/services/hora_extra_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationServices.init();
 
-  await Firebase.initializeApp();
-  final NotificationService notificationService = NotificationService();
-  await notificationService.initialize();
+  _scheduleDailyCheck(); // Agendar a verificação diária
 
-  configureDio();
-  runApp(MyApp(notificationService: notificationService));
+  runApp(const MyApp());
+}
+
+void _scheduleDailyCheck() {
+  Timer(Duration(seconds: 5), () {
+    HoraExtraService.checkForYesterdayHoraExtra();
+  });
 }
 
 class MyApp extends StatelessWidget {
-  final NotificationService notificationService;
-  MyApp({required this.notificationService});
-
-  AndroidNotificationDetails androidPlatformChannelSpecifics =
-      AndroidNotificationDetails(
-    'overtime_channel_id',
-    'Overtime Channel',
-    importance: Importance.max,
-    priority: Priority.high,
-    sound: RawResourceAndroidNotificationSound('notification_sound'),
-    largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
-  );
-
+  const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: globalNavigatorKey,
       theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
       initialRoute: '/login',
       routes: {
         '/login': (context) => LoginPage(),
-        '/homepage': (context) =>
-            HomePage(notificationService: notificationService),
-        '/listaColaboradores': (context) => BaseLayout(
-            body: ListHoraExtra(
-                colaborador:
-                    ModalRoute.of(context)!.settings.arguments as Colaborador)),
+        '/homepage': (context) => HomePage(),
         '/profile': (context) => BaseLayout(body: ProfilePage()),
       },
     );
   }
-}
-
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Background message received: ${message.messageId}');
 }

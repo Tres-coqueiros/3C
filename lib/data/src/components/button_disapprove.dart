@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-class ButtonAccept extends StatelessWidget {
+class ButtonDisapprove extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
 
-  ButtonAccept({required this.onPressed, required this.text});
+  ButtonDisapprove({required this.onPressed, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +13,7 @@ class ButtonAccept extends StatelessWidget {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.red,
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(4.0),
