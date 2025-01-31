@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:senior/data/src/layout/base_layout.dart';
-import 'package:senior/data/src/page/home_page.dart';
-import 'package:senior/data/src/page/login_page.dart';
-import 'package:senior/data/src/page/profile_page.dart';
-import 'package:senior/data/src/services/notification_services.dart';
-import 'package:senior/data/src/services/hora_extra_services.dart';
+import 'package:senior/data/core/widgets/base_layout.dart';
+import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
+import 'package:senior/data/features/dbo/pages/RegisterPublic_page.dart';
+import 'package:senior/data/features/dbo/pages/home_page.dart';
+import 'package:senior/data/features/home_page.dart';
+import 'package:senior/data/features/auth/login_page.dart';
+import 'package:senior/data/features/horaextras/profile/profile_page.dart';
+import 'package:senior/data/core/network/notification_services.dart';
+// import 'package:senior/data/src/services/hora_extra_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +21,7 @@ void main() async {
 
 void _scheduleDailyCheck() {
   Timer(Duration(seconds: 5), () {
-    HoraExtraService.checkForYesterdayHoraExtra();
+    // HoraExtraService.checkForYesterdayHoraExtra();
   });
 }
 
@@ -34,6 +37,10 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => LoginPage(),
         '/homepage': (context) => HomePage(),
+        '/dboHome': (context) => BaseLayout(body: HomePageDBO()),
+        '/registerpublic': (context) => BaseLayout(body: RegisterPublicDBO()),
+        '/detailsregister': (context) =>
+            BaseLayout(body: DetailsregisterPage()),
         '/profile': (context) => BaseLayout(body: ProfilePage()),
       },
     );

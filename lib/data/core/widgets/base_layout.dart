@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/src/page/navigation.dart';
+import 'package:senior/data/features/horaextras/navigation/navigation_page.dart';
 
 class BaseLayout extends StatelessWidget {
   final Widget body;
@@ -10,7 +10,7 @@ class BaseLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('HORA EXTRA COLABORADORES'),
+        title: const Text(''),
         backgroundColor: const Color.fromARGB(255, 0, 204, 51),
         centerTitle: true,
         elevation: 0,

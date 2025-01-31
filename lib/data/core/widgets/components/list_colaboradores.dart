@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/src/page/list_hora_extra.dart';
-import 'package:senior/data/src/services/api_services.dart';
-import 'package:senior/data/src/services/auth_services.dart';
+import 'package:senior/data/features/auth/auth_services.dart';
+import 'package:senior/data/features/horaextras/pages/list_hora_extra.dart';
 
 class ListColaboradores extends StatefulWidget {
   @override

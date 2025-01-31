@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/src/page/home_page.dart';
-import 'package:senior/data/src/services/auth_services.dart';
+import 'package:senior/data/features/horaextras/home_page1.dart';
+import 'package:senior/data/features/auth/auth_services.dart';
 
 class LoginPage extends StatefulWidget {
   @override

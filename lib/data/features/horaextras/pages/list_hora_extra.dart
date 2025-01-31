@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/src/components/button_accept.dart';
-import 'package:senior/data/src/components/button_disapprove.dart';
-import 'package:senior/data/src/components/list_colaboradores.dart';
-import 'package:senior/data/src/layout/base_layout.dart';
-import 'package:senior/data/utils/dialog_message.dart';
+import 'package:senior/data/core/widgets/buttons/button_accept.dart';
+import 'package:senior/data/core/widgets/buttons/button_disapprove.dart';
+import 'package:senior/data/core/widgets/components/list_colaboradores.dart';
+import 'package:senior/data/core/widgets/base_layout.dart';
+import 'package:senior/data/core/widgets/messages/dialog_message.dart';
 
 class ListHoraExtra extends StatefulWidget {
   final Colaborador colaborador;

@@ -1,4 +1,4 @@
-import 'package:senior/data/dio/api_client.dart';
+import 'package:senior/data/core/network/api_client.dart';
 
 class PostAuth {
   Future<bool> authuser(String matricula) async {

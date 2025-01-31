@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/src/components/list_colaboradores.dart';
-import 'package:senior/data/src/layout/base_layout.dart';
+import 'package:senior/data/core/widgets/components/list_colaboradores.dart';
+import 'package:senior/data/core/widgets/base_layout.dart';
 
 class HomePage extends StatefulWidget {
   @override
