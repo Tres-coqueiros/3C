@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:senior/data/core/widgets/base_layout.dart';
 
 class HomePage extends StatefulWidget {
@@ -19,7 +20,7 @@ class _HomePageState extends State<HomePage> {
                 width: 350, // Largura fixa maior
                 height: 60, // Altura maior
                 child: ElevatedButton(
-                  onPressed: () => print('Hora Extras'),
+                  onPressed: () => context.go('/listcolaboradores'),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.green,

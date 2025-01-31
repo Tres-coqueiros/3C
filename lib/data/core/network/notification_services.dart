@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:senior/data/features/horaextras/home_page1.dart';
+import 'package:senior/data/features/horaextras/pages/list_colaboradores_page.dart';
 
 class NotificationServices {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -19,7 +19,7 @@ class NotificationServices {
             (NotificationResponse response) async {
       if (response != null) {
         Navigator.of(globalNavigatorKey.currentContext!).push(MaterialPageRoute(
-          builder: (context) => HomePage(),
+          builder: (context) => ListColaboradores(),
         ));
       }
     });

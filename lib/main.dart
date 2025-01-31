@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:senior/data/core/routers/app_router.dart';
 import 'package:senior/data/core/widgets/base_layout.dart';
 import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/features/dbo/pages/RegisterPublic_page.dart';
@@ -29,20 +30,10 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: globalNavigatorKey,
-      theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => LoginPage(),
-        '/homepage': (context) => HomePage(),
-        '/dboHome': (context) => BaseLayout(body: HomePageDBO()),
-        '/registerpublic': (context) => BaseLayout(body: RegisterPublicDBO()),
-        '/detailsregister': (context) =>
-            BaseLayout(body: DetailsregisterPage()),
-        '/profile': (context) => BaseLayout(body: ProfilePage()),
-      },
+    return MaterialApp.router(
+      routerConfig: AppRouter,
+      debugShowCheckedModeBanner: false,
+      title: 'APP',
     );
   }
 }
