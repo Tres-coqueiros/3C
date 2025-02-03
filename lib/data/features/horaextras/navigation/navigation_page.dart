@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ModernNavigationBar extends StatefulWidget {
+  const ModernNavigationBar({super.key});
+
   @override
   _ModernNavigationBarState createState() => _ModernNavigationBarState();
 }

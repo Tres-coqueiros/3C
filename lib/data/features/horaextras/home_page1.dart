@@ -3,6 +3,8 @@ import 'package:senior/data/core/widgets/components/list_colaboradores.dart';
 import 'package:senior/data/core/widgets/base_layout.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _Homepage createState() => _Homepage();
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:senior/data/core/widgets/base_layout.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }

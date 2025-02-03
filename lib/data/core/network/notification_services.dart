@@ -17,11 +17,9 @@ class NotificationServices {
     await _notificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse:
             (NotificationResponse response) async {
-      if (response != null) {
-        Navigator.of(globalNavigatorKey.currentContext!).push(MaterialPageRoute(
-          builder: (context) => HomePage(),
-        ));
-      }
+      Navigator.of(globalNavigatorKey.currentContext!).push(MaterialPageRoute(
+        builder: (context) => HomePage(),
+      ));
     });
   }
 

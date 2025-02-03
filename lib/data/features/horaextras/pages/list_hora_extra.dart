@@ -8,7 +8,7 @@ import 'package:senior/data/core/widgets/messages/dialog_message.dart';
 class ListHoraExtra extends StatefulWidget {
   final Colaborador colaborador;
 
-  const ListHoraExtra({Key? key, required this.colaborador}) : super(key: key);
+  const ListHoraExtra({super.key, required this.colaborador});
 
   @override
   _ListHoraExtra createState() => _ListHoraExtra();

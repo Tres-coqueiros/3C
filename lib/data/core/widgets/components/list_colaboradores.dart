@@ -3,6 +3,8 @@ import 'package:senior/data/features/auth/auth_services.dart';
 import 'package:senior/data/features/horaextras/pages/list_hora_extra.dart';
 
 class ListColaboradores extends StatefulWidget {
+  const ListColaboradores({super.key});
+
   @override
   _ListColaboradoresState createState() => _ListColaboradoresState();
 }
