@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DetailsregisterPage extends StatefulWidget {
-  const DetailsregisterPage({super.key});
-
-  @override
-  _DetailsregisterPage createState() => _DetailsregisterPage();
+  _DetailsregisterPage createState() => new _DetailsregisterPage();
 }
 
 class _DetailsregisterPage extends State<DetailsregisterPage> {
@@ -14,7 +11,7 @@ class _DetailsregisterPage extends State<DetailsregisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Visualizar Registros')),
-      body: dados.isEmpty
+      body: dados == null || dados!.isEmpty
           ? const Center(
               child: Text(
                 'Nenhum registro disponível para visualização.',
@@ -24,9 +21,9 @@ class _DetailsregisterPage extends State<DetailsregisterPage> {
             )
           : ListView.builder(
               padding: const EdgeInsets.all(16.0),
-              itemCount: dados.length,
+              itemCount: dados!.length,
               itemBuilder: (context, index) {
-                final item = dados[index];
+                final item = dados![index];
                 return GestureDetector(
                   onTap: () {
                     Navigator.pushNamed(
