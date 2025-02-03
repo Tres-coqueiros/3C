@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class ModernNavigationBar extends StatefulWidget {
   @override
@@ -24,10 +25,6 @@ class _ModernNavigationBarState extends State<ModernNavigationBar> {
           icon: Icon(Icons.account_circle),
           label: 'Perfil',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.exit_to_app),
-          label: 'Sair',
-        ),
       ],
       onTap: (index) {
         setState(() {
@@ -35,13 +32,10 @@ class _ModernNavigationBarState extends State<ModernNavigationBar> {
         });
         switch (index) {
           case 0:
-            Navigator.pushReplacementNamed(context, '/homepage');
+            context.go('/homepage');
             break;
           case 1:
-            Navigator.pushReplacementNamed(context, '/profile');
-          case 2:
-            Navigator.pushNamed(context, '/exit');
-            break;
+            context.go('/profile');
         }
       },
     );

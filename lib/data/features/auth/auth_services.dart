@@ -16,21 +16,18 @@ class PostAuth {
       return false;
     }
   }
-}
 
-class GetAuth {
-  Future<List<Map<String, dynamic>>> getColaboradorGestor() async {
+  Future<bool> authlogout() async {
     try {
-      final response = await dio.get('getColaboradorGestor');
-      print(' RESPONSE : $response.data');
-      if (response.data != null) {
-        return List<Map<String, dynamic>>.from(response.data);
+      final response = await dio.post('postLogout');
+      if (response.statusCode == 200) {
+        return true;
       } else {
-        return [];
+        return false;
       }
     } catch (error) {
-      print('Erro ao carregar dados do gestor $error');
-      return [];
+      print('Erro ao fazer logout $error');
+      return false;
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:senior/data/core/network/api_services.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -6,21 +7,45 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePage extends State<ProfilePage> {
+  GetServices getServices = GetServices();
+
+  List<Map<String, dynamic>> getLogin = [];
+  String nameFun = "";
+  String positionsFun = "";
+  int numFun = 0;
+
+  void initState() {
+    super.initState();
+    fetchLogin();
+  }
+
+  void fetchLogin() async {
+    try {
+      final result = await getServices.getLogin();
+
+      if (result.isNotEmpty) {
+        nameFun = result['getLogin']['nomfun'] ?? 'Desconhecido';
+        positionsFun = result['getLogin']['titred'] ?? 'Desconhecido';
+        numFun = result['getLogin']['numcad'] ?? 'Desconhecido';
+      }
+
+      print('Resultado da API: $nameFun');
+
+      setState(() {
+        getLogin = [result['getLogin']];
+      });
+    } catch (e) {
+      print('Erro ao fazer a consulta: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          // title: Text('Perfil'),
-          // centerTitle: true,
+          // title: Text('Profile'),
+          // backgroundColor: Colors.white,
           // elevation: 0,
-          // actions: [
-          //   IconButton(
-          //     icon: Icon(Icons.settings),
-          //     onPressed: () {
-          //       // Navegar para a tela de configurações
-          //     },
-          //   ),
-          // ],
           ),
       body: SingleChildScrollView(
         child: Column(
@@ -56,18 +81,10 @@ class _ProfilePage extends State<ProfilePage> {
           ),
           SizedBox(height: 10),
           Text(
-            'João Silva',
+            nameFun,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(height: 5),
-          Text(
-            'joao.silva@example.com',
-            style: TextStyle(
-              fontSize: 16,
               color: Colors.white,
             ),
           ),
@@ -91,19 +108,18 @@ class _ProfilePage extends State<ProfilePage> {
           ),
           SizedBox(height: 10),
           ListTile(
-            leading: Icon(Icons.phone, color: Colors.blue),
-            title: Text('Telefone'),
-            subtitle: Text('(11) 98765-4321'),
+            leading: Icon(Icons.margin_outlined, color: Colors.blue),
+            title: Text('Numero Matricula'),
+            subtitle: Text(numFun.toString()),
           ),
           ListTile(
-            leading: Icon(Icons.location_on, color: Colors.blue),
-            title: Text('Endereço'),
-            subtitle: Text('Rua Exemplo, 123 - São Paulo, SP'),
-          ),
+              leading: Icon(Icons.near_me, color: Colors.blue),
+              title: Text('Nome'),
+              subtitle: Text(nameFun)),
           ListTile(
             leading: Icon(Icons.work, color: Colors.blue),
             title: Text('Cargo'),
-            subtitle: Text('Desenvolvedor Flutter'),
+            subtitle: Text(positionsFun),
           ),
         ],
       ),

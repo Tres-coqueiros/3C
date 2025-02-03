@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:senior/data/core/widgets/base_layout.dart';
+import 'package:senior/data/features/widgets/base_layout.dart';
 
 class HomePage extends StatefulWidget {
   @override

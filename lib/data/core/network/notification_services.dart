@@ -42,7 +42,5 @@ class NotificationServices {
   }
 }
 
-// Para facilitar o uso do Navigator em qualquer lugar do aplicativo,
-// crie uma chave global para o Navigator
 final GlobalKey<NavigatorState> globalNavigatorKey =
     GlobalKey<NavigatorState>();
