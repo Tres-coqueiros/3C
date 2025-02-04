@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:senior/data/core/widgets/base_layout.dart';
+import 'package:senior/data/features/widgets/base_layout.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -40,8 +40,7 @@ class _HomePageState extends State<HomePage> {
                 width: 350,
                 height: 60,
                 child: ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pushReplacementNamed(context, '/dboHome'),
+                  onPressed: () => context.go('/dboHome'),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.blue,

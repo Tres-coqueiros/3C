@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/widgets/buttons/button_accept.dart';
-import 'package:senior/data/core/widgets/buttons/button_disapprove.dart';
-import 'package:senior/data/core/widgets/base_layout.dart';
-import 'package:senior/data/core/widgets/messages/dialog_message.dart';
+import 'package:senior/data/features/widgets/base_layout.dart';
+// import 'package:senior/data/core/widgets/buttons/button_disapprove.dart';
+// import 'package:senior/data/features/widgets/base_layout.dart';
+import 'package:senior/data/features/widgets/buttons/button_accept.dart';
+import 'package:senior/data/features/widgets/buttons/button_disapprove.dart';
+import 'package:senior/data/features/widgets/messages/dialog_message.dart';
 
 class ListHoraExtra extends StatefulWidget {
   @override

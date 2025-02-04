@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 
 class RegisterPublicDBO extends StatefulWidget {
@@ -16,38 +18,53 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   final TextEditingController _horimetroFinalController =
       TextEditingController();
 
-  String? _horarioInicial;
-  String? _horarioFinal;
+  DateTime? _horarioInicial;
+  DateTime? _horarioFinal;
   List<Map<String, dynamic>> listaLimite = [];
 
+  /// **Selecionar Data e Hora com Formatação Correta**
   void _selecionarHorario(BuildContext context, bool isInicial) {
-    // DatePicker.showTimePicker(
-    //   context,
-    //   showSecondsColumn: false,
-    //   onConfirm: (time) {
-    //     setState(() {
-    //       if (isInicial) {
-    //         _horarioInicial = "${time.hour}:${time.minute}";
-    //       } else {
-    //         _horarioFinal = "${time.hour}:${time.minute}";
-    //       }
-    //     });
-    //   },
-    // );
+    DatePicker.showDateTimePicker(
+      context,
+      showTitleActions: true,
+      locale: LocaleType.pt, // Define para pt-BR
+      onConfirm: (dateTime) {
+        setState(() {
+          if (isInicial) {
+            _horarioInicial = dateTime;
+          } else {
+            _horarioFinal = dateTime;
+          }
+        });
+      },
+    );
   }
 
+  /// **Avançar para a Próxima Tela**
   void _avancar() {
     if (_formKey.currentState!.validate()) {
+      final novoRegistro = {
+        'matricula': _matriculaController.text,
+        'nomeCoordenador': _coordenadorController.text,
+        'patrimonio': _patrimonioController.text,
+        'horarioInicial': _horarioInicial?.toIso8601String() ?? 'Não informado',
+        'horarioFinal': _horarioFinal?.toIso8601String() ?? 'Não informado',
+        'horimetroInicial': _horimetroInicialController.text,
+        'horimetroFinal': _horimetroFinalController.text,
+      };
+
       setState(() {
-        listaLimite.add({
+        listaLimite.add(novoRegistro);
+      });
+
+      // Agora navega para RegisterActivity com os dados corretos
+      context.go('/registeractivity', extra: {
+        'dados': List.from(listaLimite),
+        'informacoesGerais': {
           'matricula': _matriculaController.text,
-          'nomeCoordenador': _coordenadorController.text,
+          'coordenador': _coordenadorController.text,
           'patrimonio': _patrimonioController.text,
-          'horarioInicial': _horarioInicial ?? 'Não informado',
-          'horarioFinal': _horarioFinal ?? 'Não informado',
-          'horimetroInicial': _horimetroInicialController.text,
-          'horimetroFinal': _horimetroFinalController.text,
-        });
+        }
       });
     }
   }
@@ -55,52 +72,36 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Cadastro de Atividades")),
+      appBar: AppBar(
+        title: const Text("Cadastro de Atividades"),
+      ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Matrícula*"),
-                TextFormField(
-                  controller: _matriculaController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(hintText: "Digite a Matrícula"),
-                  validator: (value) =>
-                      value!.isEmpty ? "Matrícula é obrigatória." : null,
-                ),
-                SizedBox(height: 10),
-                Text("Nome do Coordenador*"),
-                TextFormField(
-                  controller: _coordenadorController,
-                  decoration: InputDecoration(hintText: "Coordenador"),
-                  validator: (value) => value!.isEmpty
-                      ? "Nome do Coordenador é obrigatório."
-                      : null,
-                ),
-                SizedBox(height: 10),
-                Text("Patrimônio*"),
-                TextFormField(
-                  controller: _patrimonioController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(hintText: "Digite o Patrimônio"),
-                  validator: (value) =>
-                      value!.isEmpty ? "Patrimônio é obrigatório." : null,
-                ),
-                SizedBox(height: 10),
-                Text("Horários*"),
+                _buildTextField(
+                    "Matrícula*", _matriculaController, "Digite a Matrícula"),
+                _buildTextField("Nome do Coordenador*", _coordenadorController,
+                    "Coordenador"),
+                _buildTextField("Patrimônio*", _patrimonioController,
+                    "Digite o Patrimônio"),
+                const SizedBox(height: 10),
+                const Text("Horários*"),
                 Row(
                   children: [
                     Expanded(
                       child: Column(
                         children: [
-                          Text("Inicial*"),
+                          const Text("Inicial*"),
                           ElevatedButton(
                             onPressed: () => _selecionarHorario(context, true),
-                            child: Text(_horarioInicial ?? "Selecione"),
+                            child: Text(_horarioInicial != null
+                                ? _formatarData(_horarioInicial!)
+                                : "Selecione"),
                           ),
                         ],
                       ),
@@ -108,51 +109,46 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     Expanded(
                       child: Column(
                         children: [
-                          Text("Final*"),
+                          const Text("Final*"),
                           ElevatedButton(
                             onPressed: () => _selecionarHorario(context, false),
-                            child: Text(_horarioFinal ?? "Selecione"),
+                            child: Text(_horarioFinal != null
+                                ? _formatarData(_horarioFinal!)
+                                : "Selecione"),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
-                Text("Horímetro"),
+                const SizedBox(height: 10),
+                const Text("Horímetro"),
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
-                        controller: _horimetroInicialController,
-                        keyboardType: TextInputType.number,
-                        decoration:
-                            InputDecoration(hintText: "Horímetro Inicial"),
-                      ),
+                      child: _buildTextField("Horímetro Inicial",
+                          _horimetroInicialController, "Horímetro Inicial"),
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: TextFormField(
-                        controller: _horimetroFinalController,
-                        keyboardType: TextInputType.number,
-                        decoration:
-                            InputDecoration(hintText: "Horímetro Final"),
-                      ),
+                      child: _buildTextField("Horímetro Final",
+                          _horimetroFinalController, "Horímetro Final"),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _avancar,
-                  child: Text("Avançar"),
+                  child: const Text("Avançar"),
                 ),
-                SizedBox(height: 20),
-                Text("Últimos 3 Registros",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
+                const SizedBox(height: 20),
+                const Text(
+                  "Últimos 3 Registros",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
                 listaLimite.isNotEmpty
-                    ? Container(
+                    ? SizedBox(
                         height: 200,
                         child: ListView.builder(
                           itemCount:
@@ -170,9 +166,9 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                                         "Coordenador: ${item['nomeCoordenador']}"),
                                     Text("Patrimônio: ${item['patrimonio']}"),
                                     Text(
-                                        "Horário Inicial: ${item['horarioInicial']}"),
+                                        "Horário Inicial: ${_formatarData(item['horarioInicial'])}"),
                                     Text(
-                                        "Horário Final: ${item['horarioFinal']}"),
+                                        "Horário Final: ${_formatarData(item['horarioFinal'])}"),
                                     Text(
                                         "Horímetro Inicial: ${item['horimetroInicial']}"),
                                     Text(
@@ -184,11 +180,39 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                           },
                         ),
                       )
-                    : Text("Nenhum registro encontrado."),
+                    : const Text("Nenhum registro encontrado."),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// **Formata corretamente os horários armazenados**
+  String _formatarData(dynamic valor) {
+    if (valor == null || valor == "Não informado") return "Não informado";
+    try {
+      final DateTime dateTime =
+          (valor is DateTime) ? valor : DateTime.parse(valor);
+      return DateFormat('dd/MM/yyyy HH:mm', 'pt_BR').format(dateTime);
+    } catch (e) {
+      return "Formato inválido";
+    }
+  }
+
+  /// **Criação de Campos de Texto**
+  Widget _buildTextField(
+      String label, TextEditingController controller, String hint) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+        ),
+        validator: (value) => value!.isEmpty ? "Campo obrigatório" : null,
       ),
     );
   }

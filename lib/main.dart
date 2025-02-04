@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/routers/app_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:senior/data/core/widgets/base_layout.dart';
 import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/features/dbo/pages/RegisterPublic_page.dart';
@@ -13,6 +14,10 @@ import 'package:senior/data/core/network/notification_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Corrige a formatação de data para o Brasil
+  await initializeDateFormatting('pt_BR', null);
+
   await NotificationServices.init();
 
   _scheduleDailyCheck(); // Agendar a verificação diária
