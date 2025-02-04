@@ -43,7 +43,6 @@ class _ListColaboradoresState extends State<ListColaboradores> {
     });
   }
 
-  // Função para verificar se o colaborador tem horas extras
   bool hasHorasExtras(Map<String, dynamic> colaborador) {
     return colaborador['ListHorasExtras'] != null &&
         colaborador['ListHorasExtras'].isNotEmpty;
@@ -97,32 +96,28 @@ class _ListColaboradoresState extends State<ListColaboradores> {
                                   padding: const EdgeInsets.only(top: 5.0),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.mark_chat_read,
-                                        color: Colors.grey[600],
-                                        size: 16.0,
+                                      Icon(Icons.calendar_today,
+                                          color: Colors.grey[600], size: 14.0),
+                                      SizedBox(width: 2),
+                                      Expanded(
+                                        child: Text(
+                                          'Cargo: ${colaborador['TITRED'] ?? 'Nenhuma'}',
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                          style: TextStyle(
+                                              fontSize: 14.0,
+                                              color: Colors.grey[600]),
+                                        ),
                                       ),
-                                      SizedBox(width: 8),
+                                      SizedBox(width: 4),
+                                      Icon(Icons.mark_chat_read,
+                                          color: Colors.grey[600], size: 16.0),
+                                      SizedBox(width: 2),
                                       Text(
                                         'Matricula: ${colaborador['NUMCAD'].toString() ?? 'Nenhuma'}',
                                         style: TextStyle(
-                                          fontSize: 14.0,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                      SizedBox(width: 12),
-                                      Icon(
-                                        Icons.calendar_today,
-                                        color: Colors.grey[600],
-                                        size: 16.0,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Data: ${colaborador['ListJornada']?.isNotEmpty == true ? DateFormat('dd/MM/yyyy').format(DateTime.parse(colaborador['ListJornada'][0]['DATACC'])) : 'Nenhuma'}',
-                                        style: TextStyle(
-                                          fontSize: 14.0,
-                                          color: Colors.grey[600],
-                                        ),
+                                            fontSize: 14.0,
+                                            color: Colors.grey[600]),
                                       ),
                                     ],
                                   ),
@@ -138,7 +133,7 @@ class _ListColaboradoresState extends State<ListColaboradores> {
                                           color: AppColorsComponents.primary,
                                         ),
                                       )
-                                    : null, // Remove o botão de expansão
+                                    : null,
                               ),
                               if (isExpanded) ...[
                                 Padding(

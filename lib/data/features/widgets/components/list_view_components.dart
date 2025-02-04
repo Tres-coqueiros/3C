@@ -19,6 +19,18 @@ class _ListViewComponentsState extends State<ListViewComponents> {
   bool isAprovar = true;
   bool isLoading = false;
   List<String> selectedHours = [];
+  bool selectAll = false;
+
+  void toggleSelectAll() {
+    setState(() {
+      if (selectAll) {
+        selectedHours.clear();
+      } else {
+        selectedHours = getHours(widget.colaborador);
+      }
+      selectAll = !selectAll;
+    });
+  }
 
   void showMotivo(BuildContext context) async {
     if (selectedHours.isEmpty) {
@@ -99,14 +111,24 @@ class _ListViewComponentsState extends State<ListViewComponents> {
 
   List<String> getHours(Map<String, dynamic> colaborador) {
     DateTime dataLimite = DateTime.now().subtract(Duration(days: 123));
-    print(
-        'Buscando horas extras a partir da data: ${DateFormat('yyyy-MM-dd').format(dataLimite)}');
-
     if (colaborador['ListHorasExtras'] == null ||
         colaborador['ListHorasExtras'].isEmpty) {
       print('Nenhuma hora extra encontrada.');
       return [];
     }
+
+    if (colaborador['ListJornada'] == null ||
+        colaborador['ListJornada'].isEmpty) {
+      print('Nenhuma jornada encontrada.');
+      return [];
+    }
+
+    final horasFormatadas = colaborador['ListJornada']
+        .map<String>(
+            (jornada) => jornada['HORAS_FORMATADAS']?.toString() ?? 'N/A')
+        .toList();
+
+    print('horasFormatadas $horasFormatadas');
 
     final horasExtras = colaborador['ListHorasExtras'].where((horaExtra) {
       String? horaExtraDate = horaExtra['DATA_EXTRA']?.toString();
@@ -115,16 +137,15 @@ class _ListViewComponentsState extends State<ListViewComponents> {
           DateTime parsedDate = DateTime.parse(horaExtraDate).toUtc();
           return parsedDate.isAfter(dataLimite);
         } catch (e) {
-          print('Erro ao converter a data: $e');
+          print('Erro ao converter a data da hora extra: $e');
           return false;
         }
       }
       return false;
+    }).map<String>((horaExtra) {
+      return "${DateFormat("dd/MM/yyyy").format(DateTime.parse(horaExtra['DATA_EXTRA']))} - ${horaExtra['HORA_EXTRA']?.toString() ?? 'N/A'} h";
     }).toList();
-
-    return horasExtras.map<String>((horaExtra) {
-      return "${DateFormat("dd/MM/yyyy").format(DateTime.parse(horaExtra['DATA_EXTRA']))} - ${horaExtra['HORA_EXTRA']?.toString() ?? 'N/A'}";
-    }).toList();
+    return [...horasExtras, ...horasFormatadas];
   }
 
   @override
@@ -147,7 +168,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                 SizedBox(width: 3.0),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       SizedBox(height: 4.0),
                       Row(
@@ -162,6 +183,15 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                             'Total de Horas Extras: ${horasExtras.length}',
                             style: TextStyle(
                                 fontSize: 14.0, color: Colors.grey[600]),
+                          ),
+                          Spacer(),
+                          Checkbox(
+                            value: selectAll,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                toggleSelectAll();
+                              });
+                            },
                           ),
                         ],
                       ),
@@ -183,12 +213,13 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                   Text(
                     "Horas Extras Registradas:",
                     style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.blue[800]),
+                        fontWeight: FontWeight.bold,
+                        color: AppColorsComponents.secondary),
                   ),
                   SizedBox(height: 8.0),
                   horasExtras.isNotEmpty
                       ? Container(
-                          height: 200.0, // Altura fixa para a lista
+                          height: 150.0, // Altura fixa para a lista
                           child: ListView.builder(
                             shrinkWrap: true,
                             physics: AlwaysScrollableScrollPhysics(),
