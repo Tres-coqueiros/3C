@@ -1,0 +1,270 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:senior/data/core/network/api_services.dart';
+import 'package:senior/data/features/widgets/components/app_colors_components.dart';
+import 'package:senior/data/features/widgets/components/button_components.dart';
+import 'package:senior/data/features/widgets/messages/dialog_message.dart';
+
+class ListViewComponents extends StatefulWidget {
+  final Map<String, dynamic> colaborador;
+
+  ListViewComponents({super.key, required this.colaborador});
+
+  @override
+  _ListViewComponentsState createState() => _ListViewComponentsState();
+}
+
+class _ListViewComponentsState extends State<ListViewComponents> {
+  final PostServices postServices = PostServices();
+  bool isAprovar = true;
+  bool isLoading = false;
+  List<String> selectedHours = [];
+
+  void showMotivo(BuildContext context) async {
+    if (selectedHours.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Selecione pelo menos uma hora extra!"),
+          backgroundColor: AppColorsComponents.error,
+        ),
+      );
+      return;
+    }
+
+    String? motivo = await DialogUtils.showConfirmationDialog(
+      context: context,
+      title: 'Confirmação',
+      content: isAprovar
+          ? 'Tem certeza que deseja aprovar as horas extras selecionadas?'
+          : 'Tem certeza que deseja reprovar as horas extras selecionadas?',
+    );
+
+    if (motivo != null && motivo.isNotEmpty) {
+      isAprovar
+          ? acceptHours(context, motivo)
+          : disapproveHours(context, motivo);
+    }
+  }
+
+  void acceptHours(BuildContext context, String motivo) async {
+    final data = {
+      'numcad': widget.colaborador['NUMCAD'],
+      'tipcol': widget.colaborador['TIPCOL'],
+      'numemp': widget.colaborador['NUMEMP'],
+      'motivo': motivo,
+      'selectedHours': selectedHours
+    };
+
+    if (data.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erro ao enviar dados!"),
+          backgroundColor: AppColorsComponents.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      bool success = await postServices.postHours(data);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Horas extras aprovadas com sucesso!"),
+            backgroundColor: AppColorsComponents.success,
+          ),
+        );
+      }
+    } catch (error) {
+      print("Erro ao aprovar horas extras: $error");
+    }
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  void disapproveHours(BuildContext context, String motivo) {
+    try {
+      print('Horas extras reprovadas: $selectedHours\nMotivo: $motivo');
+      setState(() {
+        selectedHours.clear();
+      });
+    } catch (error) {
+      print("Erro ao reprovar horas extras: $error");
+    }
+  }
+
+  List<String> getHours(Map<String, dynamic> colaborador) {
+    DateTime dataLimite = DateTime.now().subtract(Duration(days: 123));
+    print(
+        'Buscando horas extras a partir da data: ${DateFormat('yyyy-MM-dd').format(dataLimite)}');
+
+    if (colaborador['ListHorasExtras'] == null ||
+        colaborador['ListHorasExtras'].isEmpty) {
+      print('Nenhuma hora extra encontrada.');
+      return [];
+    }
+
+    final horasExtras = colaborador['ListHorasExtras'].where((horaExtra) {
+      String? horaExtraDate = horaExtra['DATA_EXTRA']?.toString();
+      if (horaExtraDate != null) {
+        try {
+          DateTime parsedDate = DateTime.parse(horaExtraDate).toUtc();
+          return parsedDate.isAfter(dataLimite);
+        } catch (e) {
+          print('Erro ao converter a data: $e');
+          return false;
+        }
+      }
+      return false;
+    }).toList();
+
+    return horasExtras.map<String>((horaExtra) {
+      return "${DateFormat("dd/MM/yyyy").format(DateTime.parse(horaExtra['DATA_EXTRA']))} - ${horaExtra['HORA_EXTRA']?.toString() ?? 'N/A'}";
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final horasExtras = getHours(widget.colaborador);
+
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 6.0, horizontal: 2.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(5.0),
+      ),
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                SizedBox(width: 3.0),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 4.0),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            color: Colors.grey[600],
+                            size: 16.0,
+                          ),
+                          SizedBox(width: 8.0),
+                          Text(
+                            'Total de Horas Extras: ${horasExtras.length}',
+                            style: TextStyle(
+                                fontSize: 14.0, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 6.0),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              padding: EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Horas Extras Registradas:",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.blue[800]),
+                  ),
+                  SizedBox(height: 8.0),
+                  horasExtras.isNotEmpty
+                      ? Container(
+                          height: 200.0, // Altura fixa para a lista
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            physics: AlwaysScrollableScrollPhysics(),
+                            itemCount: horasExtras.length,
+                            itemBuilder: (context, index) {
+                              final horaExtra = horasExtras[index];
+                              return Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    horaExtra,
+                                    style: TextStyle(
+                                        fontSize: 14.0,
+                                        color: Colors.grey[700]),
+                                  ),
+                                  Checkbox(
+                                    value: selectedHours.contains(horaExtra),
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          selectedHours.add(horaExtra);
+                                        } else {
+                                          selectedHours.remove(horaExtra);
+                                        }
+                                      });
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        )
+                      : Text(
+                          "Nenhuma hora extra registrada.",
+                          style: TextStyle(
+                              fontSize: 14.0, color: Colors.grey[700]),
+                        ),
+                  SizedBox(height: 5),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ButtonComponents(
+                        onPressed: () {
+                          setState(() => isAprovar = true);
+                          showMotivo(context);
+                        },
+                        textAlign: Alignment.centerRight,
+                        text: 'Aprovar',
+                        backgroundColor: AppColorsComponents.primary,
+                        textColor: Colors.white,
+                        fontSize: 14,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      ),
+                      ButtonComponents(
+                        onPressed: () {
+                          setState(() => isAprovar = false);
+                          showMotivo(context);
+                        },
+                        textAlign: Alignment.centerLeft,
+                        text: 'Reprovar',
+                        backgroundColor: AppColorsComponents.error,
+                        textColor: Colors.white,
+                        fontSize: 14,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

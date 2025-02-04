@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/features/widgets/base_layout.dart';
+import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -23,7 +24,7 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () => context.go('/listcolaboradores'),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.green,
+                    backgroundColor: AppColorsComponents.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius:
                           BorderRadius.circular(8.0), // Borda mais suave
@@ -44,7 +45,7 @@ class _HomePageState extends State<HomePage> {
                       Navigator.pushReplacementNamed(context, '/dboHome'),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.blue,
+                    backgroundColor: AppColorsComponents.secondary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0),
                     ),

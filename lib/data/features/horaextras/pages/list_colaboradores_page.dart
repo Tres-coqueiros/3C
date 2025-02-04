@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:senior/data/core/network/api_services.dart';
-import 'package:senior/data/features/horaextras/pages/detalis_colaborador_page.dart';
+import 'package:senior/data/features/widgets/components/app_colors_components.dart';
+import 'package:senior/data/features/widgets/components/list_view_components.dart';
 
 class ListColaboradores extends StatefulWidget {
   @override
@@ -10,7 +12,7 @@ class ListColaboradores extends StatefulWidget {
 class _ListColaboradoresState extends State<ListColaboradores> {
   final GetServices getServices = GetServices();
   List<Map<String, dynamic>> listColaboradores = [];
-  List<Map<String, dynamic>> selectedColaboradores = [];
+  Map<int, bool> expandedItems = {};
   bool isLoading = true;
   String errorMessage = '';
 
@@ -28,7 +30,6 @@ class _ListColaboradoresState extends State<ListColaboradores> {
         isLoading = false;
       });
     } catch (error) {
-      print('Erro ao carregar dados: $error');
       setState(() {
         isLoading = false;
         errorMessage = 'Erro ao carregar colaboradores. Tente novamente.';
@@ -36,32 +37,16 @@ class _ListColaboradoresState extends State<ListColaboradores> {
     }
   }
 
-  void toggleSelection(Map<String, dynamic> colaborador) {
+  void toggleExpand(int index) {
     setState(() {
-      if (selectedColaboradores.contains(colaborador)) {
-        selectedColaboradores.remove(colaborador);
-      } else {
-        selectedColaboradores.add(colaborador);
-      }
+      expandedItems[index] = !(expandedItems[index] ?? false);
     });
   }
 
-  void approveSelected() {
-    for (var colaborador in selectedColaboradores) {
-      print("Aprovado: ${colaborador['NOMFUN']}");
-    }
-    setState(() {
-      selectedColaboradores.clear();
-    });
-  }
-
-  void rejectSelected() {
-    for (var colaborador in selectedColaboradores) {
-      print("Reprovado: ${colaborador['NOMFUN']}");
-    }
-    setState(() {
-      selectedColaboradores.clear();
-    });
+  // Função para verificar se o colaborador tem horas extras
+  bool hasHorasExtras(Map<String, dynamic> colaborador) {
+    return colaborador['ListHorasExtras'] != null &&
+        colaborador['ListHorasExtras'].isNotEmpty;
   }
 
   @override
@@ -81,104 +66,99 @@ class _ListColaboradoresState extends State<ListColaboradores> {
                       itemCount: listColaboradores.length,
                       itemBuilder: (context, index) {
                         final colaborador = listColaboradores[index];
+                        final isExpanded = expandedItems[index] ?? false;
+                        final hasExtras = hasHorasExtras(colaborador);
+                        if (!hasExtras) {
+                          return SizedBox.shrink();
+                        }
                         return Card(
                           elevation: 6.0,
                           margin: EdgeInsets.only(bottom: 12.0),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15.0),
                           ),
-                          child: ListTile(
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16.0, vertical: 12.0),
-                            leading: CircleAvatar(
-                              radius: 30.0,
-                              backgroundColor: Colors.green,
-                              child: Icon(
-                                Icons.person,
-                                color: Colors.white,
-                                size: 30.0,
-                              ),
-                            ),
-                            title: Text(
-                              colaborador['NOMFUN'] ?? 'Sem nome',
-                              style: TextStyle(
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 5.0),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.access_time,
-                                    color: Colors.grey[600],
-                                    size: 16.0,
+                          color: hasExtras
+                              ? AppColorsComponents.hashours
+                              : Colors.white,
+                          child: Column(
+                            children: [
+                              ListTile(
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16.0, vertical: 12.0),
+                                title: Text(
+                                  colaborador['NOMFUN'] ?? 'Sem nome',
+                                  style: TextStyle(
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
                                   ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Horas Extras: ${colaborador['HORA_EXTRA'] ?? 'Nenhuma'}',
-                                    style: TextStyle(
-                                      fontSize: 14.0,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            trailing: Checkbox(
-                              value:
-                                  selectedColaboradores.contains(colaborador),
-                              onChanged: (bool? value) {
-                                toggleSelection(colaborador);
-                              },
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ListHoraExtra(colaborador: colaborador),
                                 ),
-                              );
-                            },
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 5.0),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.mark_chat_read,
+                                        color: Colors.grey[600],
+                                        size: 16.0,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Matricula: ${colaborador['NUMCAD'].toString() ?? 'Nenhuma'}',
+                                        style: TextStyle(
+                                          fontSize: 14.0,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Icon(
+                                        Icons.calendar_today,
+                                        color: Colors.grey[600],
+                                        size: 16.0,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Data: ${colaborador['ListJornada']?.isNotEmpty == true ? DateFormat('dd/MM/yyyy').format(DateTime.parse(colaborador['ListJornada'][0]['DATACC'])) : 'Nenhuma'}',
+                                        style: TextStyle(
+                                          fontSize: 14.0,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                trailing: hasExtras
+                                    ? GestureDetector(
+                                        onTap: () => toggleExpand(index),
+                                        child: Icon(
+                                          isExpanded
+                                              ? Icons.arrow_drop_up
+                                              : Icons
+                                                  .arrow_drop_down_circle_sharp,
+                                          color: AppColorsComponents.primary,
+                                        ),
+                                      )
+                                    : null, // Remove o botão de expansão
+                              ),
+                              if (isExpanded) ...[
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 16.0, vertical: 8.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      ListViewComponents(
+                                          colaborador: colaborador),
+                                    ],
+                                  ),
+                                ),
+                              ]
+                            ],
                           ),
                         );
                       },
                     ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            onPressed: () {
-              if (selectedColaboradores.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Selecione pelo menos um colaborador!'),
-                ));
-              } else {
-                approveSelected();
-              }
-            },
-            backgroundColor: Colors.green,
-            child: Icon(Icons.check_box),
-          ),
-          SizedBox(width: 16),
-          FloatingActionButton(
-            onPressed: () {
-              if (selectedColaboradores.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Selecione pelo menos um colaborador!'),
-                ));
-              } else {
-                rejectSelected();
-              }
-            },
-            backgroundColor: Colors.red,
-            child: Icon(Icons.cancel),
-          ),
-        ],
-      ),
     );
   }
 }

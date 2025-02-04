@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/features/auth/auth_services.dart';
 import 'package:senior/data/features/horaextras/navigation/navigation_page.dart';
+import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 
 class BaseLayout extends StatelessWidget {
   final PostAuth postAuth = PostAuth();
@@ -28,7 +29,7 @@ class BaseLayout extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Três Coqueiros'),
-        backgroundColor: const Color.fromARGB(255, 0, 204, 51),
+        backgroundColor: AppColorsComponents.primary,
         centerTitle: false,
         elevation: 0,
         titleTextStyle: const TextStyle(

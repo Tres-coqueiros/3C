@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/features/horaextras/pages/list_colaboradores_page.dart';
 import 'package:senior/data/features/auth/auth_services.dart';
+import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -19,8 +20,11 @@ class _LoginPageState extends State<LoginPage> {
 
     if (matricula.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Por favor, insira o número do crachá.')),
+        SnackBar(
+            content: Text('Por favor, insira o número do crachá.'),
+            backgroundColor: AppColorsComponents.error),
       );
+      return;
     }
 
     setState(() {
@@ -36,6 +40,7 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Usuário não encontrado ou senha inválida!'),
+            backgroundColor: AppColorsComponents.error,
           ),
         );
       }
@@ -51,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color.fromARGB(255, 0, 204, 51),
+      backgroundColor: AppColorsComponents.primary,
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -83,15 +88,15 @@ class _LoginPageState extends State<LoginPage> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.0),
                         ),
-                        prefixIcon:
-                            Icon(Icons.badge, color: Colors.greenAccent),
+                        prefixIcon: Icon(Icons.badge,
+                            color: AppColorsComponents.primary),
                       ),
                     ),
                     SizedBox(height: 30.0),
                     ElevatedButton(
                       onPressed: () => login(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: AppColorsComponents.primary,
                         padding: EdgeInsets.symmetric(vertical: 14.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8.0),

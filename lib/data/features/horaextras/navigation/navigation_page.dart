@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 
 class ModernNavigationBar extends StatefulWidget {
   @override
@@ -12,7 +13,7 @@ class _ModernNavigationBarState extends State<ModernNavigationBar> {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      backgroundColor: const Color.fromARGB(255, 0, 204, 41),
+      backgroundColor: AppColorsComponents.primary,
       selectedItemColor: Colors.white,
       unselectedItemColor: Colors.white54,
       currentIndex: _currentIndex,

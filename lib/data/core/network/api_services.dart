@@ -1,6 +1,20 @@
 import 'package:senior/data/core/network/api_client.dart';
 
-class PostServices {}
+class PostServices {
+  Future<bool> postHours(data) async {
+    try {
+      final response = await dio.post('postHoras', data: {'data': data});
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      print('Erro ao fazer a requisição na API: $error');
+      return false;
+    }
+  }
+}
 
 class GetServices {
   Future<List<Map<String, dynamic>>> getCollaborators() async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/network/api_services.dart';
+import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -62,28 +63,28 @@ class _ProfilePage extends State<ProfilePage> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Color.fromARGB(255, 0, 204, 51),
+        color: AppColorsComponents.primary,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
+          bottomLeft: Radius.circular(10),
+          bottomRight: Radius.circular(13),
         ),
       ),
       child: Column(
         children: [
           CircleAvatar(
-            radius: 50,
+            radius: 40,
             backgroundColor: const Color.fromARGB(255, 235, 241, 246),
             child: Icon(
               Icons.person,
-              size: 50,
-              color: Colors.green,
+              size: 40,
+              color: AppColorsComponents.primary,
             ),
           ),
           SizedBox(height: 10),
           Text(
             nameFun,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -108,16 +109,18 @@ class _ProfilePage extends State<ProfilePage> {
           ),
           SizedBox(height: 10),
           ListTile(
-            leading: Icon(Icons.margin_outlined, color: Colors.blue),
+            leading: Icon(Icons.margin_outlined,
+                color: AppColorsComponents.secondary),
             title: Text('Numero Matricula'),
             subtitle: Text(numFun.toString()),
           ),
           ListTile(
-              leading: Icon(Icons.near_me, color: Colors.blue),
+              leading:
+                  Icon(Icons.near_me, color: AppColorsComponents.secondary),
               title: Text('Nome'),
               subtitle: Text(nameFun)),
           ListTile(
-            leading: Icon(Icons.work, color: Colors.blue),
+            leading: Icon(Icons.work, color: AppColorsComponents.secondary),
             title: Text('Cargo'),
             subtitle: Text(positionsFun),
           ),

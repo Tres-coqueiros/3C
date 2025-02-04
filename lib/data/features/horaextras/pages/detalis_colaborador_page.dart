@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/network/api_services.dart';
-import 'package:senior/data/features/widgets/buttons/button_accept.dart';
-import 'package:senior/data/features/widgets/buttons/button_disapprove.dart';
+// import 'package:senior/data/features/widgets/components/button_components.dart';
+// import 'package:senior/data/features/widgets/buttons/button_disapprove.dart';
 import 'package:senior/data/features/widgets/base_layout.dart';
 import 'package:senior/data/features/widgets/messages/dialog_message.dart';
 
@@ -111,19 +111,19 @@ class _ListHoraExtra extends State<ListHoraExtra> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: ButtonAccept(
-                        onPressed: () => showMotivo(context),
-                        text: 'Aprovar',
-                      ),
-                    ),
+                    // Expanded(
+                    //   child: ButtonAccept(
+                    //     onPressed: () => showMotivo(context),
+                    //     text: 'Aprovar',
+                    //   ),
+                    // ),
                     SizedBox(width: 16),
-                    Expanded(
-                      child: ButtonDisapprove(
-                        onPressed: () => showMotivo(context),
-                        text: 'Reprovar',
-                      ),
-                    ),
+                    // Expanded(
+                    // child: ButtonDisapprove(
+                    //   onPressed: () => showMotivo(context),
+                    //   text: 'Reprovar',
+                    // ),
+                    // ),
                   ],
                 ),
               ],
