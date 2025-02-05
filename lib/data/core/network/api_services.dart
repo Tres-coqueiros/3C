@@ -14,6 +14,20 @@ class PostServices {
       return false;
     }
   }
+
+  Future<bool> postSendEmail(data) async {
+    try {
+      final response = await dio.post('postSendEmail', data: {'data': data});
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      print('Erro ao fazer a requisição na API: $error');
+      return false;
+    }
+  }
 }
 
 class GetServices {

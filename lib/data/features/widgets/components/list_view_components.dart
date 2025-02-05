@@ -21,6 +21,9 @@ class _ListViewComponentsState extends State<ListViewComponents> {
   List<String> selectedHours = [];
   bool selectAll = false;
 
+  double totalHorasExtras = 0.0;
+  double totalHours = 0.0;
+
   void toggleSelectAll() {
     setState(() {
       if (selectAll) {
@@ -89,6 +92,10 @@ class _ListViewComponentsState extends State<ListViewComponents> {
             backgroundColor: AppColorsComponents.success,
           ),
         );
+        for (var hour in selectedHours) {
+          selectedHours.remove(hour);
+        }
+        ;
       }
     } catch (error) {
       print("Erro ao aprovar horas extras: $error");
@@ -98,19 +105,54 @@ class _ListViewComponentsState extends State<ListViewComponents> {
     });
   }
 
-  void disapproveHours(BuildContext context, String motivo) {
+  void disapproveHours(BuildContext context, String motivo) async {
+    final data = {
+      'numcad': widget.colaborador['NUMCAD'],
+      'nomfun': widget.colaborador['NOMFUN'],
+      'tipcol': widget.colaborador['TIPCOL'],
+      'numemp': widget.colaborador['NUMEMP'],
+      'titred': widget.colaborador['TITRED'],
+      'nomloc': widget.colaborador['NOMLOC'],
+      'motivo': motivo,
+      'selectedHours': selectedHours
+    };
+
+    if (data.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erro ao enviar dados!"),
+          backgroundColor: AppColorsComponents.error,
+        ),
+      );
+      return;
+    }
     try {
-      print('Horas extras reprovadas: $selectedHours\nMotivo: $motivo');
-      setState(() {
-        selectedHours.clear();
-      });
+      bool success = await postServices.postSendEmail(data);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Horas extras reprovadas com sucesso!"),
+            backgroundColor: AppColorsComponents.success,
+          ),
+        );
+      }
     } catch (error) {
       print("Erro ao reprovar horas extras: $error");
     }
   }
 
   List<String> getHours(Map<String, dynamic> colaborador) {
-    DateTime dataLimite = DateTime.now().subtract(Duration(days: 123));
+    DateTime dataOntem = DateTime.now().subtract(Duration(days: 1));
+    DateTime dataOntemInicio =
+        DateTime(dataOntem.year, dataOntem.month, dataOntem.day, 0, 0, 0)
+            .toUtc();
+    DateTime dataOntemFim =
+        DateTime(dataOntem.year, dataOntem.month, dataOntem.day, 23, 59, 59)
+            .toUtc();
+
+    print('dataOntemInicio $dataOntemInicio');
+    print('dataOntemFim $dataOntemFim');
+
     if (colaborador['ListHorasExtras'] == null ||
         colaborador['ListHorasExtras'].isEmpty) {
       print('Nenhuma hora extra encontrada.');
@@ -123,19 +165,15 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       return [];
     }
 
-    final horasFormatadas = colaborador['ListJornada']
-        .map<String>(
-            (jornada) => jornada['HORAS_FORMATADAS']?.toString() ?? 'N/A')
-        .toList();
-
-    print('horasFormatadas $horasFormatadas');
+    double totalHorasExtras = 0.0;
 
     final horasExtras = colaborador['ListHorasExtras'].where((horaExtra) {
       String? horaExtraDate = horaExtra['DATA_EXTRA']?.toString();
       if (horaExtraDate != null) {
         try {
           DateTime parsedDate = DateTime.parse(horaExtraDate).toUtc();
-          return parsedDate.isAfter(dataLimite);
+          return parsedDate.isAfter(dataOntemInicio) &&
+              parsedDate.isBefore(dataOntemFim);
         } catch (e) {
           print('Erro ao converter a data da hora extra: $e');
           return false;
@@ -143,9 +181,29 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       }
       return false;
     }).map<String>((horaExtra) {
-      return "${DateFormat("dd/MM/yyyy").format(DateTime.parse(horaExtra['DATA_EXTRA']))} - ${horaExtra['HORA_EXTRA']?.toString() ?? 'N/A'} h";
+      String? horasString = horaExtra['HORA_EXTRA']?.toString();
+      if (horasString == null || horasString.isEmpty) {
+        return "Erro: Dados inválidos";
+      }
+
+      List<String> partes = horasString.split(':');
+      if (partes.length != 2) {
+        return "Erro: Formato inválido";
+      }
+
+      int horas = int.tryParse(partes[0]) ?? 0;
+      int minutos = int.tryParse(partes[1]) ?? 0;
+
+      totalHorasExtras += (horas * 60) + minutos;
+
+      return "${DateFormat("dd/MM/yyyy").format(DateTime.parse(horaExtra['DATA_EXTRA']))} - ${horaExtra['HORA_EXTRA']} h";
     }).toList();
-    return [...horasExtras, ...horasFormatadas];
+
+    setState(() {
+      totalHours = totalHorasExtras;
+    });
+
+    return horasExtras;
   }
 
   @override
@@ -180,7 +238,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                           ),
                           SizedBox(width: 8.0),
                           Text(
-                            'Total de Horas Extras: ${horasExtras.length}',
+                            'Total de Horas Extras: ${totalHours.toInt()}',
                             style: TextStyle(
                                 fontSize: 14.0, color: Colors.grey[600]),
                           ),

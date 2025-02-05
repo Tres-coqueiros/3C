@@ -2,7 +2,6 @@ import 'package:senior/data/core/network/api_client.dart';
 
 class PostAuth {
   Future<bool> authuser(String matricula) async {
-    print(matricula);
     try {
       final response =
           await dio.post('postLogin', data: {'matricula': matricula});

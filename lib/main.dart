@@ -1,24 +1,17 @@
-import 'dart:async';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:senior/data/core/network/android_alarm.dart';
 import 'package:senior/data/core/network/api_client.dart';
 import 'package:senior/data/core/routers/app_router.dart';
 import 'package:senior/data/core/network/notification_services.dart';
-// import 'package:senior/data/src/services/hora_extra_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationServices.init();
-
-  _scheduleDailyCheck(); // Agendar a verificação diária
-
+  await AndroidAlarmManager.initialize();
+  await BackgroundService.startBackgroundTask();
+  await NotificationService.init();
   configureDio();
   runApp(const MyApp());
-}
-
-void _scheduleDailyCheck() {
-  Timer(Duration(seconds: 5), () {
-    // HoraExtraService.checkForYesterdayHoraExtra();
-  });
 }
 
 class MyApp extends StatelessWidget {
@@ -27,8 +20,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       routerConfig: AppRouter,
-      debugShowCheckedModeBanner: false,
-      title: 'APP',
+      debugShowCheckedModeBanner: true,
+      title: '',
     );
   }
 }

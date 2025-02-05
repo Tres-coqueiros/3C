@@ -21,8 +21,9 @@ class _LoginPageState extends State<LoginPage> {
     if (matricula.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Por favor, insira o número do crachá.'),
-            backgroundColor: AppColorsComponents.error),
+          content: Text('Por favor, insira o número do crachá.'),
+          backgroundColor: AppColorsComponents.error,
+        ),
       );
       return;
     }
@@ -36,18 +37,22 @@ class _LoginPageState extends State<LoginPage> {
 
       if (success) {
         context.go('/homepage');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Usuário não encontrado ou senha inválida!'),
-            backgroundColor: AppColorsComponents.error,
-          ),
-        );
       }
       _crachaController.clear();
     } catch (error) {
-      print('erro ao fazer login $error');
+      String errorMessage = error.toString();
+      if (errorMessage.isEmpty) {
+        errorMessage = 'Ocorreu um erro inesperado.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: AppColorsComponents.error,
+        ),
+      );
+      print('erro ao fazer login: $error');
     }
+
     setState(() {
       isLoading = false;
     });

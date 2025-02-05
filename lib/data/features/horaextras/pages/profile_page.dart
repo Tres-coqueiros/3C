@@ -30,8 +30,6 @@ class _ProfilePage extends State<ProfilePage> {
         numFun = result['getLogin']['numcad'] ?? 'Desconhecido';
       }
 
-      print('Resultado da API: $nameFun');
-
       setState(() {
         getLogin = [result['getLogin']];
       });
