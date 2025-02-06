@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:senior/data/features/horaextras/pages/list_colaboradores_page.dart';
 import 'package:senior/data/features/auth/auth_services.dart';
 
 class LoginPage extends StatefulWidget {
@@ -31,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
       bool success = await postAuth.authuser(matricula);
 
       if (success) {
-        Navigator.pushReplacementNamed(context, '/homepage');
+        context.go('/homepage');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

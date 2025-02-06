@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/widgets/buttons/button_accept.dart';
-import 'package:senior/data/core/widgets/buttons/button_disapprove.dart';
-import 'package:senior/data/core/widgets/components/list_colaboradores.dart';
-import 'package:senior/data/core/widgets/base_layout.dart';
-import 'package:senior/data/core/widgets/messages/dialog_message.dart';
+import 'package:senior/data/features/widgets/base_layout.dart';
+// import 'package:senior/data/core/widgets/buttons/button_disapprove.dart';
+// import 'package:senior/data/features/widgets/base_layout.dart';
+import 'package:senior/data/features/widgets/buttons/button_accept.dart';
+import 'package:senior/data/features/widgets/buttons/button_disapprove.dart';
+import 'package:senior/data/features/widgets/messages/dialog_message.dart';
 
 class ListHoraExtra extends StatefulWidget {
-  final Colaborador colaborador;
-
-  const ListHoraExtra({super.key, required this.colaborador});
-
   @override
   _ListHoraExtra createState() => _ListHoraExtra();
 }
@@ -80,16 +78,16 @@ class _ListHoraExtra extends State<ListHoraExtra> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Informações do Colaborador
-                  _buildInfoRow(Icons.person, 'Nome', widget.colaborador.nome),
-                  Divider(color: Colors.grey[300], thickness: 1),
-                  _buildInfoRow(Icons.access_time, 'Horas Extras',
-                      widget.colaborador.horasExtras.toString()),
-                  Divider(color: Colors.grey[300], thickness: 1),
-                  _buildInfoRow(Icons.work, 'Jornada',
-                      widget.colaborador.nome.toString()),
-                  Divider(color: Colors.grey[300], thickness: 1),
-                  _buildInfoRow(
-                      Icons.work_outline, 'Cargo', widget.colaborador.jornada),
+                  // _buildInfoRow(Icons.person, 'Nome', widget.colaborador.nome),
+                  // Divider(color: Colors.grey[300], thickness: 1),
+                  // _buildInfoRow(Icons.access_time, 'Horas Extras',
+                  //     widget.colaborador.horasExtras.toString()),
+                  // Divider(color: Colors.grey[300], thickness: 1),
+                  // _buildInfoRow(Icons.work, 'Jornada',
+                  //     widget.colaborador.nome.toString()),
+                  // Divider(color: Colors.grey[300], thickness: 1),
+                  // _buildInfoRow(
+                  //     Icons.work_outline, 'Cargo', widget.colaborador.jornada),
                   SizedBox(height: 24),
                   // Botões Aprovar e Reprovar lado a lado
                   Row(

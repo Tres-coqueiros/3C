@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class DetailsregisterPage extends StatefulWidget {
   final List<Map<String, dynamic>> registros;
@@ -97,22 +98,21 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     );
   }
 
-  Widget _buildInfo(String label, String? value) {
+  /// **Exibe informações dentro dos Cards**
+  Widget _buildInfo(String label, dynamic value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: RichText(
-        text: TextSpan(
-          text: '$label: ',
-          style: const TextStyle(
-              fontWeight: FontWeight.bold, color: Colors.black, fontSize: 16),
-          children: [
-            TextSpan(
-              text: value ?? 'Não informado',
-              style: const TextStyle(fontWeight: FontWeight.normal),
-            ),
-          ],
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Text('$label: ${value ?? 'Não informado'}',
+          style: const TextStyle(fontSize: 14)),
+    );
+  }
+
+  /// **Exibe informações nos detalhes do registro**
+  Widget _buildInfoRow(String label, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Text("$label: ${value ?? 'Não informado'}",
+          style: const TextStyle(fontSize: 16)),
     );
   }
 }

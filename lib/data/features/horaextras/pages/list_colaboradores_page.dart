@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:senior/data/features/auth/auth_services.dart';
-import 'package:senior/data/features/horaextras/pages/list_hora_extra.dart';
+import 'package:senior/data/features/horaextras/pages/detalis_colaborador_page.dart';
 
 class ListColaboradores extends StatefulWidget {
   const ListColaboradores({super.key});
@@ -12,7 +12,7 @@ class ListColaboradores extends StatefulWidget {
 class _ListColaboradoresState extends State<ListColaboradores> {
   final GetAuth getAuth = GetAuth();
   List<Map<String, dynamic>> listColaboradores = [];
-  bool isLoading = true; // Inicializa como true para mostrar loading
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -25,6 +25,7 @@ class _ListColaboradoresState extends State<ListColaboradores> {
       final result = await getAuth.getColaboradorGestor();
       setState(() {
         listColaboradores = result;
+        print(result);
         isLoading = false;
       });
     } catch (error) {
@@ -82,18 +83,18 @@ class _ListColaboradoresState extends State<ListColaboradores> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => ListHoraExtra(
-                                colaborador: Colaborador(
-                                  nome: colaborador['nomfun'] ?? 'Sem nome',
-                                  horasExtras: int.tryParse(
-                                          colaborador['horas_formatadas'] ??
-                                              '0') ??
-                                      0,
-                                  jornada:
-                                      colaborador['despos'] ?? 'Não informado',
-                                  matricula: colaborador['numcad'] ?? 0,
-                                  cargo: colaborador['titred'] ?? 'Sem cargo',
-                                ),
-                              ),
+                                  // colaborador: Colaborador(
+                                  //   nome: colaborador['nomfun'] ?? 'Sem nome',
+                                  //   horasExtras: int.tryParse(
+                                  //           colaborador['horas_formatadas'] ??
+                                  //               '0') ??
+                                  //       0,
+                                  //   jornada:
+                                  //       colaborador['despos'] ?? 'Não informado',
+                                  //   matricula: colaborador['numcad'] ?? 0,
+                                  //   cargo: colaborador['titred'] ?? 'Sem cargo',
+                                  // ),
+                                  ),
                             ),
                           );
                         },
@@ -103,20 +104,4 @@ class _ListColaboradoresState extends State<ListColaboradores> {
                 ),
     );
   }
-}
-
-class Colaborador {
-  final String nome;
-  final int horasExtras;
-  final String jornada;
-  final int matricula;
-  final String cargo;
-
-  Colaborador({
-    required this.nome,
-    required this.horasExtras,
-    required this.jornada,
-    required this.matricula,
-    required this.cargo,
-  });
 }

@@ -1,50 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class HomePageDBO extends StatefulWidget {
+  const HomePageDBO({super.key});
+
   @override
-  _HomePageState createState() => _HomePageState();
+  _HomePageDBOState createState() => _HomePageDBOState();
 }
 
-class _HomePageState extends State<HomePageDBO> {
+class _HomePageDBOState extends State<HomePageDBO> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                  textStyle: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+      body: Center(
+        // 🔹 Garante centralização total na tela
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center, // 🔹 Centraliza verticalmente
+          crossAxisAlignment:
+              CrossAxisAlignment.center, // 🔹 Centraliza horizontalmente
+          children: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 15,
+                  horizontal: 30,
                 ),
-                onPressed: () {
-                  // Direciona para a tela de cadastro diretamente
-                  Navigator.pushReplacementNamed(context, '/registerpublic');
-                },
-                child: const Text('Ir para Informações Gerais'),
-              ),
-              const SizedBox(height: 15),
-              // Botão para Histórico de Registros
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                  textStyle: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/detailsregister');
-                },
-                child: const Text('Histórico de Registros'),
               ),
-            ],
-          ),
+              onPressed: () {
+                context.go('/registerpublic'); // 🔹 Navega para Cadastro
+              },
+              child: const Text('Cadastrar'),
+            ),
+            const SizedBox(height: 20), // 🔹 Espaço entre os botões
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[600], // 🔹 Cor de fundo do botão
+                padding: const EdgeInsets.symmetric(
+                  vertical: 15,
+                  horizontal: 30,
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              onPressed: () {
+                context.go('/detailsregister'); // 🔹 Navega para Registros
+              },
+              child: const Text(
+                'Registros',
+                style: TextStyle(color: Colors.white), // 🔹 Texto branco
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:senior/data/core/routers/app_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:senior/data/core/widgets/base_layout.dart';
 import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/features/dbo/pages/RegisterPublic_page.dart';
@@ -13,6 +15,10 @@ import 'data/global_data.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Corrige a formatação de data para o Brasil
+  await initializeDateFormatting('pt_BR', null);
+
   await NotificationServices.init();
 
   _scheduleDailyCheck(); // Agendar a verificação diária
@@ -30,22 +36,10 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: globalNavigatorKey,
-      theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => LoginPage(),
-        '/homepage': (context) => HomePage(),
-        // Rota removida: '/dboHome'
-        '/registerpublic': (context) => BaseLayout(body: RegisterPublicDBO()),
-        '/detailsregister': (context) => BaseLayout(
-                body: DetailsregisterPage(
-              registros: listaDeRegistros,
-            )),
-        '/profile': (context) => BaseLayout(body: ProfilePage()),
-      },
+    return MaterialApp.router(
+      routerConfig: AppRouter,
+      debugShowCheckedModeBanner: false,
+      title: 'APP',
     );
   }
 }

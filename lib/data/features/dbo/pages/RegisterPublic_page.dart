@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:senior/data/features/dbo/pages/RegisterActivity_page.dart';
@@ -24,6 +26,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   bool _horarioError = false;
   bool _horimetroError = false;
 
+  /// **Selecionar Data e Hora com Formatação Correta**
   void _selecionarHorario(BuildContext context, bool isInicial) {
     DatePicker.showDateTimePicker(
       context,
@@ -43,6 +46,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     );
   }
 
+  /// **Avançar para a Próxima Tela**
   void _avancar() {
     setState(() {
       _horarioError = false;
@@ -122,6 +126,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       //   ],
       // ),
       body: Padding(
+        padding: const EdgeInsets.all(16.0),
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Form(
@@ -207,9 +212,12 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                       child: Column(
                         children: [
                           const Text("Inicial*"),
+                          const Text("Inicial*"),
                           ElevatedButton(
                             onPressed: () => _selecionarHorario(context, true),
-                            child: Text(_horarioInicial ?? "Selecione"),
+                            child: Text(_horarioInicial != null
+                                ? _formatarData(_horarioInicial!)
+                                : "Selecione"),
                           ),
                         ],
                       ),
@@ -218,9 +226,12 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                       child: Column(
                         children: [
                           const Text("Final*"),
+                          const Text("Final*"),
                           ElevatedButton(
                             onPressed: () => _selecionarHorario(context, false),
-                            child: Text(_horarioFinal ?? "Selecione"),
+                            child: Text(_horarioFinal != null
+                                ? _formatarData(_horarioFinal!)
+                                : "Selecione"),
                           ),
                         ],
                       ),
@@ -270,6 +281,34 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// **Formata corretamente os horários armazenados**
+  String _formatarData(dynamic valor) {
+    if (valor == null || valor == "Não informado") return "Não informado";
+    try {
+      final DateTime dateTime =
+          (valor is DateTime) ? valor : DateTime.parse(valor);
+      return DateFormat('dd/MM/yyyy HH:mm', 'pt_BR').format(dateTime);
+    } catch (e) {
+      return "Formato inválido";
+    }
+  }
+
+  /// **Criação de Campos de Texto**
+  Widget _buildTextField(
+      String label, TextEditingController controller, String hint) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+        ),
+        validator: (value) => value!.isEmpty ? "Campo obrigatório" : null,
       ),
     );
   }
