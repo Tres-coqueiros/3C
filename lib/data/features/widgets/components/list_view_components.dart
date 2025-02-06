@@ -5,6 +5,7 @@ import 'package:senior/data/core/network/exceptions_network.dart';
 import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 import 'package:senior/data/features/widgets/components/button_components.dart';
 import 'package:senior/data/features/widgets/messages/dialog_message.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ListViewComponents extends StatefulWidget {
   final Map<String, dynamic> colaborador;
@@ -33,6 +34,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
   void initState() {
     super.initState();
     fetchData();
+    saveSelectedHours(selectedHours);
   }
 
   Future<void> fetchData() async {
@@ -67,7 +69,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       if (selectAll) {
         selectedHours.clear();
       } else {
-        selectedHours = getHours(widget.colaborador);
+        selectedHours = List.from(horasExtrasAcumuladas);
       }
       selectAll = !selectAll;
     });
@@ -223,6 +225,8 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       return horasExtrasAcumuladas;
     }
 
+    totalHorasExtras = 0.0; // Resetando o total
+
     colaborador['ListHorasExtras'].forEach((horaExtra) {
       String? horaExtraDate = horaExtra['DATA_EXTRA']?.toString();
       print('horaExtraDate $horaExtraDate');
@@ -259,6 +263,29 @@ class _ListViewComponentsState extends State<ListViewComponents> {
     });
 
     return horasExtrasAcumuladas;
+  }
+
+  void saveSelectedHours(List<String> hours) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('selectedHours', hours);
+  }
+
+  Future<List<String>> getSavedSelectedHours() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList('selectedHours') ?? [];
+  }
+
+  void loadSelectedHours() async {
+    List<String> savedHours = await getSavedSelectedHours();
+    setState(() {
+      selectedHours = savedHours;
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    saveSelectedHours(selectedHours); // Salva a seleção ao sair da tela
   }
 
   @override
