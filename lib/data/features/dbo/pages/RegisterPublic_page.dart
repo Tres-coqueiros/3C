@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
+import 'package:intl/intl.dart';
+import 'package:senior/data/features/dbo/pages/RegisterActivity_page.dart';
+import 'package:senior/data/global_data.dart'; // Variável global listaDeRegistros
 
 class RegisterPublicDBO extends StatefulWidget {
   @override
@@ -18,86 +21,192 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
 
   String? _horarioInicial;
   String? _horarioFinal;
-  List<Map<String, dynamic>> listaLimite = [];
+  bool _horarioError = false;
+  bool _horimetroError = false;
 
   void _selecionarHorario(BuildContext context, bool isInicial) {
-    // DatePicker.showTimePicker(
-    //   context,
-    //   showSecondsColumn: false,
-    //   onConfirm: (time) {
-    //     setState(() {
-    //       if (isInicial) {
-    //         _horarioInicial = "${time.hour}:${time.minute}";
-    //       } else {
-    //         _horarioFinal = "${time.hour}:${time.minute}";
-    //       }
-    //     });
-    //   },
-    // );
+    DatePicker.showDateTimePicker(
+      context,
+      showTitleActions: true,
+      onConfirm: (date) {
+        setState(() {
+          String formatted = DateFormat('dd/MM/yyyy HH:mm').format(date);
+          if (isInicial) {
+            _horarioInicial = formatted;
+          } else {
+            _horarioFinal = formatted;
+          }
+        });
+      },
+      currentTime: DateTime.now(),
+      locale: LocaleType.pt,
+    );
   }
 
   void _avancar() {
+    setState(() {
+      _horarioError = false;
+      _horimetroError = false;
+    });
+
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        listaLimite.add({
-          'matricula': _matriculaController.text,
-          'nomeCoordenador': _coordenadorController.text,
-          'patrimonio': _patrimonioController.text,
-          'horarioInicial': _horarioInicial ?? 'Não informado',
-          'horarioFinal': _horarioFinal ?? 'Não informado',
-          'horimetroInicial': _horimetroInicialController.text,
-          'horimetroFinal': _horimetroFinalController.text,
+      if (_horarioInicial == null || _horarioFinal == null) {
+        setState(() {
+          _horarioError = true;
         });
-      });
+        return;
+      }
+      try {
+        final dtInicial =
+            DateFormat('dd/MM/yyyy HH:mm').parse(_horarioInicial!);
+        final dtFinal = DateFormat('dd/MM/yyyy HH:mm').parse(_horarioFinal!);
+        if (dtFinal.isBefore(dtInicial)) {
+          setState(() {
+            _horarioError = true;
+          });
+          return;
+        }
+      } catch (e) {
+        setState(() {
+          _horarioError = true;
+        });
+        return;
+      }
+
+      double? horimetroInicial =
+          double.tryParse(_horimetroInicialController.text);
+      double? horimetroFinal = double.tryParse(_horimetroFinalController.text);
+      if (horimetroInicial == null ||
+          horimetroFinal == null ||
+          horimetroFinal <= horimetroInicial) {
+        setState(() {
+          _horimetroError = true;
+        });
+        return;
+      }
+
+      final informacoesGerais = {
+        'matricula': _matriculaController.text,
+        'nomeCoordenador': _coordenadorController.text,
+        'patrimonio': _patrimonioController.text,
+        'horarioInicial': _horarioInicial,
+        'horarioFinal': _horarioFinal,
+        'horimetroInicial': _horimetroInicialController.text,
+        'horimetroFinal': _horimetroFinalController.text,
+      };
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RegisterActivityPage(
+            dados: listaDeRegistros,
+            informacoesGerais: informacoesGerais,
+          ),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Cadastro de Atividades")),
+      // appBar: AppBar(
+      //   title: const Text("Cadastro de Atividades"),
+      //   actions: [
+      //     // Botão para visualizar o histórico de registros
+      //     IconButton(
+      //       icon: const Icon(Icons.history),
+      //       tooltip: 'Histórico de Registros',
+      //       onPressed: () => Navigator.pushNamed(context, '/detailsregister'),
+      //     )
+      //   ],
+      // ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Matrícula*"),
+                const Text("Matrícula*"),
                 TextFormField(
                   controller: _matriculaController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(hintText: "Digite a Matrícula"),
+                  decoration: const InputDecoration(
+                    hintText: "Digite a Matrícula",
+                  ),
                   validator: (value) =>
                       value!.isEmpty ? "Matrícula é obrigatória." : null,
                 ),
-                SizedBox(height: 10),
-                Text("Nome do Coordenador*"),
+                const SizedBox(height: 10),
+                const Text("Nome do Coordenador*"),
                 TextFormField(
                   controller: _coordenadorController,
-                  decoration: InputDecoration(hintText: "Coordenador"),
+                  decoration: const InputDecoration(hintText: "Coordenador"),
                   validator: (value) => value!.isEmpty
                       ? "Nome do Coordenador é obrigatório."
                       : null,
                 ),
-                SizedBox(height: 10),
-                Text("Patrimônio*"),
+                const SizedBox(height: 10),
+                const Text("Patrimônio*"),
                 TextFormField(
                   controller: _patrimonioController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(hintText: "Digite o Patrimônio"),
+                  decoration: const InputDecoration(
+                    hintText: "Digite o Patrimônio",
+                  ),
                   validator: (value) =>
                       value!.isEmpty ? "Patrimônio é obrigatório." : null,
                 ),
-                SizedBox(height: 10),
-                Text("Horários*"),
+                const SizedBox(height: 10),
+                const Text("Horímetro"),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _horimetroInicialController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          hintText: "Horímetro Inicial",
+                        ),
+                        validator: (value) => value!.isEmpty
+                            ? "Horímetro Inicial é obrigatório."
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _horimetroFinalController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          hintText: "Horímetro Final",
+                        ),
+                        validator: (value) => value!.isEmpty
+                            ? "Horímetro Final é obrigatório."
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
+                if (_horimetroError)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      '⚠️ Horímetro Final deve ser maior que o Inicial!',
+                      style: TextStyle(
+                          color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                const SizedBox(height: 10),
+                const Text("Data e Horários*"),
                 Row(
                   children: [
                     Expanded(
                       child: Column(
                         children: [
-                          Text("Inicial*"),
+                          const Text("Inicial*"),
                           ElevatedButton(
                             onPressed: () => _selecionarHorario(context, true),
                             child: Text(_horarioInicial ?? "Selecione"),
@@ -108,7 +217,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     Expanded(
                       child: Column(
                         children: [
-                          Text("Final*"),
+                          const Text("Final*"),
                           ElevatedButton(
                             onPressed: () => _selecionarHorario(context, false),
                             child: Text(_horarioFinal ?? "Selecione"),
@@ -118,73 +227,45 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
-                Text("Horímetro"),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _horimetroInicialController,
-                        keyboardType: TextInputType.number,
-                        decoration:
-                            InputDecoration(hintText: "Horímetro Inicial"),
+                if (_horarioError)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      '⚠️ Data/Horário Final deve ser maior que o Inicial!',
+                      style: TextStyle(
+                          color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _avancar,
+                    child: const Text(
+                      'Avançar',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                // Exibe o último registro, se existir
+                if (listaDeRegistros.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Último Registro:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Card(
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    child: ListTile(
+                      title: Text(
+                          "Matrícula: ${listaDeRegistros.last['matricula'] ?? 'Não informado'}"),
+                      subtitle: Text(
+                        "Horário Inicial: ${listaDeRegistros.last['horarioInicial'] ?? 'Não informado'}\n"
+                        "Horário Final: ${listaDeRegistros.last['horarioFinal'] ?? 'Não informado'}",
                       ),
                     ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _horimetroFinalController,
-                        keyboardType: TextInputType.number,
-                        decoration:
-                            InputDecoration(hintText: "Horímetro Final"),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _avancar,
-                  child: Text("Avançar"),
-                ),
-                SizedBox(height: 20),
-                Text("Últimos 3 Registros",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                listaLimite.isNotEmpty
-                    ? Container(
-                        height: 200,
-                        child: ListView.builder(
-                          itemCount:
-                              listaLimite.length > 3 ? 3 : listaLimite.length,
-                          itemBuilder: (context, index) {
-                            final item = listaLimite[index];
-                            return Card(
-                              child: ListTile(
-                                title: Text("Registro #${index + 1}"),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text("Matrícula: ${item['matricula']}"),
-                                    Text(
-                                        "Coordenador: ${item['nomeCoordenador']}"),
-                                    Text("Patrimônio: ${item['patrimonio']}"),
-                                    Text(
-                                        "Horário Inicial: ${item['horarioInicial']}"),
-                                    Text(
-                                        "Horário Final: ${item['horarioFinal']}"),
-                                    Text(
-                                        "Horímetro Inicial: ${item['horimetroInicial']}"),
-                                    Text(
-                                        "Horímetro Final: ${item['horimetroFinal']}"),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      )
-                    : Text("Nenhum registro encontrado."),
+                  ),
+                ],
               ],
             ),
           ),

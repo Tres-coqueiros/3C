@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:senior/data/core/widgets/base_layout.dart';
 import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/features/dbo/pages/RegisterPublic_page.dart';
-import 'package:senior/data/features/dbo/pages/home_page.dart';
 import 'package:senior/data/features/home_page.dart';
 import 'package:senior/data/features/auth/login_page.dart';
 import 'package:senior/data/features/horaextras/profile/profile_page.dart';
 import 'package:senior/data/core/network/notification_services.dart';
+
+import 'data/global_data.dart';
 // import 'package:senior/data/src/services/hora_extra_services.dart';
 
 void main() async {
@@ -37,10 +38,12 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => LoginPage(),
         '/homepage': (context) => HomePage(),
-        '/dboHome': (context) => BaseLayout(body: HomePageDBO()),
+        // Rota removida: '/dboHome'
         '/registerpublic': (context) => BaseLayout(body: RegisterPublicDBO()),
-        '/detailsregister': (context) =>
-            BaseLayout(body: DetailsregisterPage()),
+        '/detailsregister': (context) => BaseLayout(
+                body: DetailsregisterPage(
+              registros: listaDeRegistros,
+            )),
         '/profile': (context) => BaseLayout(body: ProfilePage()),
       },
     );

@@ -6,6 +6,7 @@ class TelaDetalhesRegistro extends StatelessWidget {
   const TelaDetalhesRegistro({
     super.key,
     required this.registro,
+    // O parâmetro "registros" foi removido, pois não está sendo utilizado aqui.
   });
 
   @override

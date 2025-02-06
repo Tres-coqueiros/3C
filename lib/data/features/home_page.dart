@@ -26,23 +26,22 @@ class _HomePageState extends State<HomePage> {
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.green,
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(8.0), // Borda mais suave
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
                   ),
-                  child: Text(
+                  child: const Text(
                     'HORA EXTRAS',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               SizedBox(
                 width: 350,
                 height: 60,
                 child: ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pushReplacementNamed(context, '/dboHome'),
+                  onPressed: () => Navigator.pushReplacementNamed(
+                      context, '/registerpublic'),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.blue,
@@ -50,7 +49,7 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                   ),
-                  child: Text(
+                  child: const Text(
                     'DBO',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),

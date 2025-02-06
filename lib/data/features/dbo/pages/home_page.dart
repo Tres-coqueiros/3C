@@ -23,16 +23,12 @@ class _HomePageState extends State<HomePageDBO> {
                       fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 onPressed: () {
-                  Navigator.pushReplacementNamed(
-                    context,
-                    '/registerpublic',
-                    // arguments: dados,
-                  );
+                  // Direciona para a tela de cadastro diretamente
+                  Navigator.pushReplacementNamed(context, '/registerpublic');
                 },
                 child: const Text('Ir para Informações Gerais'),
               ),
               const SizedBox(height: 15),
-
               // Botão para Histórico de Registros
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -43,11 +39,7 @@ class _HomePageState extends State<HomePageDBO> {
                       fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 onPressed: () {
-                  Navigator.pushReplacementNamed(
-                    context,
-                    '/detailsregister',
-                    // arguments: dados,
-                  );
+                  Navigator.pushReplacementNamed(context, '/detailsregister');
                 },
                 child: const Text('Histórico de Registros'),
               ),
