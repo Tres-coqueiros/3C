@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:senior/data/features/widgets/base_layout.dart';
 import 'package:senior/data/features/auth/login_page.dart';
 import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/features/dbo/pages/RegisteractivityPage.dart';
@@ -7,47 +8,8 @@ import 'package:senior/data/features/dbo/pages/RegisterPublic_page.dart';
 import 'package:senior/data/features/dbo/pages/home_page.dart';
 import 'package:senior/data/features/home_page.dart';
 import 'package:senior/data/features/horaextras/pages/list_colaboradores_page.dart';
-import 'package:senior/data/features/horaextras/profile/profile_page.dart';
-import 'package:senior/data/features/widgets/base_layout.dart';
+import 'package:senior/data/features/horaextras/pages/profile_page.dart';
 
-/// Lista global para armazenar os registros
-List<Map<String, dynamic>> listaDeRegistros = [];
-
-/// Tela de opções gerais com botão para acessar os registros
-class OpcoesGeraisOuRegistrosPage extends StatelessWidget {
-  const OpcoesGeraisOuRegistrosPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Opções")),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                context.go('/registerpublic');
-              },
-              child: const Text("Cadastrar"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                context.go(
-                  '/detailsregister',
-                  extra: {'dados': List.from(listaDeRegistros)},
-                );
-              },
-              child: const Text("Registros"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Configuração do GoRouter corrigido
 final GoRouter AppRouter = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => LoginPage()),

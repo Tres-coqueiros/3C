@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 
 class ModernNavigationBar extends StatefulWidget {
   @override
@@ -11,7 +13,7 @@ class _ModernNavigationBarState extends State<ModernNavigationBar> {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      backgroundColor: const Color.fromARGB(255, 0, 204, 41),
+      backgroundColor: AppColorsComponents.primary,
       selectedItemColor: Colors.white,
       unselectedItemColor: Colors.white54,
       currentIndex: _currentIndex,
@@ -24,10 +26,6 @@ class _ModernNavigationBarState extends State<ModernNavigationBar> {
           icon: Icon(Icons.account_circle),
           label: 'Perfil',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.exit_to_app),
-          label: 'Sair',
-        ),
       ],
       onTap: (index) {
         setState(() {
@@ -35,13 +33,10 @@ class _ModernNavigationBarState extends State<ModernNavigationBar> {
         });
         switch (index) {
           case 0:
-            Navigator.pushReplacementNamed(context, '/homepage');
+            context.go('/homepage');
             break;
           case 1:
-            Navigator.pushReplacementNamed(context, '/profile');
-          case 2:
-            Navigator.pushNamed(context, '/exit');
-            break;
+            context.go('/profile');
         }
       },
     );
