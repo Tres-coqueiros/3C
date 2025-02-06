@@ -13,6 +13,11 @@ class TelaDetalhesRegistro extends StatefulWidget {
   });
 
   @override
+  _TelaDetalhesRegistro createState() => _TelaDetalhesRegistro();
+}
+
+class _TelaDetalhesRegistro extends State<TelaDetalhesRegistro> {
+  @override
   Widget build(BuildContext context) {
     if (widget.registro.isEmpty) {
       return Scaffold(
