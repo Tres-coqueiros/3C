@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:senior/data/core/network/api_services.dart';
+import 'package:senior/data/core/network/exceptions_network.dart';
 import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 import 'package:senior/data/features/widgets/components/button_components.dart';
 import 'package:senior/data/features/widgets/messages/dialog_message.dart';
@@ -16,15 +17,50 @@ class ListViewComponents extends StatefulWidget {
 
 class _ListViewComponentsState extends State<ListViewComponents> {
   final PostServices postServices = PostServices();
+  final GetServices getServices = GetServices();
   bool isAprovar = true;
   bool isLoading = false;
   bool selectAll = false;
 
   List<String> selectedHours = [];
   List<String> horasExtrasAcumuladas = [];
+  List<String> approvedHours = [];
 
   double totalHorasExtras = 0.0;
   double totalHours = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
+
+  Future<void> fetchData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final data = await getServices.getCollaborators();
+      setState(() {
+        totalHorasExtras = 0.0;
+        horasExtrasAcumuladas.clear();
+        getHours(widget.colaborador);
+      });
+    } catch (error) {
+      print('Erro ao carregar os dados: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erro ao carregar dados."),
+          backgroundColor: AppColorsComponents.error,
+        ),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   void toggleSelectAll() {
     setState(() {
@@ -85,6 +121,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
     setState(() {
       isLoading = true;
     });
+
     try {
       bool success = await postServices.postHours(data);
       if (success) {
@@ -94,20 +131,33 @@ class _ListViewComponentsState extends State<ListViewComponents> {
             backgroundColor: AppColorsComponents.success,
           ),
         );
-        for (var hour in selectedHours) {
-          selectedHours.remove(hour);
-        }
-        ;
+
+        setState(() {
+          approvedHours.addAll(selectedHours.map((hour) => hour));
+          selectedHours
+              .removeWhere((hour) => approvedHours.contains(hour.trim()));
+        });
+
+        fetchData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro ao aprovar"),
+            backgroundColor: AppColorsComponents.error,
+          ),
+        );
       }
     } catch (error) {
-      print("Erro ao aprovar horas extras: $error");
+      ErrorNotifier.showError("Erro ao aprovar horas extras: $error");
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
-    setState(() {
-      isLoading = false;
-    });
   }
 
   void disapproveHours(BuildContext context, String motivo) async {
+    final String status = 'aprovada';
     final data = {
       'numcad': widget.colaborador['NUMCAD'],
       'nomfun': widget.colaborador['NOMFUN'],
@@ -116,7 +166,8 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       'titred': widget.colaborador['TITRED'],
       'nomloc': widget.colaborador['NOMLOC'],
       'motivo': motivo,
-      'selectedHours': selectedHours
+      'selectedHours': selectedHours,
+      'status': status
     };
 
     if (data.isEmpty) {
@@ -128,6 +179,9 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       );
       return;
     }
+    setState(() {
+      isLoading = true;
+    });
     try {
       bool success = await postServices.postSendEmail(data);
       if (success) {
@@ -137,9 +191,28 @@ class _ListViewComponentsState extends State<ListViewComponents> {
             backgroundColor: AppColorsComponents.success,
           ),
         );
+
+        setState(() {
+          approvedHours.addAll(selectedHours.map((hour) => hour));
+          selectedHours
+              .removeWhere((hour) => approvedHours.contains(hour.trim()));
+        });
+
+        fetchData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro ao reprovar"),
+            backgroundColor: AppColorsComponents.error,
+          ),
+        );
       }
     } catch (error) {
       print("Erro ao reprovar horas extras: $error");
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -190,6 +263,11 @@ class _ListViewComponentsState extends State<ListViewComponents> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
     final horasExtras = getHours(widget.colaborador);
 
     return Card(
@@ -266,6 +344,9 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                             itemCount: horasExtras.length,
                             itemBuilder: (context, index) {
                               final horaExtra = horasExtras[index];
+                              final isApproved =
+                                  approvedHours.contains(horaExtra);
+
                               return Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -278,15 +359,17 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                                   ),
                                   Checkbox(
                                     value: selectedHours.contains(horaExtra),
-                                    onChanged: (bool? value) {
-                                      setState(() {
-                                        if (value == true) {
-                                          selectedHours.add(horaExtra);
-                                        } else {
-                                          selectedHours.remove(horaExtra);
-                                        }
-                                      });
-                                    },
+                                    onChanged: isApproved
+                                        ? null
+                                        : (bool? value) {
+                                            setState(() {
+                                              if (value == true) {
+                                                selectedHours.add(horaExtra);
+                                              } else {
+                                                selectedHours.remove(horaExtra);
+                                              }
+                                            });
+                                          },
                                   ),
                                 ],
                               );
