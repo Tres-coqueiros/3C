@@ -2,12 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/routers/app_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:senior/data/core/widgets/base_layout.dart';
-import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
-import 'package:senior/data/features/dbo/pages/RegisterPublic_page.dart';
-import 'package:senior/data/features/home_page.dart';
-import 'package:senior/data/features/auth/login_page.dart';
-import 'package:senior/data/features/horaextras/profile/profile_page.dart';
 import 'package:senior/data/core/network/notification_services.dart';
 
 import 'data/global_data.dart';
@@ -37,7 +31,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      routerConfig: AppRouter,
+      routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
       title: 'APP',
     );
