@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:senior/data/core/network/api_client.dart';
+import 'package:senior/data/core/network/exceptions_network.dart';
+import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 
 class PostServices {
   Future<bool> postHours(data) async {
@@ -33,15 +36,17 @@ class PostServices {
 class GetServices {
   Future<List<Map<String, dynamic>>> getCollaborators() async {
     try {
-      final response = await dio.get('getColaboradorGestor');
+      final response = await dio.get('getColboradorGestor');
       if (response.statusCode == 200) {
         return List<Map<String, dynamic>>.from(
             response.data['getColaboradorGestor']);
       } else {
+        ErrorNotifier.showError(
+            'Erro ao fazer busca de colaboradores: ${response.statusMessage}');
         return [];
       }
     } catch (error) {
-      print('Erro ao fazer a consulta na API: $error');
+      ErrorNotifier.showError('Erro ao carregar API: ${error.toString()}');
       return [];
     }
   }
@@ -51,7 +56,6 @@ class GetServices {
       final response = await dio.get('getLogin');
 
       if (response.statusCode == 200) {
-        print('Resultado da API: ${response.data}');
         return response.data;
       } else {
         return {};

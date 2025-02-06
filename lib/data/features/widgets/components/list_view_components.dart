@@ -18,8 +18,10 @@ class _ListViewComponentsState extends State<ListViewComponents> {
   final PostServices postServices = PostServices();
   bool isAprovar = true;
   bool isLoading = false;
-  List<String> selectedHours = [];
   bool selectAll = false;
+
+  List<String> selectedHours = [];
+  List<String> horasExtrasAcumuladas = [];
 
   double totalHorasExtras = 0.0;
   double totalHours = 0.0;
@@ -142,68 +144,48 @@ class _ListViewComponentsState extends State<ListViewComponents> {
   }
 
   List<String> getHours(Map<String, dynamic> colaborador) {
-    DateTime dataOntem = DateTime.now().subtract(Duration(days: 1));
-    DateTime dataOntemInicio =
-        DateTime(dataOntem.year, dataOntem.month, dataOntem.day, 0, 0, 0)
-            .toUtc();
-    DateTime dataOntemFim =
-        DateTime(dataOntem.year, dataOntem.month, dataOntem.day, 23, 59, 59)
-            .toUtc();
-
-    print('dataOntemInicio $dataOntemInicio');
-    print('dataOntemFim $dataOntemFim');
-
     if (colaborador['ListHorasExtras'] == null ||
         colaborador['ListHorasExtras'].isEmpty) {
       print('Nenhuma hora extra encontrada.');
-      return [];
+      return horasExtrasAcumuladas;
     }
 
-    if (colaborador['ListJornada'] == null ||
-        colaborador['ListJornada'].isEmpty) {
-      print('Nenhuma jornada encontrada.');
-      return [];
-    }
-
-    double totalHorasExtras = 0.0;
-
-    final horasExtras = colaborador['ListHorasExtras'].where((horaExtra) {
+    colaborador['ListHorasExtras'].forEach((horaExtra) {
       String? horaExtraDate = horaExtra['DATA_EXTRA']?.toString();
+      print('horaExtraDate $horaExtraDate');
       if (horaExtraDate != null) {
         try {
           DateTime parsedDate = DateTime.parse(horaExtraDate).toUtc();
-          return parsedDate.isAfter(dataOntemInicio) &&
-              parsedDate.isBefore(dataOntemFim);
+          String horasString = horaExtra['HORA_EXTRA']?.toString() ?? "00:00";
+
+          List<String> partes = horasString.split(':');
+          if (partes.length != 2) {
+            print("Erro: Formato inválido");
+            return;
+          }
+
+          int horas = int.tryParse(partes[0]) ?? 0;
+          int minutos = int.tryParse(partes[1]) ?? 0;
+
+          totalHorasExtras += (horas * 60) + minutos;
+
+          String registro =
+              "${DateFormat("dd/MM/yyyy").format(parsedDate)} - $horasString h";
+
+          if (!horasExtrasAcumuladas.contains(registro)) {
+            horasExtrasAcumuladas.add(registro);
+          }
         } catch (e) {
           print('Erro ao converter a data da hora extra: $e');
-          return false;
         }
       }
-      return false;
-    }).map<String>((horaExtra) {
-      String? horasString = horaExtra['HORA_EXTRA']?.toString();
-      if (horasString == null || horasString.isEmpty) {
-        return "Erro: Dados inválidos";
-      }
-
-      List<String> partes = horasString.split(':');
-      if (partes.length != 2) {
-        return "Erro: Formato inválido";
-      }
-
-      int horas = int.tryParse(partes[0]) ?? 0;
-      int minutos = int.tryParse(partes[1]) ?? 0;
-
-      totalHorasExtras += (horas * 60) + minutos;
-
-      return "${DateFormat("dd/MM/yyyy").format(DateTime.parse(horaExtra['DATA_EXTRA']))} - ${horaExtra['HORA_EXTRA']} h";
-    }).toList();
+    });
 
     setState(() {
       totalHours = totalHorasExtras;
     });
 
-    return horasExtras;
+    return horasExtrasAcumuladas;
   }
 
   @override
