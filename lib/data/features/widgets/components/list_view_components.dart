@@ -33,8 +33,12 @@ class _ListViewComponentsState extends State<ListViewComponents> {
   @override
   void initState() {
     super.initState();
+    loadApprovedHours().then((hours) {
+      setState(() {
+        approvedHours = hours;
+      });
+    });
     fetchData();
-    saveSelectedHours(selectedHours);
   }
 
   Future<void> fetchData() async {
@@ -140,6 +144,8 @@ class _ListViewComponentsState extends State<ListViewComponents> {
               .removeWhere((hour) => approvedHours.contains(hour.trim()));
         });
 
+        await saveApprovedHours(approvedHours);
+
         fetchData();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -225,11 +231,11 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       return horasExtrasAcumuladas;
     }
 
-    totalHorasExtras = 0.0; // Resetando o total
+    totalHorasExtras = 0.0;
+    List<String> horasNoBanco = colaborador['HorasBanco'] ?? [];
 
     colaborador['ListHorasExtras'].forEach((horaExtra) {
       String? horaExtraDate = horaExtra['DATA_EXTRA']?.toString();
-      print('horaExtraDate $horaExtraDate');
       if (horaExtraDate != null) {
         try {
           DateTime parsedDate = DateTime.parse(horaExtraDate).toUtc();
@@ -252,8 +258,15 @@ class _ListViewComponentsState extends State<ListViewComponents> {
           if (!horasExtrasAcumuladas.contains(registro)) {
             horasExtrasAcumuladas.add(registro);
           }
-        } catch (e) {
-          print('Erro ao converter a data da hora extra: $e');
+
+          if (horasNoBanco.contains(registro)) {
+            if (!approvedHours.contains(registro)) {
+              approvedHours.add(registro);
+            }
+          }
+        } catch (error) {
+          ErrorNotifier.showError(
+              'Erro ao converter a data da hora extra: $error');
         }
       }
     });
@@ -265,27 +278,19 @@ class _ListViewComponentsState extends State<ListViewComponents> {
     return horasExtrasAcumuladas;
   }
 
-  void saveSelectedHours(List<String> hours) async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setStringList('selectedHours', hours);
-  }
-
   Future<List<String>> getSavedSelectedHours() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getStringList('selectedHours') ?? [];
   }
 
-  void loadSelectedHours() async {
-    List<String> savedHours = await getSavedSelectedHours();
-    setState(() {
-      selectedHours = savedHours;
-    });
+  Future<void> saveApprovedHours(List<String> approvedHours) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('approvedHours', approvedHours);
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-    saveSelectedHours(selectedHours); // Salva a seleção ao sair da tela
+  Future<List<String>> loadApprovedHours() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList('approvedHours') ?? [];
   }
 
   @override
@@ -386,7 +391,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                                   ),
                                   Checkbox(
                                     value: selectedHours.contains(horaExtra),
-                                    onChanged: isApproved
+                                    onChanged: approvedHours.contains(horaExtra)
                                         ? null
                                         : (bool? value) {
                                             setState(() {

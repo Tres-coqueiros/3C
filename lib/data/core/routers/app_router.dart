@@ -21,7 +21,7 @@ final GoRouter AppRouter = GoRouter(
           builder: (context, state) => BaseLayout(body: HomePageDBO())),
       GoRoute(
           path: '/registerpublic',
-          builder: (context, state) => BaseLayout(body: RegisterPublicDBO())),
+          builder: (context, state) => RegisterPublicDBO()),
       GoRoute(
           path: '/detailsregister',
           builder: (context, state) => BaseLayout(body: DetailsregisterPage())),

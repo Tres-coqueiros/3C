@@ -13,11 +13,10 @@ class _HomePageState extends State<HomePage> {
   final GetServices getServices = GetServices();
 
   List<Map<String, dynamic>> listColaborador = [];
-  String use_Cargos = "";
+  String useCargos = "";
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     fetchMatricula();
   }
@@ -27,7 +26,7 @@ class _HomePageState extends State<HomePage> {
       final result = await getServices.getLogin();
 
       if (result.isNotEmpty) {
-        use_Cargos = result['getLogin']['usu_tbcarges'] ?? 'Desconhecido';
+        useCargos = result['getLogin']['usu_tbcarges'] ?? 'Desconhecido';
       }
 
       setState(() {
@@ -42,52 +41,61 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return BaseLayout(
       body: Scaffold(
+        backgroundColor: AppColorsComponents.background,
         body: Center(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                width: 350,
-                height: 60,
-                child: use_Cargos == 'S'
-                    ? ElevatedButton(
-                        onPressed: () => context.go('/listcolaboradores'),
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: AppColorsComponents.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                        child: Text(
-                          'HORA EXTRAS',
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                      )
-                    : SizedBox(),
+              _buildButton(
+                context,
+                title: "HORA EXTRAS",
+                color: AppColorsComponents.primary,
+                visible: useCargos == 'S',
+                onPressed: () => context.go('/listcolaboradores'),
               ),
               SizedBox(height: 20),
-              SizedBox(
-                width: 350,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pushReplacementNamed(context, '/dboHome'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: AppColorsComponents.secondary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  child: Text(
-                    'DBO',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ),
+              _buildButton(
+                context,
+                title: "DBO",
+                color: AppColorsComponents.secondary,
+                onPressed: () =>
+                    Navigator.pushReplacementNamed(context, '/dboHome'),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButton(
+    BuildContext context, {
+    required String title,
+    required Color color,
+    required VoidCallback onPressed,
+    bool visible = true,
+  }) {
+    if (!visible) return SizedBox();
+
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.8,
+      height: 60,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 4.0,
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
           ),
         ),
       ),
