@@ -1,61 +1,51 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/core/widgets/buttons/button_accept.dart';
+import 'package:senior/data/core/network/api_services.dart';
+// import 'package:senior/data/features/widgets/components/button_components.dart';
+// import 'package:senior/data/features/widgets/buttons/button_disapprove.dart';
 import 'package:senior/data/features/widgets/base_layout.dart';
-// import 'package:senior/data/core/widgets/buttons/button_disapprove.dart';
-// import 'package:senior/data/features/widgets/base_layout.dart';
-import 'package:senior/data/features/widgets/buttons/button_accept.dart';
-import 'package:senior/data/features/widgets/buttons/button_disapprove.dart';
 import 'package:senior/data/features/widgets/messages/dialog_message.dart';
 
 class ListHoraExtra extends StatefulWidget {
+  final Map<String, dynamic> colaborador;
+
+  const ListHoraExtra({Key? key, required this.colaborador}) : super(key: key);
+
   @override
   _ListHoraExtra createState() => _ListHoraExtra();
 }
 
 class _ListHoraExtra extends State<ListHoraExtra> {
-  // Função para mostrar o motivo de aprovação
+  final GetServices getServices = GetServices();
+
+  bool isLoading = true;
+  bool isPprovar = false;
+
+  String nomfun = "";
+  int numcad = 0;
+
   void showMotivo(BuildContext context) async {
     String? motivo = await DialogUtils.showConfirmationDialog(
       context: context,
       title: 'Confirmação',
-      content: 'Tem certeza que deseja aprovar essa hora?',
+      content: isPprovar
+          ? 'Tem certeza que deseja aprovar essa hora?'
+          : 'Tem certeza que deseja reprovar essa hora?',
     );
 
     if (motivo != null && motivo.isNotEmpty) {
-      AcceptHors(context, motivo); // Aprovar a hora
+      isPprovar ? AcceptHors(context, motivo) : DisapproveHors(context, motivo);
     }
   }
 
-  // Função para mostrar o motivo de reprovação
-  void showMotivoRe(BuildContext context) async {
-    String? motivo = await DialogUtils.showConfirmationDialog(
-      context: context,
-      title: 'Confirmação',
-      content: 'Tem certeza que deseja reprovar essa hora?',
-    );
-
-    if (motivo != null && motivo.isNotEmpty) {
-      DisapproveHors(context, motivo); // Reprovar a hora
-    }
-  }
-
-  // Função de aprovação de horas extras
   void AcceptHors(BuildContext context, String motivo) {
-    try {
-      // Aqui você pode adicionar a lógica para aprovar a hora, como uma requisição à API
-      print('Horas extras aprovadas. Motivo: $motivo');
-      // Exemplo de como você pode fazer uma requisição para a API para aprovar as horas.
-    } catch (error) {
+    try {} catch (error) {
       print("Erro ao aprovar horas extras: $error");
     }
   }
 
-  // Função de reprovação de horas extras
   void DisapproveHors(BuildContext context, String motivo) {
     try {
-      // Aqui você pode adicionar a lógica para reprovar a hora, como uma requisição à API
       print('Horas extras reprovadas. Motivo: $motivo');
-      // Exemplo de como você pode fazer uma requisição para a API para reprovar as horas.
     } catch (error) {
       print("Erro ao reprovar horas extras: $error");
     }
@@ -63,63 +53,87 @@ class _ListHoraExtra extends State<ListHoraExtra> {
 
   @override
   Widget build(BuildContext context) {
+    // String horaExtra = widget.colaborador['HORA_EXTRA'] ?? '0';
+    // if (horaExtra != '0') {
+    //   NotificationServices.showNotification(
+    //     title: 'Horas Extras',
+    //     body:
+    //         'O colaborador ${widget.colaborador['NOMFUN']} tem horas extras: $horaExtra',
+    //   );
+    // }
     return BaseLayout(
-      body: Scaffold(
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(12.0),
-          child: Card(
-            elevation: 6.0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6.0),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Informações do Colaborador
-                  // _buildInfoRow(Icons.person, 'Nome', widget.colaborador.nome),
-                  // Divider(color: Colors.grey[300], thickness: 1),
-                  // _buildInfoRow(Icons.access_time, 'Horas Extras',
-                  //     widget.colaborador.horasExtras.toString()),
-                  // Divider(color: Colors.grey[300], thickness: 1),
-                  // _buildInfoRow(Icons.work, 'Jornada',
-                  //     widget.colaborador.nome.toString()),
-                  // Divider(color: Colors.grey[300], thickness: 1),
-                  // _buildInfoRow(
-                  //     Icons.work_outline, 'Cargo', widget.colaborador.jornada),
-                  SizedBox(height: 24),
-                  // Botões Aprovar e Reprovar lado a lado
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Botão Aprovar
-                      Expanded(
-                        child: ButtonAccept(
-                          onPressed: () => showMotivo(context),
-                          text: 'Aprovar',
-                        ),
-                      ),
-                      SizedBox(width: 16), // Espaço entre os botões
-                      // Botão Reprovar
-                      Expanded(
-                        child: ButtonDisapprove(
-                          onPressed: () => showMotivoRe(context),
-                          text: 'Reprovar',
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+        body: Scaffold(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(12.0),
+        child: Card(
+          elevation: 6.0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6.0),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoRow(Icons.person, 'Matricula',
+                        widget.colaborador['NUMCAD'].toString() ?? 'N/A'),
+                    Divider(color: Colors.grey[300], thickness: 1),
+                    _buildInfoRow(Icons.access_time, 'Horas Extras',
+                        widget.colaborador['HORA_EXTRA']?.toString() ?? 'N/A'),
+                    Divider(color: Colors.grey[300], thickness: 1),
+                    _buildInfoRow(
+                      Icons.work,
+                      'Jornada',
+                      widget.colaborador['ListJornada'] != null &&
+                              widget.colaborador['ListJornada'].isNotEmpty
+                          ? widget.colaborador['ListJornada'][0]
+                                  ['HORAS_FORMATADAS'] ??
+                              'N/A'
+                          : 'N/A',
+                    ),
+                    Divider(color: Colors.grey[300], thickness: 1),
+                    _buildInfoRow(Icons.work_outline, 'Cargo',
+                        widget.colaborador['CARGOS'] ?? 'N/A'),
+                    _buildInfoRow(
+                        Icons.work_outline,
+                        'Data',
+                        widget.colaborador['ListJornada'] != null &&
+                                widget.colaborador['ListJornada'].isNotEmpty
+                            ? widget.colaborador['ListJornada'][0]['DATACC'] ??
+                                'N/A'
+                            : 'N/A'),
+                    SizedBox(height: 24),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Expanded(
+                    //   child: ButtonAccept(
+                    //     onPressed: () => showMotivo(context),
+                    //     text: 'Aprovar',
+                    //   ),
+                    // ),
+                    SizedBox(width: 16),
+                    // Expanded(
+                    // child: ButtonDisapprove(
+                    //   onPressed: () => showMotivo(context),
+                    //   text: 'Reprovar',
+                    // ),
+                    // ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
       ),
-    );
+    ));
   }
 
-  // Função para criar as linhas de informações
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [

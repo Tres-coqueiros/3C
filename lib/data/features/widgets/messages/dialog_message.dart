@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 
 class DialogUtils {
   static Future<String?> showConfirmationDialog({
@@ -32,7 +33,7 @@ class DialogUtils {
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green,
+                    color: AppColorsComponents.primary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -78,7 +79,7 @@ class DialogUtils {
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: AppColorsComponents.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

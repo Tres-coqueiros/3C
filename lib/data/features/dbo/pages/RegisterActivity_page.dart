@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
-import 'package:senior/data/global_data.dart'; // Importa a variável global
+import 'package:senior/data/global_data.dart'; // Lista global de registros
 
 class RegisterActivityPage extends StatefulWidget {
   final List<dynamic> dados;
@@ -11,6 +11,7 @@ class RegisterActivityPage extends StatefulWidget {
     Key? key,
     required this.dados,
     required this.informacoesGerais,
+    required Map<String, Object?> atividade,
   }) : super(key: key);
 
   @override
@@ -24,7 +25,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   late List<dynamic> _dados;
   late Map<String, dynamic> _informacoesGerais;
 
-  // Controladores para os campos de texto
   final TextEditingController _patrimonioImplementoController =
       TextEditingController();
   final TextEditingController _operacaoController = TextEditingController();
@@ -36,8 +36,8 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   final TextEditingController _horimetroFinalController =
       TextEditingController();
 
-  DateTime? _horaInicial;
-  DateTime? _horaFinal;
+  String? _horarioInicial;
+  String? _horarioFinal;
   bool _horaRangeError = false;
   bool _horimetroError = false;
 
@@ -46,19 +46,25 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     super.initState();
     _dados = widget.dados;
     _informacoesGerais = widget.informacoesGerais;
+
+    _patrimonioImplementoController.text =
+        _informacoesGerais['patrimonioImplemento'] ?? '';
+    _horarioInicial = _informacoesGerais['horarioInicial'];
+    _horarioFinal = _informacoesGerais['horarioFinal'];
   }
 
-  /// Seleciona data e hora usando o DatePicker
-  Future<void> _selectDateTime(BuildContext context, bool isInitial) async {
+  /// **Seleciona data e hora**
+  void _selecionarHorario(BuildContext context, bool isInicial) {
     DatePicker.showDateTimePicker(
       context,
       showTitleActions: true,
       onConfirm: (date) {
         setState(() {
-          if (isInitial) {
-            _horaInicial = date;
+          String formatted = _dateTimeFormat.format(date);
+          if (isInicial) {
+            _horarioInicial = formatted;
           } else {
-            _horaFinal = date;
+            _horarioFinal = formatted;
           }
         });
       },
@@ -67,16 +73,19 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     );
   }
 
+  /// **Valida e adiciona os dados ao histórico sem duplicação**
   void _handleAdicionar() {
-    // Validação do horímetro
     double? horimetroInicial =
         double.tryParse(_horimetroInicialController.text);
     double? horimetroFinal = double.tryParse(_horimetroFinalController.text);
 
     setState(() {
-      _horaRangeError = _horaInicial != null &&
-          _horaFinal != null &&
-          _horaFinal!.isBefore(_horaInicial!);
+      _horaRangeError = _horarioInicial != null &&
+          _horarioFinal != null &&
+          _dateTimeFormat
+              .parse(_horarioFinal!)
+              .isBefore(_dateTimeFormat.parse(_horarioInicial!));
+
       _horimetroError = horimetroInicial != null &&
           horimetroFinal != null &&
           horimetroFinal <= horimetroInicial;
@@ -94,234 +103,135 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         'motivo': _motivoController.text,
         'talhao': _talhaoController.text,
         'cultura': _culturaController.text,
-        'horaInicial': _horaInicial != null
-            ? _dateTimeFormat.format(_horaInicial!)
-            : 'Não informado',
-        'horaFinal': _horaFinal != null
-            ? _dateTimeFormat.format(_horaFinal!)
-            : 'Não informado',
+        'horaInicial': _horarioInicial ?? 'Não informado',
+        'horaFinal': _horarioFinal ?? 'Não informado',
         'horimetroInicial': _horimetroInicialController.text,
         'horimetroFinal': _horimetroFinalController.text,
       };
 
-      setState(() {
-        _dados.add(combinedData);
-        listaDeRegistros.add(combinedData); // Atualiza a variável global
-      });
+      if (!_dados.contains(combinedData)) {
+        setState(() {
+          _dados.add(combinedData);
+          listaDeRegistros.add(combinedData);
+        });
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Cadastro realizado com sucesso!',
-            style: TextStyle(fontSize: 16),
-          ),
+          content: Text('Cadastro realizado com sucesso!'),
           duration: Duration(seconds: 1),
         ),
       );
 
       Future.delayed(const Duration(seconds: 1), () {
-        // Volta para a tela de cadastro inicial
-        Navigator.pushReplacementNamed(context, '/registerpublic');
+        Navigator.pop(context);
       });
     }
+  }
+
+  /// **Criar campo de entrada de texto formatado**
+  Widget _buildTextField(
+      String label, TextEditingController controller, String hint) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          border: const OutlineInputBorder(),
+        ),
+        validator: (value) =>
+            (value == null || value.isEmpty) ? "Campo obrigatório" : null,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: const Text('Cadastro de Atividades'),
+        backgroundColor: Colors.green[800],
+        title: const Text('Cadastro de Atividades',
+            style: TextStyle(color: Colors.white)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
-          // Ícone para acessar o histórico de registros
           IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'Histórico de Registros',
-            onPressed: () {
-              Navigator.pushNamed(
-                context,
-                '/detailsregister',
-                arguments: listaDeRegistros,
-              );
-            },
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () => Navigator.pushNamed(context, '/detailsregister'),
           ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Patrimônio Implemento (opcional)',
-                  style: TextStyle(fontSize: 16),
-                ),
-                TextFormField(
-                  controller: _patrimonioImplementoController,
-                  decoration: const InputDecoration(
-                    hintText: 'Digite o Patrimônio Implemento',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Operação*',
-                  style: TextStyle(fontSize: 16),
-                ),
-                TextFormField(
-                  controller: _operacaoController,
-                  decoration: const InputDecoration(
-                    hintText: 'Digite a Operação',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => (value == null || value.isEmpty)
-                      ? 'Campo obrigatório'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Motivo de Parada*',
-                  style: TextStyle(fontSize: 16),
-                ),
-                TextFormField(
-                  controller: _motivoController,
-                  decoration: const InputDecoration(
-                    hintText: 'Digite o Motivo',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => (value == null || value.isEmpty)
-                      ? 'Campo obrigatório'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Talhão*',
-                  style: TextStyle(fontSize: 16),
-                ),
-                TextFormField(
-                  controller: _talhaoController,
-                  decoration: const InputDecoration(
-                    hintText: 'Digite o Talhão',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => (value == null || value.isEmpty)
-                      ? 'Campo obrigatório'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Cultura (opcional)',
-                  style: TextStyle(fontSize: 16),
-                ),
-                TextFormField(
-                  controller: _culturaController,
-                  decoration: const InputDecoration(
-                    hintText: 'Digite a Cultura',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Horímetro Inicial*',
-                  style: TextStyle(fontSize: 16),
-                ),
-                TextFormField(
-                  controller: _horimetroInicialController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: 'Digite o Horímetro Inicial',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => (value == null || value.isEmpty)
-                      ? 'Campo obrigatório'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Horímetro Final*',
-                  style: TextStyle(fontSize: 16),
-                ),
-                TextFormField(
-                  controller: _horimetroFinalController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: 'Digite o Horímetro Final',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => (value == null || value.isEmpty)
-                      ? 'Campo obrigatório'
-                      : null,
-                ),
-                if (_horimetroError)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      '⚠️ Horímetro Final deve ser maior que o Inicial!',
-                      style: TextStyle(
-                          color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Data e Horários*',
-                  style: TextStyle(fontSize: 16),
-                ),
+                _buildTextField("Patrimônio Implemento",
+                    _patrimonioImplementoController, "Digite o Patrimônio"),
+                _buildTextField(
+                    "Operação", _operacaoController, "Digite a Operação"),
+                _buildTextField(
+                    "Motivo de Parada", _motivoController, "Digite o Motivo"),
+                _buildTextField("Talhão", _talhaoController, "Digite o Talhão"),
+                _buildTextField(
+                    "Cultura", _culturaController, "Digite a Cultura"),
                 Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Inicial*'),
-                          ElevatedButton(
-                            onPressed: () => _selectDateTime(context, true),
-                            child: Text(
-                              _horaInicial != null
-                                  ? _dateTimeFormat.format(_horaInicial!)
-                                  : 'Selecione',
-                            ),
-                          ),
-                        ],
+                      child: _buildTextField("Horímetro Inicial",
+                          _horimetroInicialController, "Digite o Horímetro"),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildTextField("Horímetro Final",
+                          _horimetroFinalController, "Digite o Horímetro"),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _selecionarHorario(context, true),
+                        child: Text(
+                          _horarioInicial ?? "Selecionar Hora Inicial",
+                          style: const TextStyle(fontSize: 14),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Final*'),
-                          ElevatedButton(
-                            onPressed: () => _selectDateTime(context, false),
-                            child: Text(
-                              _horaFinal != null
-                                  ? _dateTimeFormat.format(_horaFinal!)
-                                  : 'Selecione',
-                            ),
-                          ),
-                        ],
+                      child: ElevatedButton(
+                        onPressed: () => _selecionarHorario(context, false),
+                        child: Text(
+                          _horarioFinal ?? "Selecionar Hora Final",
+                          style: const TextStyle(fontSize: 14),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                if (_horaRangeError)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      '⚠️ Data/Horário Final deve ser maior que o Inicial!',
-                      style: TextStyle(
-                          color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 Center(
                   child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[800],
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 20),
+                    ),
                     onPressed: _handleAdicionar,
                     child: const Text(
-                      'Adicionar',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      'Adicionar Atividade',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
                   ),
                 ),

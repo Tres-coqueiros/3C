@@ -1,65 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class HomePageDBO extends StatefulWidget {
-  const HomePageDBO({super.key});
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
-  @override
-  _HomePageDBOState createState() => _HomePageDBOState();
-}
-
-class _HomePageDBOState extends State<HomePageDBO> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Home')),
       body: Center(
-        // 🔹 Garante centralização total na tela
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center, // 🔹 Centraliza verticalmente
-          crossAxisAlignment:
-              CrossAxisAlignment.center, // 🔹 Centraliza horizontalmente
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 15,
-                  horizontal: 30,
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              onPressed: () {
-                context.go('/registerpublic'); // 🔹 Navega para Cadastro
-              },
-              child: const Text('Cadastrar'),
+            _buildButton(
+              context,
+              "Cadastro DBO",
+              Icons.assignment_add,
+              Colors.blue,
+              "/registerpublic",
             ),
-            const SizedBox(height: 20), // 🔹 Espaço entre os botões
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[600], // 🔹 Cor de fundo do botão
-                padding: const EdgeInsets.symmetric(
-                  vertical: 15,
-                  horizontal: 30,
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              onPressed: () {
-                context.go('/detailsregister'); // 🔹 Navega para Registros
-              },
-              child: const Text(
-                'Registros',
-                style: TextStyle(color: Colors.white), // 🔹 Texto branco
-              ),
+            const SizedBox(height: 20),
+            _buildButton(
+              context,
+              "Histórico de Registros",
+              Icons.history,
+              Colors.green,
+              "/detailsregister",
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// **Método para criar botões estilizados**
+  Widget _buildButton(BuildContext context, String label, IconData icon,
+      Color color, String route) {
+    return SizedBox(
+      width: 250,
+      height: 50,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        icon: Icon(icon, size: 20),
+        label: Text(label),
+        onPressed: () => context.push(route),
       ),
     );
   }
