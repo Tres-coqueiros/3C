@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/features/auth/auth_services.dart';
+import 'package:senior/data/features/horaextras/pages/loading_page.dart';
 import 'package:senior/data/features/widgets/components/app_colors_components.dart';
+import 'package:senior/data/features/widgets/components/button_components.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -27,34 +29,38 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return LoadingPage(message: "Carregando...");
+      },
+    );
 
     try {
       bool success = await postAuth.authuser(matricula);
 
       if (success) {
+        Navigator.pop(context);
         context.go('/homepage');
+      } else {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro no login. Tente novamente."),
+            backgroundColor: AppColorsComponents.error,
+          ),
+        );
       }
-      _crachaController.clear();
     } catch (error) {
-      String errorMessage = error.toString();
-      if (errorMessage.isEmpty) {
-        errorMessage = 'Ocorreu um erro inesperado.';
-      }
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(errorMessage),
+          content: Text("Erro: $error"),
           backgroundColor: AppColorsComponents.error,
         ),
       );
-      print('erro ao fazer login: $error');
     }
-
-    setState(() {
-      isLoading = false;
-    });
   }
 
   @override
@@ -114,12 +120,11 @@ class _LoginPageState extends State<LoginPage> {
                           labelStyle: TextStyle(
                               color: const Color.fromARGB(179, 0, 0, 0)),
                           hintText: 'Digite seu crachá',
-                          hintStyle: TextStyle(color: Colors.white38),
+                          // hintStyle: TextStyle(color: Colors.white38),
                           filled: true,
                           fillColor: Colors.white10,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12.0),
-                            borderSide: BorderSide.none,
                           ),
                           prefixIcon: Icon(Icons.badge,
                               color: const Color.fromARGB(179, 0, 0, 0)),
@@ -131,32 +136,18 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       SizedBox(height: 30.0),
-                      // Botão de login com animação
-                      ElevatedButton(
+                      ButtonComponents(
                         onPressed: isLoading ? null : () => login(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColorsComponents.primary,
-                          padding: EdgeInsets.symmetric(vertical: 12.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4.0),
-                          ),
-                          elevation: 20,
-                          shadowColor: AppColorsComponents.primary,
-                        ),
-                        child: isLoading
-                            ? CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                            : Text(
-                                'Entrar',
-                                style: TextStyle(
-                                  fontSize: 18.0,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                        text: 'Entrar',
+                        textColor: Colors.white,
+                        backgroundColor: AppColorsComponents.primary,
+                        fontSize: 18,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 37, vertical: 12),
+                        textAlign: Alignment.center,
+                        isLoading:
+                            isLoading, // Adicionado suporte ao carregamento
                       ),
-                      SizedBox(height: 20.0),
                     ],
                   ),
                 ),

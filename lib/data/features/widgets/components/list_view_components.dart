@@ -206,6 +206,8 @@ class _ListViewComponentsState extends State<ListViewComponents> {
               .removeWhere((hour) => approvedHours.contains(hour.trim()));
         });
 
+        await saveApprovedHours(approvedHours);
+
         fetchData();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
