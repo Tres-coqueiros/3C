@@ -73,7 +73,9 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       if (selectAll) {
         selectedHours.clear();
       } else {
-        selectedHours = List.from(horasExtrasAcumuladas);
+        selectedHours = horasExtrasAcumuladas
+            .where((hora) => !approvedHours.contains(hora))
+            .toList();
       }
       selectAll = !selectAll;
     });
@@ -142,6 +144,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
           approvedHours.addAll(selectedHours.map((hour) => hour));
           selectedHours
               .removeWhere((hour) => approvedHours.contains(hour.trim()));
+          selectedHours.clear();
         });
 
         await saveApprovedHours(approvedHours);
@@ -204,6 +207,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
           approvedHours.addAll(selectedHours.map((hour) => hour));
           selectedHours
               .removeWhere((hour) => approvedHours.contains(hour.trim()));
+          selectedHours.clear();
         });
 
         await saveApprovedHours(approvedHours);
