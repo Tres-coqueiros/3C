@@ -1,46 +1,55 @@
-// File: lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:senior/data/app_database.dart';
 import 'package:senior/data/core/routers/app_router.dart';
 import 'package:senior/data/core/network/notification_services.dart';
-import 'package:senior/data/global_data.dart';
 import 'package:senior/data/features/horaextras/pages/error_notifier_page.dart';
+//import 'package:senior/data/database/app_database.dart';
 
 void main() async {
-  // Garante que os widgets estejam inicializados antes de executar o app.
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inicializa o serviço de notificações antes de rodar o app.
   await NotificationService.init();
 
-  // Executa o aplicativo.
-  runApp(const MyApp());
+  // Inicializa o banco de dados
+  final database = AppDatabase();
+
+  // Executa o aplicativo
+  runApp(MyApp(database: database));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final AppDatabase database;
+
+  const MyApp({super.key, required this.database});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      // Configuração do roteador (utilizando GoRouter)
-      routerConfig: appRouter,
+    return MultiProvider(
+      providers: [
+        Provider<AppDatabase>.value(value: database),
+      ],
+      child: MaterialApp.router(
+        // Configuração do roteador (utilizando GoRouter)
+        routerConfig: appRouter,
 
-      // Exibe a banner de debug; altere para false em produção.
-      debugShowCheckedModeBanner: true,
+        // Exibe a banner de debug; altere para false em produção.
+        debugShowCheckedModeBanner: false,
 
-      // Título do aplicativo.
-      title: 'Senior',
+        // Título do aplicativo.
+        title: 'Senior',
 
-      // O builder permite sobrepor widgets; neste caso, adicionamos o ErrorListener
-      // para que ele possa exibir notificações de erros globalmente, sobrepondo as demais telas.
-      builder: (context, child) {
-        return Stack(
-          children: [
-            child!, // Conteúdo principal gerenciado pelo GoRouter
-            ErrorListener(), // Widget para exibição de notificações de erro
-          ],
-        );
-      },
+        // O builder permite sobrepor widgets; adicionamos o ErrorListener
+        builder: (context, child) {
+          return Stack(
+            children: [
+              child!, // Conteúdo principal gerenciado pelo GoRouter
+              ErrorListener(), // Widget para exibição de notificações de erro
+            ],
+          );
+        },
+      ),
     );
   }
 }

@@ -115,7 +115,7 @@ class _ListColaboradoresState extends State<ListColaboradores> {
                                           color: Colors.grey[600], size: 16.0),
                                       SizedBox(width: 2),
                                       Text(
-                                        'Matricula: ${colaborador['NUMCAD'].toString() ?? 'Nenhuma'}',
+                                        'Matricula: ${colaborador['NUMCAD'].toString()}',
                                         style: TextStyle(
                                             fontSize: 14.0,
                                             color: Colors.grey[600]),

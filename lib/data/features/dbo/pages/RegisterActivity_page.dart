@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
-import 'package:senior/data/global_data.dart'; // Lista global de registros
+import 'package:senior/data/app_database.dart';
+//import 'package:senior/data/database/app_database.dart'; // Importa o banco de dados Drift
+import 'package:drift/drift.dart' as drift;
+import 'package:provider/provider.dart';
 
 class RegisterActivityPage extends StatefulWidget {
   final List<dynamic> dados;
   final Map<String, dynamic> informacoesGerais;
+  final Map<String, dynamic> atividade;
 
   const RegisterActivityPage({
     Key? key,
     required this.dados,
     required this.informacoesGerais,
-    required Map<String, Object?> atividade,
+    required this.atividade,
   }) : super(key: key);
 
   @override
@@ -21,9 +25,6 @@ class RegisterActivityPage extends StatefulWidget {
 class _RegisterActivityPageState extends State<RegisterActivityPage> {
   final _formKey = GlobalKey<FormState>();
   final DateFormat _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
-
-  late List<dynamic> _dados;
-  late Map<String, dynamic> _informacoesGerais;
 
   final TextEditingController _patrimonioImplementoController =
       TextEditingController();
@@ -44,16 +45,14 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   @override
   void initState() {
     super.initState();
-    _dados = widget.dados;
-    _informacoesGerais = widget.informacoesGerais;
 
     _patrimonioImplementoController.text =
-        _informacoesGerais['patrimonioImplemento'] ?? '';
-    _horarioInicial = _informacoesGerais['horarioInicial'];
-    _horarioFinal = _informacoesGerais['horarioFinal'];
+        widget.atividade['patrimonioImplemento'] ?? '';
+    _horarioInicial = widget.atividade['horarioInicial'];
+    _horarioFinal = widget.atividade['horarioFinal'];
   }
 
-  /// **Seleciona data e hora**
+  /// **Seleciona Data e Hora**
   void _selecionarHorario(BuildContext context, bool isInicial) {
     DatePicker.showDateTimePicker(
       context,
@@ -73,8 +72,10 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     );
   }
 
-  /// **Valida e adiciona os dados ao histórico sem duplicação**
-  void _handleAdicionar() {
+  /// **Armazena os dados no banco de dados Drift**
+  Future<void> _handleAdicionar() async {
+    final database = Provider.of<AppDatabase>(context, listen: false);
+
     double? horimetroInicial =
         double.tryParse(_horimetroInicialController.text);
     double? horimetroFinal = double.tryParse(_horimetroFinalController.text);
@@ -94,31 +95,21 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     if (_formKey.currentState!.validate() &&
         !_horaRangeError &&
         !_horimetroError) {
-      final combinedData = {
-        ..._informacoesGerais,
-        'patrimonioImplemento': _patrimonioImplementoController.text.isNotEmpty
-            ? _patrimonioImplementoController.text
-            : 'Não informado',
-        'operacao': _operacaoController.text,
-        'motivo': _motivoController.text,
-        'talhao': _talhaoController.text,
-        'cultura': _culturaController.text,
-        'horaInicial': _horarioInicial ?? 'Não informado',
-        'horaFinal': _horarioFinal ?? 'Não informado',
-        'horimetroInicial': _horimetroInicialController.text,
-        'horimetroFinal': _horimetroFinalController.text,
-      };
+      final novaAtividade = AtividadesCompanion(
+        descricao: drift.Value(_operacaoController.text),
+        coordenador: drift.Value(widget.informacoesGerais['nomeCoordenador']),
+        patrimonio: drift.Value(_patrimonioImplementoController.text),
+        horarioInicial: drift.Value(_horarioInicial ?? 'Não informado'),
+        horarioFinal: drift.Value(_horarioFinal ?? 'Não informado'),
+        horimetroInicial: drift.Value(_horimetroInicialController.text),
+        horimetroFinal: drift.Value(_horimetroFinalController.text),
+      );
 
-      if (!_dados.contains(combinedData)) {
-        setState(() {
-          _dados.add(combinedData);
-          listaDeRegistros.add(combinedData);
-        });
-      }
+      await database.inserirAtividade(novaAtividade);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cadastro realizado com sucesso!'),
+          content: Text('Atividade salva com sucesso!'),
           duration: Duration(seconds: 1),
         ),
       );
@@ -204,7 +195,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                         onPressed: () => _selecionarHorario(context, true),
                         child: Text(
                           _horarioInicial ?? "Selecionar Hora Inicial",
-                          style: const TextStyle(fontSize: 14),
                         ),
                       ),
                     ),
@@ -214,7 +204,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                         onPressed: () => _selecionarHorario(context, false),
                         child: Text(
                           _horarioFinal ?? "Selecionar Hora Final",
-                          style: const TextStyle(fontSize: 14),
                         ),
                       ),
                     ),
@@ -223,16 +212,8 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                 const SizedBox(height: 16),
                 Center(
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[800],
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 20),
-                    ),
                     onPressed: _handleAdicionar,
-                    child: const Text(
-                      'Adicionar Atividade',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
+                    child: const Text('Adicionar Atividade'),
                   ),
                 ),
               ],

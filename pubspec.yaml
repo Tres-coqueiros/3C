@@ -1,6 +1,6 @@
 name: senior
 description: "A new Flutter project."
-publish_to: 'none' 
+publish_to: 'none'
 
 version: 1.0.0+1
 
@@ -19,14 +19,24 @@ dependencies:
   intl: ^0.20.2
   go_router: ^14.7.2
   auto_route: ^9.3.0+1
-  # android_alarm_manager_plus: ^4.0.6
   flutter_launcher_icons: ^0.14.3
+  
+  # *** Adicionados para Drift (Banco de dados local) ***
+  drift: ^2.7.0
+  sqlite3_flutter_libs: 0.5.30
+  path_provider: ^2.1.5
+  provider: ^6.1.2
+  # Biblioteca necessária para compilar o SQLite em apps Flutter
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
   
+  # *** Adicionados para gerar código do Drift ***
+  drift_dev: ^2.7.0
+  build_runner: ^2.3.3
+
 flutter_icons:
   android: true
   ios: true

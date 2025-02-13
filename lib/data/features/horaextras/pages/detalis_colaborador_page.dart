@@ -79,7 +79,7 @@ class _ListHoraExtra extends State<ListHoraExtra> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildInfoRow(Icons.person, 'Matricula',
-                        widget.colaborador['NUMCAD'].toString() ?? 'N/A'),
+                        widget.colaborador['NUMCAD'].toString()),
                     Divider(color: Colors.grey[300], thickness: 1),
                     _buildInfoRow(Icons.access_time, 'Horas Extras',
                         widget.colaborador['HORA_EXTRA']?.toString() ?? 'N/A'),

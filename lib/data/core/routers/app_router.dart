@@ -1,6 +1,6 @@
-// File: lib/data/core/routers/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+//import 'package:senior/data/database/app_database.dart';
 import 'package:senior/data/features/auth/login_page.dart';
 import 'package:senior/data/features/home_page.dart';
 import 'package:senior/data/features/horaextras/pages/profile_page.dart';
@@ -8,7 +8,6 @@ import 'package:senior/data/features/widgets/base_layout.dart';
 import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/features/dbo/pages/RegisterActivity_page.dart';
 import 'package:senior/data/features/dbo/pages/RegisterPublic_page.dart';
-import 'package:senior/data/global_data.dart';
 
 final GoRouter appRouter = GoRouter(
   routes: [
@@ -27,19 +26,23 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/detailsregister',
       builder: (context, state) => BaseLayout(
-        body: DetailsregisterPage(registros: listaDeRegistros),
-      ),
-    ),
-    // Rota para cadastro de atividades sem passar 'atividade'
-    GoRoute(
-      path: '/registeractivity',
-      builder: (context, state) => BaseLayout(
-        body: RegisterActivityPage(
-          dados: listaDeRegistros,
-          informacoesGerais: {}, atividade: {},
-          // Removido: atividade: {}
+        body: DetailsregisterPage(
+          registros: [],
         ),
       ),
+    ),
+    GoRoute(
+      path: '/registeractivity',
+      builder: (context, state) {
+        final atividade = state.extra as Map<String, dynamic>? ?? {};
+
+        return BaseLayout(
+          body: RegisterActivityPage(
+            dados: [], // Lista inicial vazia (será carregada no banco)
+            informacoesGerais: atividade, atividade: {},
+          ),
+        );
+      },
     ),
     GoRoute(
       path: '/profile',
