@@ -58,8 +58,7 @@ class _HomePageState extends State<HomePage> {
                 context,
                 title: "DBO",
                 color: AppColorsComponents.secondary,
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/dboHome'),
+                onPressed: () => context.go('/dboHome'),
               ),
             ],
           ),

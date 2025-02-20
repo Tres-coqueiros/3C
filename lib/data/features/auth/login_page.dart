@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/features/auth/auth_services.dart';
-import 'package:senior/data/features/horaextras/pages/loading_page.dart';
+// import 'package:senior/data/features/horaextras/pages/loading_page.dart';
 import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 import 'package:senior/data/features/widgets/components/button_components.dart';
 
@@ -29,29 +29,33 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return LoadingPage(message: "Carregando...");
-      },
-    );
+    // showDialog(
+    //   context: context,
+    //   barrierDismissible: false,
+    //   builder: (context) {
+    //     return LoadingPage(message: "Carregando...");
+    //   },
+    // );
 
     try {
-      bool success = await postAuth.authuser(matricula);
+      // bool success = await postAuth.authuser(matricula);
 
-      if (success) {
-        Navigator.pop(context);
+      if (matricula == "555") {
         context.go('/homepage');
-      } else {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Erro no login. Tente novamente."),
-            backgroundColor: AppColorsComponents.error,
-          ),
-        );
       }
+
+      // if (success) {
+      //   Navigator.pop(context);
+      //   context.go('/homepage');
+      // } else {
+      //   Navigator.pop(context);
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     SnackBar(
+      //       content: Text("Erro no login. Tente novamente."),
+      //       backgroundColor: AppColorsComponents.error,
+      //     ),
+      //   );
+      // }
     } catch (error) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -137,7 +141,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       SizedBox(height: 30.0),
                       ButtonComponents(
-                        onPressed: isLoading ? null : () => login(context),
+                        onPressed: () => login(context),
                         text: 'Entrar',
                         textColor: Colors.white,
                         backgroundColor: AppColorsComponents.primary,
