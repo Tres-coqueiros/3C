@@ -42,6 +42,10 @@ class BaseLayout extends StatelessWidget {
               icon: const Icon(Icons.exit_to_app_outlined),
               color: Colors.white,
               onPressed: () => {Exit(context)}),
+          // IconButton(
+          //     onPressed: () => Exit,
+          //     color: Colors.white,
+          //     icon: const Icon(Icons.history)),
         ],
       ),
       backgroundColor: const Color(0xFFF3F7FB),

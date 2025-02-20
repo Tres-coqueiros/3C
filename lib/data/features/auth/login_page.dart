@@ -6,6 +6,8 @@ import 'package:senior/data/features/widgets/components/app_colors_components.da
 import 'package:senior/data/features/widgets/components/button_components.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
   _LoginPageState createState() => _LoginPageState();
 }
@@ -41,6 +43,9 @@ class _LoginPageState extends State<LoginPage> {
       bool success = await postAuth.authuser(matricula);
 
       if (success) {
+<<<<<<< HEAD
+        context.go('/registerpublic');
+=======
         Navigator.pop(context);
         context.go('/homepage');
       } else {
@@ -51,6 +56,7 @@ class _LoginPageState extends State<LoginPage> {
             backgroundColor: AppColorsComponents.error,
           ),
         );
+>>>>>>> master
       }
     } catch (error) {
       Navigator.pop(context);
