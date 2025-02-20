@@ -10,6 +10,7 @@ import 'package:senior/data/features/dbo/pages/RegisterActivity_page.dart';
 import 'package:senior/data/features/dbo/pages/RegisterPublic_page.dart';
 import 'package:senior/data/global_data.dart';
 
+<<<<<<< HEAD
 final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(
@@ -52,3 +53,30 @@ final GoRouter appRouter = GoRouter(
     ),
   ),
 );
+=======
+final GoRouter AppRouter = GoRouter(
+    routes: [
+      GoRoute(path: '/', builder: (context, state) => LoginPage()),
+      GoRoute(path: '/homepage', builder: (context, state) => HomePage()),
+      GoRoute(
+          path: '/listcolaboradores',
+          builder: (context, state) => BaseLayout(body: ListColaboradores())),
+      GoRoute(
+          path: '/dboHome',
+          builder: (context, state) => BaseLayout(body: HomePageDBO())),
+      GoRoute(
+          path: '/registerpublic',
+          builder: (context, state) => RegisterPublicDBO()),
+      GoRoute(
+          path: '/detailsregister',
+          builder: (context, state) => BaseLayout(body: DetailsregisterPage())),
+      GoRoute(
+          path: '/profile',
+          builder: (context, state) => BaseLayout(body: ProfilePage())),
+    ],
+    errorBuilder: (context, state) => Scaffold(
+          body: Center(
+            child: Text('Rota não encontrada: ${state.namedLocation('name')}'),
+          ),
+        ));
+>>>>>>> master

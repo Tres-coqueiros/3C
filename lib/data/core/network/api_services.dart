@@ -4,14 +4,15 @@ import 'package:senior/data/core/network/exceptions_network.dart';
 class PostServices {
   Future<bool> postHours(data) async {
     try {
-      final response = await dio.post('postHoras', data: {'data': data});
+      final response = await dio.post('postHours', data: {'data': data});
       if (response.statusCode == 200) {
         return true;
       } else {
         return false;
       }
     } catch (error) {
-      print('Erro ao fazer a requisição na API: $error');
+      ErrorNotifier.showError(
+          'Erro ao fazer a requisição na API: ${error.toString()}');
       return false;
     }
   }
@@ -34,7 +35,7 @@ class PostServices {
 class GetServices {
   Future<List<Map<String, dynamic>>> getCollaborators() async {
     try {
-      final response = await dio.get('getColboradorGestor');
+      final response = await dio.get('getColaboradorGestor');
       if (response.statusCode == 200) {
         return List<Map<String, dynamic>>.from(
             response.data['getColaboradorGestor']);
