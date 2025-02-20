@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
-import 'package:senior/data/global_data.dart'; // Lista global de registros
+import 'package:senior/data/global_data.dart';
 
 class RegisterActivityPage extends StatefulWidget {
   final List<dynamic> dados;
@@ -174,15 +174,16 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildTextField("Patrimônio", _patrimonioImplementoController,
+                    "Digite o Patrimônio"),
                 _buildTextField("Patrimônio Implemento",
                     _patrimonioImplementoController, "Digite o Patrimônio"),
+                _buildTextField("Maquina", _patrimonioImplementoController,
+                    "Digite o Patrimônio"),
                 _buildTextField(
                     "Operação", _operacaoController, "Digite a Operação"),
                 _buildTextField(
                     "Motivo de Parada", _motivoController, "Digite o Motivo"),
-                _buildTextField("Talhão", _talhaoController, "Digite o Talhão"),
-                _buildTextField(
-                    "Cultura", _culturaController, "Digite a Cultura"),
                 Row(
                   children: [
                     Expanded(

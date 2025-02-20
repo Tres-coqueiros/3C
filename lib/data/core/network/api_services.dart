@@ -64,4 +64,38 @@ class GetServices {
       return {};
     }
   }
+
+  Future<List<Map<String, dynamic>>> getCiclo() async {
+    try {
+      final response = await dio.get('getCiclo');
+
+      if (response.data != null && response.data['getCiclo'] != null) {
+        return List<Map<String, dynamic>>.from(response.data['getCiclo']);
+      } else {
+        ErrorNotifier.showError(
+            'Erro ao fazer busca ciclo: ${response.statusMessage}');
+        return [];
+      }
+    } catch (error) {
+      print('Erro ao fazer a consulta na API: $error');
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getSafra() async {
+    try {
+      final response = await dio.get('getSafra');
+
+      if (response.data != null && response.data['getSafra'] != null) {
+        return List<Map<String, dynamic>>.from(response.data['getSafra']);
+      } else {
+        ErrorNotifier.showError(
+            'Erro ao fazer busca de safra: ${response.statusMessage}');
+        return [];
+      }
+    } catch (error) {
+      print('Erro ao fazer a consulta na API: $error');
+      return [];
+    }
+  }
 }

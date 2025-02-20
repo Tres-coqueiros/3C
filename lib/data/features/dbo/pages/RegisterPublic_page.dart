@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
+import 'package:senior/data/core/interface/app_interface.dart';
+import 'package:senior/data/core/network/api_services.dart';
 import 'package:senior/data/features/dbo/pages/RegisterActivity_Page.dart';
 import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
-import 'package:senior/data/global_data.dart'; // Lista global de registros
+import 'package:senior/data/global_data.dart';
 
 class RegisterPublicDBO extends StatefulWidget {
   @override
@@ -11,8 +13,11 @@ class RegisterPublicDBO extends StatefulWidget {
 }
 
 class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
+  final GetServices getServices = GetServices();
   final _formKey = GlobalKey<FormState>();
 
+  final TextEditingController safraController = TextEditingController();
+  final TextEditingController fazendaController = TextEditingController();
   final TextEditingController _matriculaController = TextEditingController();
   final TextEditingController _coordenadorController = TextEditingController();
   final TextEditingController _patrimonioController = TextEditingController();
@@ -23,8 +28,62 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
 
   String? _horarioInicial;
   String? _horarioFinal;
+
   bool _horarioError = false;
   bool _horimetroError = false;
+
+  List<Ciclo> getCiclo = [];
+  List<Safra> getSafra = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSafra();
+    fetchCiclo();
+  }
+
+  void fetchSafra() async {
+    try {
+      final result = await getServices.getSafra();
+      setState(() {
+        getSafra = result
+            .map((data) =>
+                Safra(Codigo: data['Codigo'], Descricao: data['Descricao']))
+            .toList();
+      });
+    } catch (error) {
+      print('Error ao buscar safras: $error');
+    }
+  }
+
+  void fetchCiclo() async {
+    try {
+      final result = await getServices.getCiclo();
+      setState(() {
+        getCiclo = result
+            .map((data) => Ciclo(
+                Codigo: data['Codigo'],
+                Descricao: data['Descricao'],
+                Safra: data['Safra']))
+            .toList();
+      });
+    } catch (error) {
+      print('Error ao buscar ciclos: $error');
+    }
+  }
+
+  void fetchSafraByCiclo(int safraId) async {
+    try {
+      var filteredSafra =
+          getCiclo.where((ciclo) => ciclo.Codigo == safraId).toList();
+      setState(() {
+        getCiclo = filteredSafra;
+      });
+      print('object $filteredSafra');
+    } catch (error) {
+      print('Error ao buscar safras para o ciclo $safraId: $error');
+    }
+  }
 
   /// **Seleciona a data/hora**
   void _selecionarHorario(BuildContext context, bool isInicial) {
@@ -86,58 +145,10 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     }
   }
 
-  /// **Navega para a tela de registros**
-  void _mostrarRegistros() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-          builder: (context) => DetailsregisterPage(
-                registros: [],
-              )),
-    );
-  }
-
-  /// **Cria um campo de entrada de texto formatado**
-  Widget _buildTextField(
-      String label, TextEditingController controller, String hint,
-      {bool isNumeric = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        validator: (value) =>
-            (value == null || value.isEmpty) ? "Campo obrigatório" : null,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[200],
-      appBar: AppBar(
-        backgroundColor: Colors.green[800],
-        title: const Text("Cadastro de Atividades",
-            style: TextStyle(color: Colors.white)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history, color: Colors.white),
-            onPressed: _mostrarRegistros, // Agora leva para a tela de registros
-          ),
-        ],
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -147,26 +158,12 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildTextField(
-                    "Matrícula*", _matriculaController, "Digite a Matrícula"),
-                _buildTextField("Nome do Coordenador*", _coordenadorController,
-                    "Digite o Coordenador"),
-                _buildTextField("Patrimônio*", _patrimonioController,
-                    "Digite o Patrimônio"),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField("Horímetro Inicial*",
-                          _horimetroInicialController, "Digite o Horímetro",
-                          isNumeric: true),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField("Horímetro Final*",
-                          _horimetroFinalController, "Digite o Horímetro",
-                          isNumeric: true),
-                    ),
-                  ],
-                ),
+                    "Operador*", _matriculaController, "Digite o operador"),
+                _buildCicloDropdown(),
+                _buildTextField("Safra*", safraController, "Selecione a safra"),
+                _buildTextField("Fazenda*", fazendaController, "Fazenda"),
+                _buildTextField("Cultura*", fazendaController, "Cultura"),
+                _buildTextField("Talhão*", fazendaController, "Talhão"),
                 if (_horimetroError)
                   const Padding(
                     padding: EdgeInsets.only(top: 8.0),
@@ -177,7 +174,8 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     ),
                   ),
                 const SizedBox(height: 16),
-                const Text("Data e Horários*", style: TextStyle(fontSize: 16)),
+                const Text("Jornada de trabalho",
+                    style: TextStyle(fontSize: 16)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -185,8 +183,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Inicial*",
-                              style: TextStyle(fontSize: 14)),
+                          const Text("Inicial", style: TextStyle(fontSize: 14)),
                           const SizedBox(height: 4),
                           ElevatedButton(
                             onPressed: () => _selecionarHorario(context, true),
@@ -201,7 +198,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Final*", style: TextStyle(fontSize: 14)),
+                          const Text("Final", style: TextStyle(fontSize: 14)),
                           const SizedBox(height: 4),
                           ElevatedButton(
                             onPressed: () => _selecionarHorario(context, false),
@@ -241,6 +238,56 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+      String label, TextEditingController controller, String hint,
+      {bool isNumeric = false, Function(dynamic value)? onChanged}) {
+    // Alterado para opcional
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        validator: (value) =>
+            (value == null || value.isEmpty) ? "Campo obrigatório" : null,
+        onChanged: onChanged, // onChanged é agora opcional
+      ),
+    );
+  }
+
+  Widget _buildCicloDropdown() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: DropdownButtonFormField<int>(
+        decoration: InputDecoration(
+          labelText: "Ciclo*",
+          hintText: "Selecione o ciclo",
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        onChanged: (value) {
+          if (value != null) {
+            fetchSafraByCiclo(value); // Filtra as safras com base no cicloId
+          }
+        },
+        items: getCiclo.map((Ciclo ciclo) {
+          return DropdownMenuItem<int>(
+            value: ciclo.Codigo,
+            child: Text(ciclo.Descricao),
+          );
+        }).toList(),
+        validator: (value) => value == null ? "Campo obrigatório" : null,
       ),
     );
   }

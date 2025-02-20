@@ -55,33 +55,13 @@ class _HomePageState extends State<HomePage> {
                 visible: useCargos == 'S',
                 onPressed: () => context.go('/listcolaboradores'),
               ),
-<<<<<<< HEAD
               const SizedBox(height: 20),
-              SizedBox(
-                width: 350,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pushReplacementNamed(
-                      context, '/registerpublic'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: AppColorsComponents.secondary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  child: const Text(
-                    'DBO',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ),
-=======
               SizedBox(height: 20),
               _buildButton(
                 context,
-                title: "DBO",
+                title: "BDO",
                 color: AppColorsComponents.secondary,
-                onPressed: () => context.go('/dboHome'),
+                onPressed: () => context.go('/registerpublic'),
               ),
             ],
           ),

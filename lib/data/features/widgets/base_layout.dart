@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/features/auth/auth_services.dart';
+import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/features/horaextras/navigation/navigation_page.dart';
 import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 
@@ -9,6 +10,18 @@ class BaseLayout extends StatelessWidget {
   final Widget body;
 
   BaseLayout({super.key, required this.body});
+
+  /// **Navega para a tela de registros**
+  void _mostrarRegistros(BuildContext context) {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BaseLayout(
+              body: DetailsregisterPage(
+            registros: [],
+          )),
+        ));
+  }
 
   void Exit(BuildContext context) async {
     try {
@@ -42,10 +55,11 @@ class BaseLayout extends StatelessWidget {
               icon: const Icon(Icons.exit_to_app_outlined),
               color: Colors.white,
               onPressed: () => {Exit(context)}),
-          // IconButton(
-          //     onPressed: () => Exit,
-          //     color: Colors.white,
-          //     icon: const Icon(Icons.history)),
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () => _mostrarRegistros(
+                context), // Agora leva para a tela de registros
+          ),
         ],
       ),
       backgroundColor: const Color(0xFFF3F7FB),

@@ -31,10 +31,6 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     final bool isEmpty =
         registrosPublicos.isEmpty && registrosAtividades.isEmpty;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Histórico de Registros'),
-        backgroundColor: Colors.green[800],
-      ),
       body: isEmpty
           ? const Center(
               child: Text(
@@ -52,11 +48,6 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                     "Registros da Segunda Tela", registrosAtividades),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.green[800],
-        onPressed: () => Navigator.pop(context),
-        child: const Icon(Icons.arrow_back),
-      ),
     );
   }
 
