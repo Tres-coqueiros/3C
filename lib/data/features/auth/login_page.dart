@@ -6,6 +6,8 @@ import 'package:senior/data/features/widgets/components/app_colors_components.da
 import 'package:senior/data/features/widgets/components/button_components.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
   _LoginPageState createState() => _LoginPageState();
 }

@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:senior/data/features/widgets/components/app_colors_components.dart';
 
 class ModernNavigationBar extends StatefulWidget {
+  const ModernNavigationBar({super.key});
+
   @override
   _ModernNavigationBarState createState() => _ModernNavigationBarState();
 }

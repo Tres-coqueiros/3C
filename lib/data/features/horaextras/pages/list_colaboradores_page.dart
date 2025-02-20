@@ -4,6 +4,8 @@ import 'package:senior/data/features/widgets/components/app_colors_components.da
 import 'package:senior/data/features/widgets/components/list_view_components.dart';
 
 class ListColaboradores extends StatefulWidget {
+  const ListColaboradores({super.key});
+
   @override
   _ListColaboradoresState createState() => _ListColaboradoresState();
 }
