@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:senior/data/core/interface/app_interface.dart';
-import 'package:senior/data/core/network/api_services.dart';
+import 'package:senior/data/core/repository/api_services.dart';
 import 'package:senior/data/features/dbo/pages/RegisterActivity_Page.dart';
-import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
+import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/global_data.dart';
 
 class RegisterPublicDBO extends StatefulWidget {

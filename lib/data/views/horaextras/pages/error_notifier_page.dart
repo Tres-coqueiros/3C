@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/core/network/exceptions_network.dart';
+import 'package:senior/data/core/repository/exceptions_network.dart';
 
 class ErrorListener extends StatefulWidget {
   @override

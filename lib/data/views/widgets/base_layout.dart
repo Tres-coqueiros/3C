@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:senior/data/features/auth/auth_services.dart';
-import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
-import 'package:senior/data/features/horaextras/navigation/navigation_page.dart';
-import 'package:senior/data/features/widgets/components/app_colors_components.dart';
+import 'package:senior/data/views/auth/auth_services.dart';
+import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
+import 'package:senior/data/views/horaextras/pages/navigation_page.dart';
+import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 
 class BaseLayout extends StatelessWidget {
   final PostAuth postAuth = PostAuth();

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:senior/data/core/network/api_services.dart';
-import 'package:senior/data/features/widgets/base_layout.dart';
-import 'package:senior/data/features/widgets/components/app_colors_components.dart';
+import 'package:senior/data/core/repository/api_services.dart';
+import 'package:senior/data/views/widgets/base_layout.dart';
+import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

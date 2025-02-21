@@ -1,5 +1,5 @@
-import 'package:senior/data/core/network/api_client.dart';
-import 'package:senior/data/core/network/exceptions_network.dart';
+import 'package:senior/data/core/repository/api_client.dart';
+import 'package:senior/data/core/repository/exceptions_network.dart';
 
 class PostServices {
   Future<bool> postHours(data) async {

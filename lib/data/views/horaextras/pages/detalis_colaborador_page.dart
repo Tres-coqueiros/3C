@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/core/network/api_services.dart';
+import 'package:senior/data/core/repository/api_services.dart';
 // import 'package:senior/data/features/widgets/components/button_components.dart';
 // import 'package:senior/data/features/widgets/buttons/button_disapprove.dart';
-import 'package:senior/data/features/widgets/base_layout.dart';
-import 'package:senior/data/features/widgets/messages/dialog_message.dart';
+import 'package:senior/data/views/widgets/base_layout.dart';
+import 'package:senior/data/views/widgets/messages/dialog_message.dart';
 
 class ListHoraExtra extends StatefulWidget {
   final Map<String, dynamic> colaborador;

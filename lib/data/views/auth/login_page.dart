@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:senior/data/features/auth/auth_services.dart';
-// import 'package:senior/data/features/horaextras/pages/loading_page.dart';
-import 'package:senior/data/features/widgets/components/app_colors_components.dart';
-import 'package:senior/data/features/widgets/components/button_components.dart';
+import 'package:senior/data/views/auth/auth_services.dart';
+import 'package:senior/data/views/horaextras/pages/loading_page.dart';
+import 'package:senior/data/views/widgets/components/app_colors_components.dart';
+import 'package:senior/data/views/widgets/components/button_components.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final _crachaController = TextEditingController();
 
   bool isLoading = false;
+  String? selectValue;
 
   void login(BuildContext context) async {
     final matricula = _crachaController.text.trim();
@@ -31,33 +32,33 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    // showDialog(
-    //   context: context,
-    //   barrierDismissible: false,
-    //   builder: (context) {
-    //     return LoadingPage(message: "Carregando...");
-    //   },
-    // );
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return LoadingPage(message: "Carregando...");
+      },
+    );
 
     try {
-      // bool success = await postAuth.authuser(matricula);
+      bool success = await postAuth.authuser(matricula);
 
-      if (matricula == "555") {
-        context.go('/homepage');
-      }
-
-      // if (success) {
-      //   Navigator.pop(context);
+      // if (matricula == "555") {
       //   context.go('/homepage');
-      // } else {
-      //   Navigator.pop(context);
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     SnackBar(
-      //       content: Text("Erro no login. Tente novamente."),
-      //       backgroundColor: AppColorsComponents.error,
-      //     ),
-      //   );
       // }
+
+      if (success) {
+        Navigator.pop(context);
+        context.go('/homepage');
+      } else {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro no login. Tente novamente."),
+            backgroundColor: AppColorsComponents.error,
+          ),
+        );
+      }
     } catch (error) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -117,6 +118,24 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       SizedBox(height: 40.0),
+                      DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'Selecione',
+                          border: OutlineInputBorder(),
+                        ),
+                        value: selectValue,
+                        items: const [
+                          DropdownMenuItem(
+                              value: 'Entrada', child: Text('Hora Extra')),
+                          DropdownMenuItem(value: 'Saída', child: Text('BDO')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            selectValue = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
                       // Campo do número do crachá
                       TextField(
                         controller: _crachaController,

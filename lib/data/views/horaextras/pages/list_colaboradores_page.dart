@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/core/network/api_services.dart';
-import 'package:senior/data/features/widgets/components/app_colors_components.dart';
-import 'package:senior/data/features/widgets/components/list_view_components.dart';
+import 'package:senior/data/core/repository/api_services.dart';
+import 'package:senior/data/views/widgets/components/app_colors_components.dart';
+import 'package:senior/data/views/widgets/components/list_view_components.dart';
 
 class ListColaboradores extends StatefulWidget {
   const ListColaboradores({super.key});

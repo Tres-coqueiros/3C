@@ -1,13 +1,13 @@
 // File: lib/data/core/routers/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:senior/data/features/auth/login_page.dart';
-import 'package:senior/data/features/home_page.dart';
-import 'package:senior/data/features/horaextras/pages/profile_page.dart';
-import 'package:senior/data/features/widgets/base_layout.dart';
-import 'package:senior/data/features/dbo/pages/DetailsRegister_page.dart';
-import 'package:senior/data/features/dbo/pages/RegisterActivity_page.dart';
-import 'package:senior/data/features/dbo/pages/RegisterPublic_page.dart';
+import 'package:senior/data/views/auth/login_page.dart';
+import 'package:senior/data/views/home_page.dart';
+import 'package:senior/data/views/horaextras/pages/profile_page.dart';
+import 'package:senior/data/views/widgets/base_layout.dart';
+import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
+import 'package:senior/data/views/dbo/pages/RegisterActivity_page.dart';
+import 'package:senior/data/views/dbo/pages/RegisterPublic_page.dart';
 import 'package:senior/data/global_data.dart';
 
 final GoRouter appRouter = GoRouter(

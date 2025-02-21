@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:senior/data/core/network/api_services.dart';
-import 'package:senior/data/core/network/exceptions_network.dart';
-import 'package:senior/data/features/widgets/components/app_colors_components.dart';
-import 'package:senior/data/features/widgets/components/button_components.dart';
-import 'package:senior/data/features/widgets/messages/dialog_message.dart';
+import 'package:senior/data/core/repository/api_services.dart';
+import 'package:senior/data/core/repository/exceptions_network.dart';
+import 'package:senior/data/views/widgets/components/app_colors_components.dart';
+import 'package:senior/data/views/widgets/components/button_components.dart';
+import 'package:senior/data/views/widgets/messages/dialog_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ListViewComponents extends StatefulWidget {
