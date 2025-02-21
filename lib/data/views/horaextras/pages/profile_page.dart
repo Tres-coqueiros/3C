@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/core/repository/api_services.dart';
+import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -25,13 +25,14 @@ class _ProfilePage extends State<ProfilePage> {
       final result = await getServices.getLogin();
 
       if (result.isNotEmpty) {
-        nameFun = result['getLogin']['nomfun'] ?? 'Desconhecido';
-        positionsFun = result['getLogin']['titred'] ?? 'Desconhecido';
-        numFun = result['getLogin']['numcad'] ?? 'Desconhecido';
+        // Acesso correto aos dados
+        nameFun = result[0]['nomfun'] ?? 'Desconhecido';
+        positionsFun = result[0]['titred'] ?? 'Desconhecido';
+        numFun = result[0]['numcad'] ?? 'Desconhecido';
       }
 
       setState(() {
-        getLogin = [result['getLogin']];
+        getLogin = result;
       });
     } catch (e) {
       print('Erro ao fazer a consulta: $e');

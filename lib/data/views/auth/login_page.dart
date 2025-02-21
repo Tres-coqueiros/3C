@@ -17,7 +17,6 @@ class _LoginPageState extends State<LoginPage> {
   final _crachaController = TextEditingController();
 
   bool isLoading = false;
-  String? selectValue;
 
   void login(BuildContext context) async {
     final matricula = _crachaController.text.trim();
@@ -42,10 +41,6 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       bool success = await postAuth.authuser(matricula);
-
-      // if (matricula == "555") {
-      //   context.go('/homepage');
-      // }
 
       if (success) {
         Navigator.pop(context);
@@ -118,24 +113,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       SizedBox(height: 40.0),
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Selecione',
-                          border: OutlineInputBorder(),
-                        ),
-                        value: selectValue,
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'Entrada', child: Text('Hora Extra')),
-                          DropdownMenuItem(value: 'Saída', child: Text('BDO')),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectValue = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
                       // Campo do número do crachá
                       TextField(
                         controller: _crachaController,

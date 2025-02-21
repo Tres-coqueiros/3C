@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:senior/data/core/repository/api_services.dart';
+import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/core/repository/exceptions_network.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 import 'package:senior/data/views/widgets/components/button_components.dart';

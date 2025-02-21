@@ -1,10 +1,10 @@
-import 'package:senior/data/core/repository/api_client.dart';
+import 'package:senior/data/core/repository/client_repository.dart';
 
 class PostAuth {
   Future<bool> authuser(String matricula) async {
     try {
       final response =
-          await dio.post('postLogin', data: {'matricula': matricula});
+          await dioSenior.post('postLogin', data: {'matricula': matricula});
       if (response.statusCode == 200) {
         return true;
       } else {
@@ -18,7 +18,7 @@ class PostAuth {
 
   Future<bool> authlogout() async {
     try {
-      final response = await dio.post('postLogout');
+      final response = await dioSenior.post('postLogout');
       if (response.statusCode == 200) {
         return true;
       } else {

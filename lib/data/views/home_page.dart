@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:senior/data/core/repository/api_services.dart';
+import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/views/widgets/base_layout.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 
@@ -28,14 +28,14 @@ class _HomePageState extends State<HomePage> {
       final result = await getServices.getLogin();
 
       if (result.isNotEmpty) {
-        useCargos = result['getLogin']['usu_tbcarges'] ?? 'Desconhecido';
+        useCargos = result[0]['usu_tbcarges'] ?? 'Desconhecido';
       }
 
       setState(() {
-        listColaborador = [result['getLogin']];
+        listColaborador = result;
       });
     } catch (error) {
-      print('Error: $error');
+      print('Erro ao buscar matrícula: $error');
     }
   }
 
