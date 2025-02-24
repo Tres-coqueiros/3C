@@ -63,12 +63,13 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       setState(() {
         getOperador = result
             .map((data) => Operador(
-                Codigo: data['Codigo'] ?? 0,
-                Nome: data['Nome'] ?? 'Sem identificação'))
+                  Codigo: data['Codigo'] ?? 0,
+                  Nome: data['Nome'] ?? 'Sem identificação',
+                ))
             .toList();
       });
     } catch (error) {
-      print('Erro ao buscar talhoes: $error');
+      // Trate erro se necessário
     }
   }
 
@@ -78,14 +79,15 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       setState(() {
         getFazenda = result
             .map((data) => Fazenda(
-                Codigo: data['Codigo'],
-                Descricao: data['Descricao'] ?? 'Sem Descricao',
-                Sequencial: data['Sequencial']))
+                  Codigo: data['Codigo'],
+                  Descricao: data['Descricao'] ?? 'Sem Descricao',
+                  Sequencial: data['Sequencial'],
+                ))
             .toList();
       });
       getFazendaFiltrada = getFazenda;
     } catch (error) {
-      print('Erro ao buscar fazendas: $error');
+      // Trate erro se necessário
     }
   }
 
@@ -104,7 +106,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       });
       getTalhoesFiltrada = getTalhoes;
     } catch (error) {
-      print('Erro ao buscar talhoes: $error');
+      // Trate erro se necessário
     }
   }
 
@@ -121,7 +123,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       });
       getCulturaFiltrada = getCultura;
     } catch (error) {
-      print('Erro ao buscar culturas: $error');
+      // Trate erro se necessário
     }
   }
 
@@ -130,13 +132,15 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       final result = await getServices.getSafra();
       setState(() {
         getSafra = result
-            .map((data) =>
-                Safra(Codigo: data['Codigo'], Descricao: data['Descricao']))
+            .map((data) => Safra(
+                  Codigo: data['Codigo'],
+                  Descricao: data['Descricao'],
+                ))
             .toList();
       });
       getSafraFiltrada = getSafra;
     } catch (error) {
-      print('Error ao buscar safras: $error');
+      // Trate erro se necessário
     }
   }
 
@@ -146,14 +150,34 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       setState(() {
         getCiclo = result
             .map((data) => Ciclo(
-                Codigo: data['Codigo'],
-                Descricao: data['Descricao'],
-                Safra: data['Safra'],
-                Cultura: data['Cultura']))
+                  Codigo: data['Codigo'],
+                  Descricao: data['Descricao'],
+                  Safra: data['Safra'],
+                  Cultura: data['Cultura'],
+                ))
             .toList();
       });
     } catch (error) {
-      print('Error ao buscar ciclos: $error');
+      // Trate erro se necessário
+    }
+  }
+
+  /// Mapeia o sequencial para uma descrição específica.
+  /// Ajuste os cases conforme a necessidade.
+  String _getFazendaDescricaoBySequencial(dynamic sequencial) {
+    switch (sequencial.toString()) {
+      case '1':
+        return 'SPZ - MAURO';
+      case '14':
+        return 'BRN - MAURO';
+      case '16':
+        return 'GNT - MAURO';
+      case '1.377':
+        return 'ALG - MAURO';
+      case '11.124':
+        return 'BJR - MAURO';
+      default:
+        return 'Fazenda não encontrada';
     }
   }
 
@@ -188,7 +212,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
         'matricula': _matriculaController.text,
         'horarioInicial': _horarioInicial,
         'horarioFinal': _horarioFinal,
-        'operacoes': []
+        'operacoes': [],
       };
 
       listaDeRegistros.add(registro);
@@ -207,7 +231,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
@@ -218,13 +241,17 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Operador
                 SearchableDropdown(
-                    items: getOperador,
-                    itemLabel: (operador) => operador.Nome,
-                    onItemSelected: (operador) {
-                      print('Operador selecionado: ${operador.Nome}');
-                    }),
+                  items: getOperador,
+                  itemLabel: (operador) => operador.Nome,
+                  onItemSelected: (operador) {
+                    // Lógica adicional, se necessário
+                  },
+                ),
                 const SizedBox(height: 8),
+
+                // Ciclos
                 SearchableDropdown<Ciclo>(
                   items: getCiclo,
                   itemLabel: (ciclo) => ciclo.Descricao,
@@ -246,10 +273,9 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                         culturaController.text = culturaid[0].Descricao;
                       }
                       if (safrasid.isNotEmpty) {
-                        getTalhoesFiltrada = getTalhoes
-                            .where(
-                                (talhao) => talhao.Safra == safrasid[0].Codigo)
-                            .toList();
+                        getTalhoesFiltrada = getTalhoes.where((talhao) {
+                          return talhao.Safra == safrasid[0].Codigo;
+                        }).toList();
                       } else {
                         getTalhoesFiltrada = [];
                       }
@@ -259,58 +285,77 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   hintText: "Selecione o ciclo",
                 ),
                 const SizedBox(height: 8),
-                _buildTextField('Safra', safraController, "Selecione a safra",
-                    list: getSafraFiltrada, readOnly: true),
-                _buildTextField("Cultura", culturaController, "Cultura",
-                    list: getCulturaFiltrada, readOnly: true),
+
+                // Safra e Cultura
+                _buildTextField(
+                  'Safra',
+                  safraController,
+                  "Selecione a safra",
+                  list: getSafraFiltrada,
+                  readOnly: true,
+                ),
+                _buildTextField(
+                  "Cultura",
+                  culturaController,
+                  "Cultura",
+                  list: getCulturaFiltrada,
+                  readOnly: true,
+                ),
+
+                // Talhões
                 SearchableDropdown(
                   items: getTalhoesFiltrada,
                   itemLabel: (talhao) => talhao.Identificacao,
                   onItemSelected: (talhao) {
-                    print('Safra: ${talhao.Safra}');
-                    print('Fazenda: ${talhao.Fazenda}');
-                    final fazendaid = getFazenda
-                        .where((fazenda) =>
-                            talhao.Fazenda.toString() ==
-                            fazenda.Sequencial.toString())
-                        .toList();
                     setState(() {
-                      getFazendaFiltrada = fazendaid;
-                      if (fazendaid.isNotEmpty) {
-                        fazendaController.text = fazendaid.first.Descricao;
-                      } else {
-                        fazendaController.text = "Não encontrada";
-                      }
+                      // Aplica o switch-case no sequencial do talhão
+                      fazendaController.text =
+                          _getFazendaDescricaoBySequencial(talhao.Fazenda);
                     });
-                    print('getFazendaFiltrada $fazendaid');
                   },
                   labelText: "Talhões",
                 ),
-                _buildTextField("Fazenda", fazendaController, "Fazenda",
-                    list: getFazendaFiltrada, readOnly: true),
+
+                // Fazenda
+                _buildTextField(
+                  "Fazenda",
+                  fazendaController,
+                  "Fazenda",
+                  list: getFazendaFiltrada,
+                  readOnly: true,
+                ),
+
                 const SizedBox(height: 16),
-                const Text("Jornada de Trabalho",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Jornada de Trabalho",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
+
                 if (_horarioError)
                   const Padding(
                     padding: EdgeInsets.only(top: 8.0),
                     child: Text(
                       '⚠️ Jornada Final deve ser maior que o Inicial!',
                       style: TextStyle(
-                          color: Colors.red, fontWeight: FontWeight.bold),
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 const SizedBox(height: 24),
+
+                // Botão de Salvar/Avançar
                 ButtonComponents(
                   onPressed: _salvarRegistro,
                   text: 'Salvar e Avançar',
                   textColor: AppColorsComponents.hashours,
                   backgroundColor: AppColorsComponents.primary,
                   fontSize: 18,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 37, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 37,
+                    vertical: 12,
+                  ),
                   textAlign: Alignment.center,
                 ),
               ],
@@ -322,11 +367,14 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   }
 
   Widget _buildTextField(
-      String label, TextEditingController controller, String hint,
-      {List list = const [],
-      bool isNumeric = false,
-      Function(dynamic value)? onChanged,
-      bool readOnly = false}) {
+    String label,
+    TextEditingController controller,
+    String hint, {
+    List list = const [],
+    bool isNumeric = false,
+    Function(dynamic value)? onChanged,
+    bool readOnly = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(

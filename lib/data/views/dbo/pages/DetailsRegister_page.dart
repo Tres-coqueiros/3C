@@ -104,13 +104,88 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
 
   /// Cria uma lista de widgets para exibir cada campo do registro com ícone.
   List<Widget> _buildRegistroInfo(Map<String, dynamic> registro) {
-    List<Widget> infoWidgets = [];
+    final List<Widget> infoWidgets = [];
+
     registro.forEach((key, value) {
       if (value != null && value.toString().isNotEmpty) {
-        infoWidgets
-            .add(_buildInfoRow(_getIconForKey(key), _formatLabel(key), value));
+        // Se for a lista de motivos de parada
+        if (key == 'motivosParada' && value is List) {
+          // Exibe uma seção específica
+          infoWidgets.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6.0),
+              child: Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Motivos de Parada:',
+                      style:
+                          TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+          // Para cada item na lista de motivos, renderizamos separadamente
+          final List motivos = value;
+          for (int i = 0; i < motivos.length; i++) {
+            final mp = motivos[i];
+            // mp deve ser um Map com 'descricao', 'inicio', 'fim', etc.
+            final descricao = mp['descricao'] ?? 'Motivo não informado';
+            final inicio = mp['inicio'] ?? 'Início não informado';
+            final fim = mp['fim'] ?? 'Fim não informado';
+            final duracaoMin = mp['duracaoMin']?.toString() ?? '';
+
+            // Monta um layout mais agradável, por exemplo, usando um Card
+            infoWidgets.add(
+              Container(
+                margin: const EdgeInsets.only(left: 32, bottom: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• $descricao',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Início: $inicio',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    Text(
+                      'Fim: $fim',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    if (duracaoMin.isNotEmpty)
+                      Text(
+                        'Tempo parado: $duracaoMin min',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }
+        } else {
+          // Campos normais (fora de motivosParada)
+          infoWidgets.add(
+            _buildInfoRow(_getIconForKey(key), _formatLabel(key), value),
+          );
+        }
       }
     });
+
     return infoWidgets;
   }
 
@@ -154,8 +229,8 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
         return Icons.build;
       case 'operacao':
         return Icons.construction;
-      case 'motivo':
-        return Icons.warning;
+      case 'motivosParada':
+        return Icons.warning; // icone default, mas tratamos acima
       case 'talhao':
         return Icons.terrain;
       case 'cultura':
@@ -186,8 +261,8 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
         return 'Patrimônio Implemento';
       case 'operacao':
         return 'Operação';
-      case 'motivo':
-        return 'Motivo de Parada';
+      case 'motivosParada':
+        return 'Motivos de Parada';
       case 'talhao':
         return 'Talhão';
       case 'cultura':
