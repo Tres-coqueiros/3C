@@ -30,7 +30,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
   @override
   void initState() {
     super.initState();
-    filteredItems = widget.items;
+    filteredItems = List.from(widget.items);
     _searchController.addListener(_filterItems);
   }
 
@@ -42,56 +42,52 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
           .toList();
     });
 
-    if (_searchController.text.isEmpty) {
-      // Se o campo estiver vazio, remova o overlay
+    if (query.isEmpty || filteredItems.isEmpty) {
       _removeOverlay();
     } else {
-      // Se o texto não estiver vazio, mostre o overlay se necessário
-      if (_overlayEntry == null) {
-        _showOverlay();
-      }
+      _showOverlay();
     }
   }
 
   void _showOverlay() {
+    _removeOverlay();
     final overlayState = Overlay.of(context);
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        width: MediaQuery.of(context).size.width - 39,
+        width: MediaQuery.of(context).size.width - 40,
         child: CompositedTransformFollower(
           link: _layerLink,
           showWhenUnlinked: false,
           offset: const Offset(0, 50),
           child: Material(
             elevation: 4,
-            child: GestureDetector(
-              // Fecha o overlay quando clicar fora
-              onTap: _removeOverlay,
-              child: Container(
-                height: 200,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              constraints: BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
                 color: Colors.white,
-                child: ListView.builder(
-                  padding: EdgeInsets.zero,
-                  itemCount: filteredItems.length,
-                  itemBuilder: (context, index) {
-                    final item = filteredItems[index];
-                    return ListTile(
-                      title: Text(widget.itemLabel(item)),
-                      onTap: () {
-                        _searchController.text = widget.itemLabel(item);
-                        widget.onItemSelected(item);
-                        _removeOverlay();
-                      },
-                    );
-                  },
-                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: filteredItems.length,
+                itemBuilder: (context, index) {
+                  final item = filteredItems[index];
+                  return ListTile(
+                    title: Text(widget.itemLabel(item)),
+                    onTap: () {
+                      _searchController.text = widget.itemLabel(item);
+                      widget.onItemSelected(item);
+                      _removeOverlay();
+                    },
+                  );
+                },
               ),
             ),
           ),
         ),
       ),
     );
-
     overlayState.insert(_overlayEntry!);
   }
 
@@ -112,39 +108,35 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
   Widget build(BuildContext context) {
     return CompositedTransformTarget(
       link: _layerLink,
-      child: GestureDetector(
-        // Detecta clique fora do widget para fechar o overlay
-        onTap: _removeOverlay,
-        child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: widget.labelText,
-                hintText: widget.hintText,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Colors.grey.shade400,
-                    width: 1.5,
-                  ),
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              labelText: widget.labelText,
+              hintText: widget.hintText,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.grey.shade400,
+                  width: 1.5,
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(
-                    color: AppColorsComponents.primary,
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: EdgeInsets.symmetric(vertical: 8),
-                prefixIcon:
-                    Icon(Icons.search, color: AppColorsComponents.primary),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: AppColorsComponents.primary,
+                  width: 2,
+                ),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: EdgeInsets.symmetric(vertical: 8),
+              prefixIcon:
+                  Icon(Icons.search, color: AppColorsComponents.primary),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

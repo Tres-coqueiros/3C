@@ -32,6 +32,17 @@ class Safra {
   Safra({required this.Codigo, required this.Descricao});
 }
 
+class Fazenda {
+  int Codigo;
+  String Descricao;
+  int Sequencial;
+
+  Fazenda(
+      {required this.Codigo,
+      required this.Descricao,
+      required this.Sequencial});
+}
+
 class Talhoes {
   int Codigo;
   String Identificacao;

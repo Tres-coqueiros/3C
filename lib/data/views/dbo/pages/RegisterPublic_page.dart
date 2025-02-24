@@ -3,8 +3,8 @@ import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
-import 'package:senior/data/features/dbo/pages/RegisterActivity_Page.dart';
 import 'package:senior/data/global_data.dart';
+import 'package:senior/data/views/dbo/pages/RegisterActivity_page.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 import 'package:senior/data/views/widgets/components/button_components.dart';
 import 'package:senior/data/views/widgets/components/search_components.dart';
@@ -35,10 +35,12 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   List<Talhoes> getTalhoes = [];
   List<Cultura> getCultura = [];
   List<Operador> getOperador = [];
+  List<Fazenda> getFazenda = [];
 
   List<Cultura> getCulturaFiltrada = [];
   List<Safra> getSafraFiltrada = [];
   List<Talhoes> getTalhoesFiltrada = [];
+  List<Fazenda> getFazendaFiltrada = [];
 
   @override
   void initState() {
@@ -48,9 +50,11 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     fetchCultura();
     fetchTalhoes();
     fetchOperador();
+    fetchFazenda();
     getSafraFiltrada = getSafra;
     getCulturaFiltrada = getCultura;
     getTalhoesFiltrada = getTalhoes;
+    getFazendaFiltrada = getFazenda;
   }
 
   void fetchOperador() async {
@@ -68,16 +72,33 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     }
   }
 
+  void fetchFazenda() async {
+    try {
+      final result = await getServices.getFazenda();
+      setState(() {
+        getFazenda = result
+            .map((data) => Fazenda(
+                Codigo: data['Codigo'],
+                Descricao: data['Descricao'] ?? 'Sem Descricao',
+                Sequencial: data['Sequencial']))
+            .toList();
+      });
+      getFazendaFiltrada = getFazenda;
+    } catch (error) {
+      print('Erro ao buscar fazendas: $error');
+    }
+  }
+
   void fetchTalhoes() async {
     try {
       final result = await getServices.getTalhao();
       setState(() {
         getTalhoes = result
             .map((data) => Talhoes(
-                  Codigo: data['Codigo'] ?? 0,
+                  Codigo: data['Codigo'],
                   Identificacao: data['Identificacao'] ?? 'Sem identificação',
-                  Safra: data['Safra'] ?? 0,
-                  Fazenda: data['Fazenda'] ?? 0,
+                  Safra: data['Safra'],
+                  Fazenda: data['Fazenda'],
                 ))
             .toList();
       });
@@ -240,11 +261,33 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                 const SizedBox(height: 8),
                 _buildTextField('Safra', safraController, "Selecione a safra",
                     list: getSafraFiltrada, readOnly: true),
-                _buildTextField("Fazenda", fazendaController, "Fazenda"),
                 _buildTextField("Cultura", culturaController, "Cultura",
                     list: getCulturaFiltrada, readOnly: true),
-                _buildTextField("Talhão", talhaoController, "Talhão",
-                    list: getTalhoesFiltrada, readOnly: true),
+                SearchableDropdown(
+                  items: getTalhoesFiltrada,
+                  itemLabel: (talhao) => talhao.Identificacao,
+                  onItemSelected: (talhao) {
+                    print('Safra: ${talhao.Safra}');
+                    print('Fazenda: ${talhao.Fazenda}');
+                    final fazendaid = getFazenda
+                        .where((fazenda) =>
+                            talhao.Fazenda.toString() ==
+                            fazenda.Sequencial.toString())
+                        .toList();
+                    setState(() {
+                      getFazendaFiltrada = fazendaid;
+                      if (fazendaid.isNotEmpty) {
+                        fazendaController.text = fazendaid.first.Descricao;
+                      } else {
+                        fazendaController.text = "Não encontrada";
+                      }
+                    });
+                    print('getFazendaFiltrada $fazendaid');
+                  },
+                  labelText: "Talhões",
+                ),
+                _buildTextField("Fazenda", fazendaController, "Fazenda",
+                    list: getFazendaFiltrada, readOnly: true),
                 const SizedBox(height: 16),
                 const Text("Jornada de Trabalho",
                     style:

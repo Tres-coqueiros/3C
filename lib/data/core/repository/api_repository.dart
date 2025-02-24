@@ -148,4 +148,20 @@ class GetServices {
       return [];
     }
   }
+
+  Future<List<Map<String, dynamic>>> getFazenda() async {
+    try {
+      final response = await dioAgrimanager.get('getFazenda');
+      if (response.data != null && response.data['getFazenda'] != null) {
+        return List<Map<String, dynamic>>.from(response.data['getFazenda']);
+      } else {
+        ErrorNotifier.showError(
+            'Erro ao fazer busca de operador: ${response.statusMessage}');
+        return [];
+      }
+    } catch (error) {
+      print('Erro ao fazer a consulta na API Operador: $error');
+      return [];
+    }
+  }
 }
