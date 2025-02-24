@@ -26,9 +26,14 @@ class _ListViewComponentsState extends State<ListViewComponents> {
   List<String> selectedHours = [];
   List<String> horasExtrasAcumuladas = [];
   List<String> approvedHours = [];
+  List<Map<String, dynamic>> getGestor = [];
 
   double totalHorasExtras = 0.0;
   double totalHours = 0.0;
+
+  int numFun = 0;
+  int numemp = 0;
+  int tipcol = 0;
 
   @override
   void initState() {
@@ -39,6 +44,25 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       });
     });
     fetchData();
+    print('WIDGET ${widget.colaborador}');
+  }
+
+  void fetchGestor() async {
+    try {
+      final result = await getServices.getLogin();
+
+      if (result.isNotEmpty) {
+        numFun = result[0]['numcad'];
+        numemp = result[0]['numemp'];
+        tipcol = result[0]['tipcol'];
+      }
+
+      setState(() {
+        getGestor = result;
+      });
+    } catch (e) {
+      print('Erro ao fazer a consulta: $e');
+    }
   }
 
   Future<void> fetchData() async {
@@ -113,7 +137,10 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       'tipcol': widget.colaborador['TIPCOL'],
       'numemp': widget.colaborador['NUMEMP'],
       'motivo': motivo,
-      'selectedHours': selectedHours
+      'selectedHours': selectedHours,
+      'numFun': numFun,
+      'numemp': numemp,
+      'tipcol': tipcol
     };
 
     if (data.isEmpty) {

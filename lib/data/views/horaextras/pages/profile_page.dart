@@ -25,7 +25,6 @@ class _ProfilePage extends State<ProfilePage> {
       final result = await getServices.getLogin();
 
       if (result.isNotEmpty) {
-        // Acesso correto aos dados
         nameFun = result[0]['nomfun'] ?? 'Desconhecido';
         positionsFun = result[0]['titred'] ?? 'Desconhecido';
         numFun = result[0]['numcad'] ?? 'Desconhecido';
