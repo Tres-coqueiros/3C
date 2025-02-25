@@ -50,44 +50,66 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
   }
 
   void _showOverlay() {
-    _removeOverlay();
+    _removeOverlay(); // Remove qualquer overlay anterior
+
     final overlayState = Overlay.of(context);
     _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        width: MediaQuery.of(context).size.width - 40,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: const Offset(0, 50),
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              constraints: BoxConstraints(maxHeight: 200),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+      builder: (context) {
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            // Ao clicar em qualquer área fora do dropdown, fecha o overlay
+            _removeOverlay();
+          },
+          child: Stack(
+            children: [
+              // Área toda da tela (já coberta pelo GestureDetector)
+              Positioned.fill(
+                child: Container(color: Colors.transparent),
               ),
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: filteredItems.length,
-                itemBuilder: (context, index) {
-                  final item = filteredItems[index];
-                  return ListTile(
-                    title: Text(widget.itemLabel(item)),
-                    onTap: () {
-                      _searchController.text = widget.itemLabel(item);
-                      widget.onItemSelected(item);
-                      _removeOverlay();
-                    },
-                  );
-                },
+              // O dropdown propriamente dito
+              Positioned(
+                width: MediaQuery.of(context).size.width - 40,
+                child: CompositedTransformFollower(
+                  link: _layerLink,
+                  showWhenUnlinked: false,
+                  offset: const Offset(0, 50),
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      constraints: BoxConstraints(maxHeight: 200),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: filteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          return ListTile(
+                            title: Text(widget.itemLabel(item)),
+                            onTap: () {
+                              _searchController.text = widget.itemLabel(item);
+                              widget.onItemSelected(item);
+
+                              // Fecha o overlay após selecionar
+                              _removeOverlay();
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ),
-      ),
+        );
+      },
     );
+
     overlayState.insert(_overlayEntry!);
   }
 
