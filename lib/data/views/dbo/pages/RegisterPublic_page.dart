@@ -162,8 +162,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     }
   }
 
-  /// Mapeia o sequencial para uma descrição específica.
-  /// Ajuste os cases conforme a necessidade.
+  /// Mapeia o sequencial para uma descrição específica (se precisar).
   String _getFazendaDescricaoBySequencial(dynamic sequencial) {
     switch (sequencial.toString()) {
       case '1':
@@ -181,6 +180,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     }
   }
 
+  /// Escolher data/hora
   void _selecionarHorario(BuildContext context, bool isInicial) {
     DatePicker.showDateTimePicker(
       context,
@@ -246,7 +246,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   items: getOperador,
                   itemLabel: (operador) => operador.Nome,
                   onItemSelected: (operador) {
-                    // Lógica adicional, se necessário
+                    // ...
                   },
                 ),
                 const SizedBox(height: 8),
@@ -273,9 +273,10 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                         culturaController.text = culturaid[0].Descricao;
                       }
                       if (safrasid.isNotEmpty) {
-                        getTalhoesFiltrada = getTalhoes.where((talhao) {
-                          return talhao.Safra == safrasid[0].Codigo;
-                        }).toList();
+                        getTalhoesFiltrada = getTalhoes
+                            .where(
+                                (talhao) => talhao.Safra == safrasid[0].Codigo)
+                            .toList();
                       } else {
                         getTalhoesFiltrada = [];
                       }
@@ -286,19 +287,18 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                 ),
                 const SizedBox(height: 8),
 
-                // Safra e Cultura
+                // Safra
                 _buildTextField(
                   'Safra',
                   safraController,
                   "Selecione a safra",
-                  list: getSafraFiltrada,
                   readOnly: true,
                 ),
+                // Cultura
                 _buildTextField(
                   "Cultura",
                   culturaController,
                   "Cultura",
-                  list: getCulturaFiltrada,
                   readOnly: true,
                 ),
 
@@ -308,7 +308,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   itemLabel: (talhao) => talhao.Identificacao,
                   onItemSelected: (talhao) {
                     setState(() {
-                      // Aplica o switch-case no sequencial do talhão
                       fazendaController.text =
                           _getFazendaDescricaoBySequencial(talhao.Fazenda);
                     });
@@ -321,7 +320,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   "Fazenda",
                   fazendaController,
                   "Fazenda",
-                  list: getFazendaFiltrada,
                   readOnly: true,
                 ),
 
@@ -330,7 +328,22 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   "Jornada de Trabalho",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+
+                // Aqui inserimos os botões p/ data/hora
                 const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTimePicker(
+                          "Horário Inicial", _horarioInicial, true),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildTimePicker(
+                          "Horário Final", _horarioFinal, false),
+                    ),
+                  ],
+                ),
 
                 if (_horarioError)
                   const Padding(
@@ -345,7 +358,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   ),
                 const SizedBox(height: 24),
 
-                // Botão de Salvar/Avançar
+                // Botão
                 ButtonComponents(
                   onPressed: _salvarRegistro,
                   text: 'Salvar e Avançar',
@@ -370,15 +383,16 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     String label,
     TextEditingController controller,
     String hint, {
+    bool readOnly = false,
     List list = const [],
     bool isNumeric = false,
     Function(dynamic value)? onChanged,
-    bool readOnly = false,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
         controller: controller,
+        readOnly: readOnly,
         keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
         decoration: InputDecoration(
           labelText: label,
@@ -391,7 +405,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
         ),
         validator: (value) =>
             (value == null || value.isEmpty) ? "Campo obrigatório" : null,
-        readOnly: readOnly,
         onChanged: onChanged,
       ),
     );
@@ -401,17 +414,19 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 14)),
+        Text(label, style: const TextStyle(fontSize: 14)),
         const SizedBox(height: 4),
         ElevatedButton(
           onPressed: () => _selecionarHorario(context, isInicial),
-          child:
-              Text(time ?? "Selecione", style: const TextStyle(fontSize: 14)),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
+          ),
+          child: Text(
+            time ?? "Selecione",
+            style: const TextStyle(fontSize: 14),
           ),
         ),
       ],
