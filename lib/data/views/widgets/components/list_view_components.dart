@@ -38,13 +38,8 @@ class _ListViewComponentsState extends State<ListViewComponents> {
   @override
   void initState() {
     super.initState();
-    loadApprovedHours().then((hours) {
-      setState(() {
-        approvedHours = hours;
-      });
-    });
+    fetchGestor();
     fetchData();
-    print('WIDGET ${widget.colaborador}');
   }
 
   void fetchGestor() async {
@@ -55,13 +50,16 @@ class _ListViewComponentsState extends State<ListViewComponents> {
         numFun = result[0]['numcad'];
         numemp = result[0]['numemp'];
         tipcol = result[0]['tipcol'];
+        print(
+            'Gestor encontrado: numFun = $numFun, numemp = $numemp, tipcol = $tipcol');
       }
 
       setState(() {
         getGestor = result;
       });
-    } catch (e) {
-      print('Erro ao fazer a consulta: $e');
+    } catch (error) {
+      print('Erro ao buscar gestor: $error');
+      ErrorNotifier.showError("Erro ao buscar gestor: $error");
     }
   }
 
@@ -143,6 +141,8 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       'tipcolAut': tipcol
     };
 
+    print('DATA $data');
+
     if (data.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -166,16 +166,6 @@ class _ListViewComponentsState extends State<ListViewComponents> {
             backgroundColor: AppColorsComponents.success,
           ),
         );
-
-        setState(() {
-          approvedHours.addAll(selectedHours.map((hour) => hour));
-          selectedHours
-              .removeWhere((hour) => approvedHours.contains(hour.trim()));
-          selectedHours.clear();
-        });
-
-        await saveApprovedHours(approvedHours);
-
         fetchData();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -236,9 +226,6 @@ class _ListViewComponentsState extends State<ListViewComponents> {
               .removeWhere((hour) => approvedHours.contains(hour.trim()));
           selectedHours.clear();
         });
-
-        await saveApprovedHours(approvedHours);
-
         fetchData();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -309,21 +296,6 @@ class _ListViewComponentsState extends State<ListViewComponents> {
     });
 
     return horasExtrasAcumuladas;
-  }
-
-  Future<List<String>> getSavedSelectedHours() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList('selectedHours') ?? [];
-  }
-
-  Future<void> saveApprovedHours(List<String> approvedHours) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('approvedHours', approvedHours);
-  }
-
-  Future<List<String>> loadApprovedHours() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList('approvedHours') ?? [];
   }
 
   @override

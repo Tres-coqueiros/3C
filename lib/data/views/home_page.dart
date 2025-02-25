@@ -27,6 +27,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final result = await getServices.getLogin();
 
+      print('result: $result');
       if (result.isNotEmpty) {
         useCargos = result[0]['usu_tbcarges'] ?? 'Desconhecido';
       }

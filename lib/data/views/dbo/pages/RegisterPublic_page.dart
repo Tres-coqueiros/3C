@@ -30,136 +30,9 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   bool _horarioError = false;
   bool _horimetroError = false;
 
-  List<Ciclo> getCiclo = [];
-  List<Safra> getSafra = [];
-  List<Talhoes> getTalhoes = [];
-  List<Cultura> getCultura = [];
-  List<Operador> getOperador = [];
-  List<Fazenda> getFazenda = [];
-
-  List<Cultura> getCulturaFiltrada = [];
-  List<Safra> getSafraFiltrada = [];
-  List<Talhoes> getTalhoesFiltrada = [];
-  List<Fazenda> getFazendaFiltrada = [];
-
   @override
   void initState() {
     super.initState();
-    fetchSafra();
-    fetchCiclo();
-    fetchCultura();
-    fetchTalhoes();
-    fetchOperador();
-    fetchFazenda();
-    getSafraFiltrada = getSafra;
-    getCulturaFiltrada = getCultura;
-    getTalhoesFiltrada = getTalhoes;
-    getFazendaFiltrada = getFazenda;
-  }
-
-  void fetchOperador() async {
-    try {
-      final result = await getServices.getOperador();
-      setState(() {
-        getOperador = result
-            .map((data) => Operador(
-                  Codigo: data['Codigo'] ?? 0,
-                  Nome: data['Nome'] ?? 'Sem identificação',
-                ))
-            .toList();
-      });
-    } catch (error) {
-      // Trate erro se necessário
-    }
-  }
-
-  void fetchFazenda() async {
-    try {
-      final result = await getServices.getFazenda();
-      setState(() {
-        getFazenda = result
-            .map((data) => Fazenda(
-                  Codigo: data['Codigo'],
-                  Descricao: data['Descricao'] ?? 'Sem Descricao',
-                  Sequencial: data['Sequencial'],
-                ))
-            .toList();
-      });
-      getFazendaFiltrada = getFazenda;
-    } catch (error) {
-      // Trate erro se necessário
-    }
-  }
-
-  void fetchTalhoes() async {
-    try {
-      final result = await getServices.getTalhao();
-      setState(() {
-        getTalhoes = result
-            .map((data) => Talhoes(
-                  Codigo: data['Codigo'],
-                  Identificacao: data['Identificacao'] ?? 'Sem identificação',
-                  Safra: data['Safra'],
-                  Fazenda: data['Fazenda'],
-                ))
-            .toList();
-      });
-      getTalhoesFiltrada = getTalhoes;
-    } catch (error) {
-      // Trate erro se necessário
-    }
-  }
-
-  void fetchCultura() async {
-    try {
-      final result = await getServices.getCultura();
-      setState(() {
-        getCultura = result
-            .map((data) => Cultura(
-                  Codigo: data['Codigo'],
-                  Descricao: data['Descricao'],
-                ))
-            .toList();
-      });
-      getCulturaFiltrada = getCultura;
-    } catch (error) {
-      // Trate erro se necessário
-    }
-  }
-
-  void fetchSafra() async {
-    try {
-      final result = await getServices.getSafra();
-      setState(() {
-        getSafra = result
-            .map((data) => Safra(
-                  Codigo: data['Codigo'],
-                  Descricao: data['Descricao'],
-                ))
-            .toList();
-      });
-      getSafraFiltrada = getSafra;
-    } catch (error) {
-      // Trate erro se necessário
-    }
-  }
-
-  void fetchCiclo() async {
-    try {
-      final result = await getServices.getCiclo();
-      setState(() {
-        getCiclo = result
-            .map((data) => Ciclo(
-                  Codigo: data['Codigo'],
-                  Descricao: data['Descricao'],
-                  Safra: data['Safra'],
-                  Cultura: data['Cultura'],
-                ))
-            .toList();
-      });
-    } catch (error) {
-      // Trate erro se necessário
-    }
   }
 
   /// Mapeia o sequencial para uma descrição específica (se precisar).
@@ -242,49 +115,49 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Operador
-                SearchableDropdown(
-                  items: getOperador,
-                  itemLabel: (operador) => operador.Nome,
-                  onItemSelected: (operador) {
-                    // ...
-                  },
-                ),
+                // SearchableDropdown(
+                //   items: getOperador,
+                //   itemLabel: (operador) => operador.Nome,
+                //   onItemSelected: (operador) {
+                //     // ...
+                //   },
+                // ),
                 const SizedBox(height: 8),
 
                 // Ciclos
-                SearchableDropdown<Ciclo>(
-                  items: getCiclo,
-                  itemLabel: (ciclo) => ciclo.Descricao,
-                  onItemSelected: (ciclo) {
-                    final culturaid = getCultura
-                        .where((cultura) => ciclo.Cultura == cultura.Codigo)
-                        .toList();
-                    final safrasid = getSafra
-                        .where((safra) => safra.Codigo == ciclo.Safra)
-                        .toList();
+                // SearchableDropdown<Ciclo>(
+                //   items: getCiclo,
+                //   itemLabel: (ciclo) => ciclo.Descricao,
+                //   onItemSelected: (ciclo) {
+                //     final culturaid = getCultura
+                //         .where((cultura) => ciclo.Cultura == cultura.Codigo)
+                //         .toList();
+                //     final safrasid = getSafra
+                //         .where((safra) => safra.Codigo == ciclo.Safra)
+                //         .toList();
 
-                    setState(() {
-                      getSafraFiltrada = safrasid;
-                      getCulturaFiltrada = culturaid;
-                      if (safrasid.isNotEmpty) {
-                        safraController.text = safrasid[0].Descricao;
-                      }
-                      if (culturaid.isNotEmpty) {
-                        culturaController.text = culturaid[0].Descricao;
-                      }
-                      if (safrasid.isNotEmpty) {
-                        getTalhoesFiltrada = getTalhoes
-                            .where(
-                                (talhao) => talhao.Safra == safrasid[0].Codigo)
-                            .toList();
-                      } else {
-                        getTalhoesFiltrada = [];
-                      }
-                    });
-                  },
-                  labelText: "Ciclos",
-                  hintText: "Selecione o ciclo",
-                ),
+                //     setState(() {
+                //       getSafraFiltrada = safrasid;
+                //       getCulturaFiltrada = culturaid;
+                //       if (safrasid.isNotEmpty) {
+                //         safraController.text = safrasid[0].Descricao;
+                //       }
+                //       if (culturaid.isNotEmpty) {
+                //         culturaController.text = culturaid[0].Descricao;
+                //       }
+                //       if (safrasid.isNotEmpty) {
+                //         getTalhoesFiltrada = getTalhoes
+                //             .where(
+                //                 (talhao) => talhao.Safra == safrasid[0].Codigo)
+                //             .toList();
+                //       } else {
+                //         getTalhoesFiltrada = [];
+                //       }
+                //     });
+                //   },
+                //   labelText: "Ciclos",
+                //   hintText: "Selecione o ciclo",
+                // ),
                 const SizedBox(height: 8),
 
                 // Safra
@@ -303,17 +176,17 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                 ),
 
                 // Talhões
-                SearchableDropdown(
-                  items: getTalhoesFiltrada,
-                  itemLabel: (talhao) => talhao.Identificacao,
-                  onItemSelected: (talhao) {
-                    setState(() {
-                      fazendaController.text =
-                          _getFazendaDescricaoBySequencial(talhao.Fazenda);
-                    });
-                  },
-                  labelText: "Talhões",
-                ),
+                // SearchableDropdown(
+                //   items: getTalhoesFiltrada,
+                //   itemLabel: (talhao) => talhao.Identificacao,
+                //   onItemSelected: (talhao) {
+                //     setState(() {
+                //       fazendaController.text =
+                //           _getFazendaDescricaoBySequencial(talhao.Fazenda);
+                //     });
+                //   },
+                //   labelText: "Talhões",
+                // ),
 
                 // Fazenda
                 _buildTextField(
