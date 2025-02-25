@@ -138,9 +138,9 @@ class _ListViewComponentsState extends State<ListViewComponents> {
       'numemp': widget.colaborador['NUMEMP'],
       'motivo': motivo,
       'selectedHours': selectedHours,
-      'numFun': numFun,
-      'numemp': numemp,
-      'tipcol': tipcol
+      'numFunAut': numFun,
+      'numempAut': numemp,
+      'tipcolAut': tipcol
     };
 
     if (data.isEmpty) {

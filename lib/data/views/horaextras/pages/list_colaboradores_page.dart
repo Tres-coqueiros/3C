@@ -13,13 +13,11 @@ class ListColaboradores extends StatefulWidget {
 class _ListColaboradoresState extends State<ListColaboradores> {
   final GetServices getServices = GetServices();
   List<Map<String, dynamic>> listColaboradores = [];
-  List<Map<String, dynamic>> getGestor = [];
+
   Map<int, bool> expandedItems = {};
+
   bool isLoading = true;
   String errorMessage = '';
-  int numFun = 0;
-  int numemp = 0;
-  int tipcol = 0;
 
   @override
   void initState() {
@@ -39,24 +37,6 @@ class _ListColaboradoresState extends State<ListColaboradores> {
         isLoading = false;
         errorMessage = 'Erro ao carregar colaboradores. Tente novamente.';
       });
-    }
-  }
-
-  void fetchGestor() async {
-    try {
-      final result = await getServices.getLogin();
-
-      if (result.isNotEmpty) {
-        numFun = result[0]['numcad'];
-        numemp = result[0]['numemp'];
-        tipcol = result[0]['tipcol'];
-      }
-
-      setState(() {
-        getGestor = result;
-      });
-    } catch (e) {
-      print('Erro ao fazer a consulta: $e');
     }
   }
 
