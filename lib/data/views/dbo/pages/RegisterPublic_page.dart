@@ -208,25 +208,24 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     if (_formKey.currentState!.validate() &&
         !_horarioError &&
         !_horimetroError) {
-      // Monta o registro parcial (com matrícula)
+      // Monta o registro parcial (NÃO adiciona em listaDeRegistros para evitar duplicação)
       final registro = {
-        'matricula': _matriculaController.text, // <--- Matrícula aqui
+        'matricula': _matriculaController.text,
         'horarioInicial': _horarioInicial,
         'horarioFinal': _horarioFinal,
         'operacoes': [],
       };
 
-      // IMPORTANTE: NÃO adicionar ainda em listaDeRegistros para evitar duplicação.
-      // A adição definitiva será na RegisterActivityPage.
+      // Removido: listaDeRegistros.add(registro);
 
-      // Passa esse registro para a próxima tela
+      // Navega para a próxima tela (RegisterActivityPage)
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => RegisterActivityPage(
             dados: listaDeRegistros, // Lista global atual
-            informacoesGerais: registro, // Dados parciais (contém matricula)
-            atividade: registro, // Mesmo map
+            informacoesGerais: registro,
+            atividade: registro,
           ),
         ),
       );
@@ -245,14 +244,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Matrícula (agora descomentado e ativo)
-                _buildTextField(
-                  "Matrícula",
-                  _matriculaController,
-                  "Digite a Matrícula",
-                ),
-                const SizedBox(height: 24),
-
                 // Operador
                 SearchableDropdown(
                   items: getOperador,
@@ -369,6 +360,13 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     ),
                   ),
                 const SizedBox(height: 24),
+
+                // (Campo de Matrícula, se quiser ativar, basta descomentar)
+                // _buildTextField(
+                //   "Matrícula",
+                //   _matriculaController,
+                //   "Digite a Matrícula",
+                // ),
 
                 // Botão
                 ButtonComponents(

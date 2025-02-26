@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:senior/data/global_data.dart';
+import 'package:senior/data/views/dbo/pages/LastRegister_page.dart';
 
 class DetailsregisterPage extends StatefulWidget {
   const DetailsregisterPage(
@@ -39,6 +40,11 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
   /// - "incompleto" (vermelho) => não tem ou está vazio 'motivosParada'
   /// - "emEspera" (amarelo) => todo o resto
   String _determineStatus(Map<String, dynamic> registro) {
+    // Se já definimos manualmente 'status' como 'concluido'
+    if (registro['status'] == 'concluido') {
+      return 'concluido';
+    }
+
     final matricula = registro['matricula'] ?? '';
     final operacao = registro['operacao'] ?? '';
     final motivosParada = registro['motivosParada'];
@@ -62,7 +68,6 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
         concluidos.isEmpty && emEspera.isEmpty && incompletos.isEmpty;
 
     return Scaffold(
-      // Removemos o AppBar e colocamos o título direto no body
       body: SafeArea(
         child: isAllEmpty
             ? const Center(
@@ -76,7 +81,6 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    // Título simples no topo
                     const Text(
                       'Detalhes de Registros',
                       style: TextStyle(
@@ -85,6 +89,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
+
                     // Card para registros Concluídos (Verde)
                     _buildStatusCard(
                       'Registros Concluídos',
@@ -92,6 +97,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                       Colors.green[100] ?? Colors.greenAccent,
                     ),
                     const SizedBox(height: 16),
+
                     // Card para registros em Espera (Amarelo)
                     _buildStatusCard(
                       'Registros em Espera',
@@ -99,6 +105,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                       Colors.yellow[100] ?? Colors.yellowAccent,
                     ),
                     const SizedBox(height: 16),
+
                     // Card para registros Incompletos (Vermelho)
                     _buildStatusCard(
                       'Registros Incompletos',
@@ -141,6 +148,8 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                   itemCount: registros.length,
                   itemBuilder: (context, index) {
                     final registro = registros[index];
+                    final status = _determineStatus(registro);
+
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 6.0),
                       elevation: 1,
@@ -161,7 +170,29 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                               padding: const EdgeInsets.all(12.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: _buildRegistroInfo(registro),
+                                children: [
+                                  // Exibe informações do registro
+                                  ..._buildRegistroInfo(registro),
+
+                                  // Se está em espera, exibe o botão verde para concluir
+                                  if (status == 'emEspera')
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        onPressed: () =>
+                                            _concluirRegistro(registro),
+                                        child: const Text('Concluir'),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ],
@@ -180,33 +211,45 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
   List<Widget> _buildRegistroInfo(Map<String, dynamic> registro) {
     final List<Widget> infoWidgets = [];
 
+    // Estado 1
     infoWidgets.add(const Text(
       'Estado 1 (Primeira Tela)',
       style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
     ));
-    infoWidgets.add(_buildInfoRow(_getIconForKey('matricula'),
-        _formatLabel('matricula'), registro['matricula']));
-    infoWidgets.add(_buildInfoRow(_getIconForKey('horarioInicial'),
-        _formatLabel('horarioInicial'), registro['horarioInicial']));
-    infoWidgets.add(_buildInfoRow(_getIconForKey('horarioFinal'),
-        _formatLabel('horarioFinal'), registro['horarioFinal']));
+    infoWidgets
+        .add(_buildInfoRow(Icons.badge, 'Matrícula', registro['matricula']));
+    infoWidgets.add(_buildInfoRow(
+        Icons.timer, 'Horário Inicial', registro['horarioInicial']));
+    infoWidgets.add(_buildInfoRow(
+        Icons.timer_off, 'Horário Final', registro['horarioFinal']));
 
     infoWidgets.add(const SizedBox(height: 8));
     infoWidgets.add(const Divider());
     infoWidgets.add(const SizedBox(height: 8));
 
+    // Estado 2
     infoWidgets.add(const Text(
       'Estado 2 (Segunda Tela)',
       style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
     ));
-    infoWidgets.add(_buildInfoRow(_getIconForKey('patrimonio'),
-        _formatLabel('patrimonio'), registro['patrimonio']));
-    infoWidgets.add(_buildInfoRow(_getIconForKey('operacao'),
-        _formatLabel('operacao'), registro['operacao']));
-    infoWidgets.add(_buildInfoRow(_getIconForKey('horimetroInicial'),
-        _formatLabel('horimetroInicial'), registro['horimetroInicial']));
-    infoWidgets.add(_buildInfoRow(_getIconForKey('horimetroFinal'),
-        _formatLabel('horimetroFinal'), registro['horimetroFinal']));
+    infoWidgets.add(_buildInfoRow(
+        Icons.precision_manufacturing, 'Patrimônio', registro['patrimonio']));
+    // "Operação" (no lugar de cargo)
+    infoWidgets.add(
+        _buildInfoRow(Icons.construction, 'Operação', registro['operacao']));
+    infoWidgets.add(_buildInfoRow(
+        Icons.speed, 'Horímetro Inicial', registro['horimetroInicial']));
+    infoWidgets.add(_buildInfoRow(
+        Icons.speed, 'Horímetro Final', registro['horimetroFinal']));
+
+    // Exemplo de mostrar "Total de Horas Trabalhadas" (se existir no registro):
+    if (registro.containsKey('tempoTrabalhado')) {
+      infoWidgets.add(_buildInfoRow(
+        Icons.access_time,
+        'Total de Horas Trabalhadas',
+        registro['tempoTrabalhado'],
+      ));
+    }
 
     // Motivos de parada
     if (registro.containsKey('motivosParada') &&
@@ -254,13 +297,17 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
         }
       } else {
         infoWidgets.add(_buildInfoRow(
-            _getIconForKey('motivosParada'),
-            _formatLabel('motivosParada'),
-            'Nenhum motivo de parada cadastrado'));
+          Icons.warning,
+          'Motivos de Parada',
+          'Nenhum motivo de parada cadastrado',
+        ));
       }
     } else {
-      infoWidgets.add(_buildInfoRow(_getIconForKey('motivosParada'),
-          _formatLabel('motivosParada'), 'Nenhum motivo de parada cadastrado'));
+      infoWidgets.add(_buildInfoRow(
+        Icons.warning,
+        'Motivos de Parada',
+        'Nenhum motivo de parada cadastrado',
+      ));
     }
 
     return infoWidgets;
@@ -284,84 +331,45 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     );
   }
 
-  IconData _getIconForKey(String key) {
-    switch (key) {
-      case 'matricula':
-        return Icons.badge;
-      case 'nomeCoordenador':
-        return Icons.person;
-      case 'patrimonio':
-        return Icons.precision_manufacturing;
-      case 'horarioInicial':
-        return Icons.timer;
-      case 'horarioFinal':
-        return Icons.timer_off;
-      case 'horimetroInicial':
-        return Icons.speed;
-      case 'horimetroFinal':
-        return Icons.speed;
-      case 'patrimonioImplemento':
-        return Icons.build;
-      case 'operacao':
-        return Icons.construction;
-      case 'motivosParada':
-        return Icons.warning;
-      case 'talhao':
-        return Icons.terrain;
-      case 'cultura':
-        return Icons.agriculture;
-      default:
-        return Icons.info;
-    }
-  }
-
-  String _formatLabel(String key) {
-    switch (key) {
-      case 'matricula':
-        return 'Matrícula';
-      case 'nomeCoordenador':
-        return 'Nome do Coordenador';
-      case 'patrimonio':
-        return 'Patrimônio';
-      case 'horarioInicial':
-        return 'Horário Inicial';
-      case 'horarioFinal':
-        return 'Horário Final';
-      case 'horimetroInicial':
-        return 'Horímetro Inicial';
-      case 'horimetroFinal':
-        return 'Horímetro Final';
-      case 'patrimonioImplemento':
-        return 'Patrimônio Implemento';
-      case 'operacao':
-        return 'Operação';
-      case 'motivosParada':
-        return 'Motivos de Parada';
-      case 'talhao':
-        return 'Talhão';
-      case 'cultura':
-        return 'Cultura';
-      default:
-        return key;
-    }
-  }
-
-  void _onCardTap(Map<String, dynamic> registro) {
+  /// Ao clicar no botão, pergunta se deseja concluir.
+  /// Se sim, marcamos como 'concluido' e atualizamos a tela.
+  void _concluirRegistro(Map<String, dynamic> registro) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Detalhes / Editar Motivos'),
+        title: const Text('Concluir Registro'),
         content: const Text(
-          'Aqui você poderia redirecionar para uma tela read-only, \n'
-          'habilitando apenas a edição de motivos de parada.',
+          'Deseja concluir este registro? Ele não poderá mais ser alterado, nem o motivo de parada.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar'),
+            child: const Text('Não'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                // Força o status para 'concluido'
+                registro['status'] = 'concluido';
+              });
+            },
+            child: const Text('Sim'),
           ),
         ],
       ),
     );
+  }
+
+  void _onCardTap(Map<String, dynamic> registro) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LastRegisterPage(registro: registro),
+      ),
+    ).then((_) {
+      // Ao voltar da tela de edição, chamamos setState para atualizar a exibição
+      setState(() {});
+    });
   }
 }
