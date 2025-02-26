@@ -5,7 +5,6 @@ import 'package:senior/data/core/repository/exceptions_network.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 import 'package:senior/data/views/widgets/components/button_components.dart';
 import 'package:senior/data/views/widgets/messages/dialog_message.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ListViewComponents extends StatefulWidget {
   final Map<String, dynamic> colaborador;
@@ -50,8 +49,6 @@ class _ListViewComponentsState extends State<ListViewComponents> {
         numFun = result[0]['numcad'];
         numemp = result[0]['numemp'];
         tipcol = result[0]['tipcol'];
-        print(
-            'Gestor encontrado: numFun = $numFun, numemp = $numemp, tipcol = $tipcol');
       }
 
       setState(() {
@@ -63,6 +60,63 @@ class _ListViewComponentsState extends State<ListViewComponents> {
     }
   }
 
+  Future<void> submitHours(
+      BuildContext context, String motivo, String status) async {
+    if (selectedHours.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Nenhuma hora selecionada!"),
+          backgroundColor: AppColorsComponents.error,
+        ),
+      );
+      return;
+    }
+
+    final Map<String, dynamic> data = {
+      'numcad': widget.colaborador['NUMCAD'],
+      'nomfun': widget.colaborador['NOMFUN'],
+      'tipcol': widget.colaborador['TIPCOL'],
+      'numemp': widget.colaborador['NUMEMP'],
+      'titred': widget.colaborador['TITRED'],
+      'nomloc': widget.colaborador['NOMLOC'],
+      'numFunAut': numFun,
+      'numempAut': numemp,
+      'tipcolAut': tipcol,
+      'motivo': motivo,
+      'selectedHours': selectedHours,
+      'status': status,
+    };
+
+    setState(() => isLoading = true);
+
+    try {
+      bool success = await postServices.postHours(data);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success
+              ? "Horas extras $status com sucesso!"
+              : "Erro ao ${status == 'aprovada' ? 'aprovar' : 'reprovar'} horas"),
+          backgroundColor:
+              success ? AppColorsComponents.success : AppColorsComponents.error,
+        ),
+      );
+
+      if (success) {
+        if (status == 'reprovada') {
+          setState(() {
+            approvedHours.addAll(selectedHours);
+          });
+        }
+        await fetchData();
+      }
+    } catch (error) {
+      ErrorNotifier.showError("Erro ao $status horas extras: $error");
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
   Future<void> fetchData() async {
     setState(() {
       isLoading = true;
@@ -70,9 +124,17 @@ class _ListViewComponentsState extends State<ListViewComponents> {
 
     try {
       final data = await getServices.getCollaborators();
+
+      final colaboradorAtualizado = data.firstWhere(
+        (colab) => colab['NUMCAD'] == widget.colaborador['NUMCAD'],
+        orElse: () => widget.colaborador,
+      );
+
       setState(() {
         totalHorasExtras = 0.0;
         horasExtrasAcumuladas.clear();
+        widget.colaborador['ListHorasExtras'] =
+            colaboradorAtualizado['ListHorasExtras'];
         getHours(widget.colaborador);
       });
     } catch (error) {
@@ -127,121 +189,15 @@ class _ListViewComponentsState extends State<ListViewComponents> {
           ? acceptHours(context, motivo)
           : disapproveHours(context, motivo);
     }
+    await fetchData();
   }
 
   void acceptHours(BuildContext context, String motivo) async {
-    final data = {
-      'numcad': widget.colaborador['NUMCAD'],
-      'tipcol': widget.colaborador['TIPCOL'],
-      'numemp': widget.colaborador['NUMEMP'],
-      'motivo': motivo,
-      'selectedHours': selectedHours,
-      'numFunAut': numFun,
-      'numempAut': numemp,
-      'tipcolAut': tipcol
-    };
-
-    print('DATA $data');
-
-    if (data.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Erro ao enviar dados!"),
-          backgroundColor: AppColorsComponents.error,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      bool success = await postServices.postHours(data);
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Horas extras aprovadas com sucesso!"),
-            backgroundColor: AppColorsComponents.success,
-          ),
-        );
-        fetchData();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Erro ao aprovar"),
-            backgroundColor: AppColorsComponents.error,
-          ),
-        );
-      }
-    } catch (error) {
-      ErrorNotifier.showError("Erro ao aprovar horas extras: $error");
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
+    await submitHours(context, motivo, 'aprovado');
   }
 
   void disapproveHours(BuildContext context, String motivo) async {
-    final String status = 'aprovada';
-    final data = {
-      'numcad': widget.colaborador['NUMCAD'],
-      'nomfun': widget.colaborador['NOMFUN'],
-      'tipcol': widget.colaborador['TIPCOL'],
-      'numemp': widget.colaborador['NUMEMP'],
-      'titred': widget.colaborador['TITRED'],
-      'nomloc': widget.colaborador['NOMLOC'],
-      'motivo': motivo,
-      'selectedHours': selectedHours,
-      'status': status
-    };
-
-    if (data.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Erro ao enviar dados!"),
-          backgroundColor: AppColorsComponents.error,
-        ),
-      );
-      return;
-    }
-    setState(() {
-      isLoading = true;
-    });
-    try {
-      bool success = await postServices.postSendEmail(data);
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Horas extras reprovadas com sucesso!"),
-            backgroundColor: AppColorsComponents.success,
-          ),
-        );
-
-        setState(() {
-          approvedHours.addAll(selectedHours.map((hour) => hour));
-          selectedHours
-              .removeWhere((hour) => approvedHours.contains(hour.trim()));
-          selectedHours.clear();
-        });
-        fetchData();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Erro ao reprovar"),
-            backgroundColor: AppColorsComponents.error,
-          ),
-        );
-      }
-    } catch (error) {
-      print("Erro ao reprovar horas extras: $error");
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
+    await submitHours(context, motivo, 'reprovado');
   }
 
   List<String> getHours(Map<String, dynamic> colaborador) {
@@ -270,10 +226,11 @@ class _ListViewComponentsState extends State<ListViewComponents> {
           int horas = int.tryParse(partes[0]) ?? 0;
           int minutos = int.tryParse(partes[1]) ?? 0;
 
-          totalHorasExtras += (horas * 60) + minutos;
+          // Converte minutos para horas e soma ao total
+          totalHorasExtras += horas + (minutos / 60);
 
           String registro =
-              "${DateFormat("dd/MM/yyyy").format(parsedDate)} - $horasString h";
+              "${DateFormat("dd/MM/yyyy").format(parsedDate)} - $horasString";
 
           if (!horasExtrasAcumuladas.contains(registro)) {
             horasExtrasAcumuladas.add(registro);
@@ -335,7 +292,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                           ),
                           SizedBox(width: 8.0),
                           Text(
-                            'Total de Horas Extras: ${totalHours.toInt()}',
+                            'Total de Horas Extras: ${totalHours.toStringAsFixed(2)} h',
                             style: TextStyle(
                                 fontSize: 14.0, color: Colors.grey[600]),
                           ),
