@@ -208,22 +208,25 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     if (_formKey.currentState!.validate() &&
         !_horarioError &&
         !_horimetroError) {
+      // Monta o registro parcial (com matrícula)
       final registro = {
-        'matricula': _matriculaController.text,
+        'matricula': _matriculaController.text, // <--- Matrícula aqui
         'horarioInicial': _horarioInicial,
         'horarioFinal': _horarioFinal,
         'operacoes': [],
       };
 
-      listaDeRegistros.add(registro);
+      // IMPORTANTE: NÃO adicionar ainda em listaDeRegistros para evitar duplicação.
+      // A adição definitiva será na RegisterActivityPage.
 
+      // Passa esse registro para a próxima tela
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => RegisterActivityPage(
-            dados: listaDeRegistros,
-            informacoesGerais: registro,
-            atividade: registro,
+            dados: listaDeRegistros, // Lista global atual
+            informacoesGerais: registro, // Dados parciais (contém matricula)
+            atividade: registro, // Mesmo map
           ),
         ),
       );
@@ -233,6 +236,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Sem AppBar
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -241,6 +245,14 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Matrícula (agora descomentado e ativo)
+                _buildTextField(
+                  "Matrícula",
+                  _matriculaController,
+                  "Digite a Matrícula",
+                ),
+                const SizedBox(height: 24),
+
                 // Operador
                 SearchableDropdown(
                   items: getOperador,
@@ -329,7 +341,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
 
-                // Aqui inserimos os botões p/ data/hora
+                // Botões p/ data/hora
                 const SizedBox(height: 8),
                 Row(
                   children: [

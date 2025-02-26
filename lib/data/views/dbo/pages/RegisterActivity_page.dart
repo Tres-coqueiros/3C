@@ -219,6 +219,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         'horimetroTotal': horimetroTotal,
       };
 
+      // Adiciona no array local (Activity) e no global (listaDeRegistros)
       if (!_dados.contains(combinedData)) {
         setState(() {
           _dados.add(combinedData);
@@ -233,13 +234,19 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         ),
       );
 
+      // Exemplo: Se preferir navegar automaticamente à tela de detalhes:
+      // Future.delayed(const Duration(seconds: 1), () {
+      //   Navigator.pushNamed(context, '/detailsregister');
+      // });
+      //
+      // Ou apenas fechar a tela:
       Future.delayed(const Duration(seconds: 1), () {
         Navigator.pop(context);
       });
     }
   }
 
-  /// Mesma aparência dos TextFields do RegisterPublicDBO
+  /// Mantém a aparência dos TextFields do RegisterPublicDBO
   Widget _buildTextField(
       String label, TextEditingController controller, String hint) {
     return Padding(
@@ -288,14 +295,12 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // No RegisterPublicDBO, não há cor de fundo explícita; mas se quiser igual:
-      // backgroundColor: Colors.white,
+      // Não definimos appBar para manter coerência com a tela anterior,
+      // mas você pode colocar um AppBar se desejar.
       appBar: AppBar(
         backgroundColor: Colors.green[800],
-        title: const Text(
-          'Cadastro de Atividades',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Cadastro de Atividades',
+            style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -315,7 +320,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Campos de texto com o estilo do RegisterPublicDBO
                 _buildTextField(
                     "Patrimônio", _patrimonioController, "Digite o Patrimônio"),
                 _buildTextField("Patrimônio Implemento",
