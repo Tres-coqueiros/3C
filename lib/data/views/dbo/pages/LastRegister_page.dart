@@ -16,8 +16,11 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
   final TextEditingController _novoMotivoController = TextEditingController();
   final DateFormat _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
 
-  // Armazenaremos localmente a lista de motivos de parada para edição
+  // Armazenamos localmente a lista de motivos de parada para edição
   late List<dynamic> _motivosParada;
+
+  // Flag para saber se o registro está concluído
+  late bool _isConcluido;
 
   @override
   void initState() {
@@ -30,9 +33,12 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
     } else {
       _motivosParada = [];
     }
+
+    // Verifica se o registro já está concluído
+    _isConcluido = (widget.registro['status'] == 'concluido');
   }
 
-  /// Retorna um widget para cada campo do registro (exceto motivosParada, que terá exibição customizada)
+  /// Retorna um widget para cada campo do registro (exceto motivosParada)
   Widget _buildDetailRow(String label, dynamic value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -75,6 +81,9 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
 
   // Adiciona um novo motivo de parada
   Future<void> _addNovoMotivo() async {
+    // Se o registro está concluído, não faz nada
+    if (_isConcluido) return;
+
     final descricao = _novoMotivoController.text.trim();
     if (descricao.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,7 +101,8 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
     if (fim.isBefore(inicio)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text("Hora final não pode ser antes da inicial!")),
+          content: Text("Hora final não pode ser antes da inicial!"),
+        ),
       );
       return;
     }
@@ -111,15 +121,14 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
     });
   }
 
-  // Remove um motivo de parada
-  // void _removerMotivo(int index) {
-  //   setState(() {
-  //     _motivosParada.removeAt(index);
-  //   });
-  // }
-
   // Salva alterações no registro global e fecha a tela
   void _salvarAlteracoes() {
+    // Se está concluído, não atualiza nada
+    if (_isConcluido) {
+      Navigator.pop(context);
+      return;
+    }
+
     // Atualiza o registro original com a nova lista de motivos
     widget.registro['motivosParada'] = _motivosParada;
 
@@ -139,8 +148,7 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Detalhes do Registro'),
-          backgroundColor:
-              const Color.from(alpha: 1, red: 0.18, green: 0.49, blue: 0.196),
+          backgroundColor: Colors.green[800],
         ),
         body: const Center(
           child: Text(
@@ -157,10 +165,14 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
         title: const Text('Detalhes do Registro'),
         backgroundColor: Colors.green[800],
         actions: [
+          // Se estiver concluído, exibe só um ícone de "Fechar"
+          // Se quiser remover completamente, pode ocultar esse botão
           IconButton(
             onPressed: _salvarAlteracoes,
             icon: const Icon(Icons.save),
-            tooltip: 'Salvar alterações',
+            tooltip: _isConcluido
+                ? 'Registro concluído, sem alterações'
+                : 'Salvar alterações',
           )
         ],
       ),
@@ -182,34 +194,44 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
               );
             }).toList(),
 
-            // Agora exibimos a seção de "Motivos de Parada" com edição
-            const SizedBox(height: 16),
-            const Text(
-              'Editar Motivos de Parada',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
+            // Se concluído, exibe mensagem que não pode editar
+            if (_isConcluido) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'Registro Concluído',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const Text('Edição de motivos de parada não é permitida.'),
+            ] else ...[
+              // Caso não concluído, permite editar
+              const SizedBox(height: 16),
+              const Text(
+                'Editar Motivos de Parada',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
 
-            // Campo para digitar um novo motivo
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _novoMotivoController,
-                    decoration: const InputDecoration(
-                      labelText: 'Novo Motivo',
-                      hintText: 'Ex: Falta de material',
+              // Campo para digitar um novo motivo
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _novoMotivoController,
+                      decoration: const InputDecoration(
+                        labelText: 'Novo Motivo',
+                        hintText: 'Ex: Chuva',
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: _addNovoMotivo,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Adicionar'),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: _addNovoMotivo,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Adicionar'),
+                  ),
+                ],
+              ),
+            ],
 
             const SizedBox(height: 16),
             // Lista de motivos de parada
@@ -231,10 +253,6 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
                         'Fim: ${m['fim']}\n'
                         'Duração: ${m['duracaoMin']} min',
                       ),
-                      // trailing: IconButton(
-                      //   icon: const Icon(Icons.delete, color: Colors.red),
-                      //   onPressed: () => _removerMotivo(index),
-                      // ),
                     ),
                   );
                 },
@@ -244,11 +262,6 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
           ],
         ),
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   backgroundColor: Colors.green[800],
-      //   onPressed: () => Navigator.pop(context),
-      //   child: const Icon(Icons.arrow_back),
-      // ),
     );
   }
 }
