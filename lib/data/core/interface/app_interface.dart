@@ -18,11 +18,36 @@ class Cultura {
   Cultura({required this.Codigo, required this.Descricao});
 }
 
-class Operador {
-  int Codigo;
-  String Nome;
+class Operacao {
+  final int safraId;
+  final String Safra;
+  final int talhaoId;
+  final String Talhao;
+  final double area;
+  final int cicloId;
+  final String Cicloprod;
+  final int culturaId;
+  final String cultura;
+  final int variedadeId;
+  final String variedade;
+  final int FazendaId;
+  final String Fazenda;
 
-  Operador({required this.Codigo, required this.Nome});
+  Operacao({
+    required this.safraId,
+    required this.Safra,
+    required this.talhaoId,
+    required this.Talhao,
+    required this.area,
+    required this.cicloId,
+    required this.Cicloprod,
+    required this.culturaId,
+    required this.cultura,
+    required this.variedadeId,
+    required this.variedade,
+    required this.FazendaId,
+    required this.Fazenda,
+  });
 }
 
 class Safra {

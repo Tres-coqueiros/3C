@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/views/auth/login_page.dart';
 import 'package:senior/data/views/home_page.dart';
+import 'package:senior/data/views/horaextras/pages/list_colaboradores_page.dart';
 import 'package:senior/data/views/horaextras/pages/profile_page.dart';
 import 'package:senior/data/views/widgets/base_layout.dart';
 import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
@@ -44,6 +45,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/profile',
       builder: (context, state) => BaseLayout(body: ProfilePage()),
+    ),
+    GoRoute(
+      path: '/listcolaboradores',
+      builder: (context, state) => BaseLayout(body: ListColaboradores()),
     ),
   ],
   errorBuilder: (context, state) => Scaffold(

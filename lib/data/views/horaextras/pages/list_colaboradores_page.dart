@@ -13,7 +13,9 @@ class ListColaboradores extends StatefulWidget {
 class _ListColaboradoresState extends State<ListColaboradores> {
   final GetServices getServices = GetServices();
   List<Map<String, dynamic>> listColaboradores = [];
+
   Map<int, bool> expandedItems = {};
+
   bool isLoading = true;
   String errorMessage = '';
 
@@ -44,9 +46,22 @@ class _ListColaboradoresState extends State<ListColaboradores> {
     });
   }
 
+  // Método para verificar se o colaborador tem horas extras
   bool hasHorasExtras(Map<String, dynamic> colaborador) {
     return colaborador['ListHorasExtras'] != null &&
         colaborador['ListHorasExtras'].isNotEmpty;
+  }
+
+  // Método para remover horas extras selecionadas
+  void removeHorasExtras(
+      int index, List<Map<String, dynamic>> horasSelecionadas) {
+    setState(() {
+      // Filtra a lista de horas extras, removendo as selecionadas
+      listColaboradores[index]['ListHorasExtras'] = listColaboradores[index]
+              ['ListHorasExtras']
+          .where((hora) => !horasSelecionadas.contains(hora))
+          .toList();
+    });
   }
 
   @override
@@ -67,7 +82,8 @@ class _ListColaboradoresState extends State<ListColaboradores> {
                       itemBuilder: (context, index) {
                         final colaborador = listColaboradores[index];
                         final isExpanded = expandedItems[index] ?? false;
-                        final hasExtras = hasHorasExtras(colaborador);
+                        final hasExtras =
+                            hasHorasExtras(colaborador); // Usando o método aqui
                         if (!hasExtras) {
                           return SizedBox.shrink();
                         }
@@ -145,7 +161,14 @@ class _ListColaboradoresState extends State<ListColaboradores> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       ListViewComponents(
-                                          colaborador: colaborador),
+                                        colaborador: colaborador,
+                                        onHorasSelecionadas:
+                                            (horasSelecionadas) {
+                                          // Remove as horas extras selecionadas
+                                          removeHorasExtras(
+                                              index, horasSelecionadas);
+                                        },
+                                      ),
                                     ],
                                   ),
                                 ),
