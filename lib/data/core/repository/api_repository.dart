@@ -11,8 +11,8 @@ class PostServices {
         return false;
       }
     } catch (error) {
-      // ErrorNotifier.showError(
-      //     'Erro ao fazer a requisição na API: ${error.toString()}');
+      ErrorNotifier.showError(
+          'Erro ao fazer a requisição na API: ${error.toString()}');
       return false;
     }
   }
@@ -31,7 +31,7 @@ class GetServices {
         return [];
       }
     } catch (error) {
-      // ErrorNotifier.showError('Erro ao carregar API: ${error.toString()}');
+      ErrorNotifier.showError('Erro ao carregar API: ${error.toString()}');
       return [];
     }
   }

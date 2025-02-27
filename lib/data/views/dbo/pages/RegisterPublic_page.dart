@@ -5,6 +5,7 @@ import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/global_data.dart';
 import 'package:senior/data/views/dbo/pages/RegisterActivity_page.dart';
+import 'package:senior/data/views/widgets/base_layout.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 import 'package:senior/data/views/widgets/components/button_components.dart';
 import 'package:senior/data/views/widgets/components/search_components.dart';
@@ -22,38 +23,79 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   final TextEditingController talhaoController = TextEditingController();
   final TextEditingController culturaController = TextEditingController();
   final TextEditingController fazendaController = TextEditingController();
-  final TextEditingController _matriculaController = TextEditingController();
+  final TextEditingController matriculaController = TextEditingController();
+  final TextEditingController cicloController = TextEditingController();
+  final TextEditingController areaTrabalhadaController =
+      TextEditingController();
 
   String? _horarioInicial;
   String? _horarioFinal;
+  Operador? operadorSelecionado;
+  String? safraSelecionada;
 
   bool _horarioError = false;
   bool _horimetroError = false;
+  List<Map<String, dynamic>> getOperacao = [];
+  List<Operador> getOperador = [];
 
   @override
   void initState() {
     super.initState();
+    fetchOperacao();
+    fetchOperador();
   }
 
-  /// Mapeia o sequencial para uma descrição específica (se precisar).
-  String _getFazendaDescricaoBySequencial(dynamic sequencial) {
-    switch (sequencial.toString()) {
-      case '1':
-        return 'SPZ - MAURO';
-      case '14':
-        return 'BRN - MAURO';
-      case '16':
-        return 'GNT - MAURO';
-      case '1.377':
-        return 'ALG - MAURO';
-      case '11.124':
-        return 'BJR - MAURO';
-      default:
-        return 'Fazenda não encontrada';
+  void fetchOperacao() async {
+    try {
+      final result = await getServices.getOperacao();
+      setState(() {
+        getOperacao = result;
+      });
+    } catch (error) {
+      print('Error em buscar todas as operações: $error');
     }
   }
 
-  /// Escolher data/hora
+  void fetchOperador() async {
+    try {
+      final result = await getServices.getOperador();
+      setState(() {
+        getOperador = result
+            .map((data) => Operador(Codigo: data['Codigo'], Nome: data['Nome']))
+            .toList();
+      });
+    } catch (error) {
+      print('Erro ao buscar talhoes: $error');
+    }
+  }
+
+  List<Map<String, dynamic>> getTalhoesBySafra(String safraId) {
+    return getOperacao
+        .where((op) => op['safraId'].toString() == safraId)
+        .map((op) => {'Talhao': op['Talhao']})
+        .toList();
+  }
+
+  List<Map<String, dynamic>> getCiclosBySafra(String safraId) {
+    return getOperacao
+        .where((op) => op['safraId'].toString() == safraId)
+        .map((op) => {'Cicloprod': op['Cicloprod']})
+        .toList();
+  }
+
+  List<Map<String, dynamic>> getUniqueSafras() {
+    final seen = <String>{};
+    return getOperacao.where((op) {
+      final safraId = op['safraId'].toString();
+      if (seen.contains(safraId)) {
+        return false;
+      } else {
+        seen.add(safraId);
+        return true;
+      }
+    }).toList();
+  }
+
   void _selecionarHorario(BuildContext context, bool isInicial) {
     DatePicker.showDateTimePicker(
       context,
@@ -81,26 +123,23 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     if (_formKey.currentState!.validate() &&
         !_horarioError &&
         !_horimetroError) {
-      // Monta o registro parcial (NÃO adiciona em listaDeRegistros para evitar duplicação)
       final registro = {
-        'matricula': _matriculaController.text,
+        'matricula': matriculaController.text,
         'horarioInicial': _horarioInicial,
         'horarioFinal': _horarioFinal,
         'operacoes': [],
       };
 
-      // Removido: listaDeRegistros.add(registro);
-
-      // Navega para a próxima tela (RegisterActivityPage)
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => RegisterActivityPage(
-            dados: listaDeRegistros, // Lista global atual
-            informacoesGerais: registro,
-            atividade: registro,
-          ),
-        ),
+            builder: (context) => BaseLayout(
+                  body: RegisterActivityPage(
+                    dados: listaDeRegistros,
+                    informacoesGerais: registro,
+                    atividade: registro,
+                  ),
+                )),
       );
     }
   }
@@ -108,7 +147,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Sem AppBar
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -117,95 +155,77 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Operador
-                // SearchableDropdown(
-                //   items: getOperador,
-                //   itemLabel: (operador) => operador.Nome,
-                //   onItemSelected: (operador) {
-                //     // ...
-                //   },
-                // ),
-                const SizedBox(height: 8),
-
-                // Ciclos
-                // SearchableDropdown<Ciclo>(
-                //   items: getCiclo,
-                //   itemLabel: (ciclo) => ciclo.Descricao,
-                //   onItemSelected: (ciclo) {
-                //     final culturaid = getCultura
-                //         .where((cultura) => ciclo.Cultura == cultura.Codigo)
-                //         .toList();
-                //     final safrasid = getSafra
-                //         .where((safra) => safra.Codigo == ciclo.Safra)
-                //         .toList();
-
-                //     setState(() {
-                //       getSafraFiltrada = safrasid;
-                //       getCulturaFiltrada = culturaid;
-                //       if (safrasid.isNotEmpty) {
-                //         safraController.text = safrasid[0].Descricao;
-                //       }
-                //       if (culturaid.isNotEmpty) {
-                //         culturaController.text = culturaid[0].Descricao;
-                //       }
-                //       if (safrasid.isNotEmpty) {
-                //         getTalhoesFiltrada = getTalhoes
-                //             .where(
-                //                 (talhao) => talhao.Safra == safrasid[0].Codigo)
-                //             .toList();
-                //       } else {
-                //         getTalhoesFiltrada = [];
-                //       }
-                //     });
-                //   },
-                //   labelText: "Ciclos",
-                //   hintText: "Selecione o ciclo",
-                // ),
-                const SizedBox(height: 8),
-
-                // Safra
-                _buildTextField(
-                  'Safra',
-                  safraController,
-                  "Selecione a safra",
-                  readOnly: true,
+                SearchableDropdown(
+                  items: getOperador,
+                  itemLabel: (operador) => operador.Nome,
+                  onItemSelected: (operador) {
+                    setState(() {
+                      operadorSelecionado = operador;
+                    });
+                  },
+                  labelText: "Operador",
+                  hintText: "Selecione o operador",
                 ),
-                // Cultura
+                const SizedBox(height: 8),
+                SearchableDropdown(
+                  items: getUniqueSafras(),
+                  itemLabel: (safra) => safra['Safra'],
+                  onItemSelected: (safra) {
+                    setState(() {
+                      safraSelecionada = safra['safraId'].toString();
+                      fazendaController.text = safra['Fazenda'].toString();
+                      culturaController.text = safra['cultura'];
+                    });
+                  },
+                  labelText: "Safra",
+                  hintText: "Selecione a safra",
+                ),
+                const SizedBox(height: 8),
+                SearchableDropdown(
+                  items: getCiclosBySafra(safraSelecionada ?? ''),
+                  itemLabel: (ciclo) => ciclo['Cicloprod'],
+                  onItemSelected: (ciclo) {
+                    print('Ciclo selecionado: $ciclo');
+                    setState(() {
+                      cicloController.text = ciclo['Cicloprod'] ?? '';
+                      areaTrabalhadaController.text = ciclo['area'] ?? '';
+                    });
+                  },
+                  labelText: "Ciclo",
+                  hintText: "Selecione o ciclo",
+                ),
+                const SizedBox(height: 8),
                 _buildTextField(
                   "Cultura",
                   culturaController,
                   "Cultura",
                   readOnly: true,
                 ),
-
-                // Talhões
-                // SearchableDropdown(
-                //   items: getTalhoesFiltrada,
-                //   itemLabel: (talhao) => talhao.Identificacao,
-                //   onItemSelected: (talhao) {
-                //     setState(() {
-                //       fazendaController.text =
-                //           _getFazendaDescricaoBySequencial(talhao.Fazenda);
-                //     });
-                //   },
-                //   labelText: "Talhões",
-                // ),
-
-                // Fazenda
                 _buildTextField(
                   "Fazenda",
                   fazendaController,
                   "Fazenda",
                   readOnly: true,
                 ),
-
+                const SizedBox(height: 8),
+                SearchableDropdown(
+                  items: getTalhoesBySafra(safraSelecionada ?? ''),
+                  itemLabel: (talhao) => talhao['Talhao'],
+                  onItemSelected: (talhao) {
+                    setState(() {
+                      talhaoController.text = talhao['Talhao'].toString() ?? '';
+                    });
+                  },
+                  labelText: "Talhão",
+                  hintText: "Selecione o talhão",
+                ),
+                _buildTextField("Área Trabalhada", areaTrabalhadaController,
+                    "Digite a área trabalhada (ex: 10 ha)"),
                 const SizedBox(height: 16),
                 const Text(
                   "Jornada de Trabalho",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-
-                // Botões p/ data/hora
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -220,7 +240,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     ),
                   ],
                 ),
-
                 if (_horarioError)
                   const Padding(
                     padding: EdgeInsets.only(top: 8.0),
@@ -233,15 +252,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     ),
                   ),
                 const SizedBox(height: 24),
-
-                // (Campo de Matrícula, se quiser ativar, basta descomentar)
-                // _buildTextField(
-                //   "Matrícula",
-                //   _matriculaController,
-                //   "Digite a Matrícula",
-                // ),
-
-                // Botão
                 ButtonComponents(
                   onPressed: _salvarRegistro,
                   text: 'Salvar e Avançar',

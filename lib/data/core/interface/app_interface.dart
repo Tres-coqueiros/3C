@@ -80,3 +80,37 @@ class Talhoes {
       required this.Fazenda,
       required this.Safra});
 }
+
+class MotivoParada {
+  final String descricao;
+  final DateTime inicio;
+  final DateTime fim;
+
+  MotivoParada({
+    required this.descricao,
+    required this.inicio,
+    required this.fim,
+  });
+
+  Duration get duracao => fim.difference(inicio);
+}
+
+class Operador {
+  int Codigo;
+  String Nome;
+
+  Operador({required this.Codigo, required this.Nome});
+}
+
+class Patrimonio {
+  int bensId;
+  String bens;
+  String bensImple;
+  String Unidade;
+
+  Patrimonio(
+      {required this.bensId,
+      required this.bens,
+      required this.bensImple,
+      required this.Unidade});
+}

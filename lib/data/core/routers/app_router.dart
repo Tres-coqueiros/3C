@@ -35,12 +35,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/registeractivity',
       builder: (context, state) => BaseLayout(
-        body: RegisterActivityPage(
-          dados: listaDeRegistros,
-          informacoesGerais: {}, atividade: {},
-          // Removido: atividade: {}
-        ),
-      ),
+          body: RegisterActivityPage(
+        dados: listaDeRegistros,
+        informacoesGerais: {}, atividade: {},
+        // Removido: atividade: {}
+      )),
     ),
     GoRoute(
       path: '/profile',

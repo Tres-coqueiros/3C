@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
+import 'package:senior/data/core/interface/app_interface.dart';
+import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/global_data.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 import 'package:senior/data/views/widgets/components/button_components.dart';
+import 'package:senior/data/views/widgets/components/search_components.dart';
 
 class RegisterActivityPage extends StatefulWidget {
-  final List<dynamic>
-      dados; // Normalmente é a mesma referência de listaDeRegistros
+  final List<dynamic> dados;
   final Map<String, dynamic> informacoesGerais;
 
   const RegisterActivityPage({
@@ -21,29 +23,12 @@ class RegisterActivityPage extends StatefulWidget {
   State<RegisterActivityPage> createState() => _RegisterActivityPageState();
 }
 
-// Modelo simples para guardar cada "Motivo de Parada"
-class MotivoParada {
-  final String descricao;
-  final DateTime inicio;
-  final DateTime fim;
-
-  MotivoParada({
-    required this.descricao,
-    required this.inicio,
-    required this.fim,
-  });
-
-  Duration get duracao => fim.difference(inicio);
-}
-
 class _RegisterActivityPageState extends State<RegisterActivityPage> {
+  final GetServices getServices = GetServices();
   final _formKey = GlobalKey<FormState>();
   final DateFormat _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
-
-  late List<dynamic> _dados;
   late Map<String, dynamic> _informacoesGerais;
 
-  // Controllers
   final TextEditingController _patrimonioController = TextEditingController();
   final TextEditingController _patrimonioImplementoController =
       TextEditingController();
@@ -61,29 +46,48 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
 
   String? _horarioInicial;
   String? _horarioFinal;
+  int? selectedPatrimonio;
+
   bool _horaRangeError = false;
   bool _horimetroError = false;
   String? _horimetroErrorMessage;
 
-  // Exibição de horas trabalhadas e diferença de horímetro
   String _tempoTrabalhado = '';
   String _horimetroTotal = '';
-
-  // Lista de motivos de parada
   final List<MotivoParada> _motivosParada = [];
+  List<Patrimonio> getPatrimonio = [];
 
   @override
   void initState() {
     super.initState();
-    _dados = widget.dados;
+    fetchPatrimonio();
     _informacoesGerais = widget.informacoesGerais;
-
-    // Caso venha horário da tela anterior
     _horarioInicial = _informacoesGerais['horarioInicial'];
     _horarioFinal = _informacoesGerais['horarioFinal'];
   }
 
-  // Exibe um DateTimePicker e retorna o valor escolhido
+  void fetchPatrimonio() async {
+    try {
+      final result = await getServices.getMaquina();
+      setState(() {
+        getPatrimonio = result.map((patrimonio) {
+          return Patrimonio(
+            bensId: patrimonio['bensId'] ?? 0,
+            bens: patrimonio['bens'] ?? '',
+            bensImple: patrimonio['bensImple'] ?? '',
+            Unidade: patrimonio['Unidade'] ?? '',
+          );
+        }).toList();
+      });
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Erro ao buscar patrimônio"),
+        ),
+      );
+    }
+  }
+
   Future<DateTime?> _pickDateTime() async {
     DateTime? selecionado;
     await DatePicker.showDateTimePicker(
@@ -98,7 +102,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     return selecionado;
   }
 
-  // Adiciona motivo de parada (com início e fim)
   Future<void> _addMotivoParada() async {
     final descricao = _motivoTempController.text.trim();
     if (descricao.isEmpty) {
@@ -132,7 +135,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     });
   }
 
-  // Seleciona data/hora para horário inicial ou final da atividade
   void _selecionarHorario(BuildContext context, bool isInicial) {
     DatePicker.showDateTimePicker(
       context,
@@ -152,20 +154,16 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     );
   }
 
-  // Valida e salva a atividade
   void _handleAdicionar() {
     final horimetroInicial = double.tryParse(_horimetroInicialController.text);
     final horimetroFinal = double.tryParse(_horimetroFinalController.text);
 
     setState(() {
-      // Verifica se horário final é antes do inicial
       _horaRangeError = _horarioInicial != null &&
           _horarioFinal != null &&
           _dateTimeFormat.parse(_horarioFinal!).isBefore(
                 _dateTimeFormat.parse(_horarioInicial!),
               );
-
-      // Verifica as condições de erro para horímetro
       if (horimetroInicial != null && horimetroFinal != null) {
         if (horimetroFinal <= horimetroInicial) {
           _horimetroError = true;
@@ -180,7 +178,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
           _horimetroErrorMessage = null;
         }
       } else {
-        // Se não conseguiu converter, não marcamos erro específico
         _horimetroError = false;
         _horimetroErrorMessage = null;
       }
@@ -189,7 +186,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     if (_formKey.currentState!.validate() &&
         !_horaRangeError &&
         !_horimetroError) {
-      // Calcula tempo total de horas
       String tempoTrabalhado = '';
       if (_horarioInicial != null && _horarioFinal != null) {
         final inicio = _dateTimeFormat.parse(_horarioInicial!);
@@ -200,7 +196,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         tempoTrabalhado = horas > 0 ? '$horas h $minutos min' : '$minutos min';
       }
 
-      // Calcula diferença de horímetro
       String horimetroTotal = '';
       if (horimetroInicial != null && horimetroFinal != null) {
         final dif = horimetroFinal - horimetroInicial;
@@ -212,7 +207,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         _horimetroTotal = horimetroTotal;
       });
 
-      // Monta map final
       final combinedData = {
         ..._informacoesGerais,
         'patrimonio': _patrimonioController.text,
@@ -259,130 +253,9 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     }
   }
 
-  /// Mantém a aparência dos TextFields do RegisterPublicDBO
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller,
-    String hint,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        validator: (value) =>
-            (value == null || value.isEmpty) ? "Campo obrigatório" : null,
-      ),
-    );
-  }
-
-  /// Layout mais organizado para cada Motivo de Parada
-  Widget _buildMotivoParadaItem(MotivoParada parada) {
-    final duracaoMin = parada.duracao.inMinutes;
-    final h = duracaoMin ~/ 60;
-    final m = duracaoMin % 60;
-    final tempoParada = (h > 0) ? '$h h $m min' : '$m min';
-
-    return Card(
-      color: Colors.white,
-      elevation: 4,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.green.shade600, width: 1.5),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Título do motivo
-            Text(
-              'Motivo: ${parada.descricao}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-
-            // Início
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 14, color: Colors.black),
-                children: [
-                  const TextSpan(
-                    text: 'Início: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(
-                    text: _dateTimeFormat.format(parada.inicio),
-                  ),
-                ],
-              ),
-            ),
-
-            // Fim
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 14, color: Colors.black),
-                children: [
-                  const TextSpan(
-                    text: 'Fim: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(
-                    text: _dateTimeFormat.format(parada.fim),
-                  ),
-                ],
-              ),
-            ),
-
-            // Tempo parado
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 14, color: Colors.black),
-                children: [
-                  const TextSpan(
-                    text: 'Tempo parado: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(
-                    text: tempoParada,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBar para navegar e acessar histórico
-      appBar: AppBar(
-        backgroundColor: Colors.green[800],
-        title: const Text('Cadastro de Atividades',
-            style: TextStyle(color: Colors.white)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history, color: Colors.white),
-            onPressed: () => Navigator.pushNamed(context, '/detailsregister'),
-          ),
-        ],
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -391,18 +264,20 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTextField(
-                    "Patrimônio", _patrimonioController, "Digite o Patrimônio"),
+                SearchableDropdown(
+                    items: getPatrimonio,
+                    itemLabel: (patrimonio) => patrimonio.bens,
+                    onItemSelected: (patrimonio) {
+                      selectedPatrimonio = patrimonio.bensId;
+                      _patrimonioController.text = patrimonio.bens;
+                      _maquinaController.text = patrimonio.bensImple;
+                    }),
                 _buildTextField("Patrimônio Implemento",
                     _patrimonioImplementoController, "Digite o Patrimônio"),
                 _buildTextField(
                     "Maquina", _maquinaController, "Digite o Patrimônio"),
                 _buildTextField(
                     "Operação", _operacaoController, "Digite a Operação"),
-                _buildTextField("Área Trabalhada", _areaTrabalhadaController,
-                    "Digite a área trabalhada (ex: 10 ha)"),
-
-                // Linha "Motivo de Parada" + botão (+)
                 Row(
                   children: [
                     Expanded(
@@ -549,6 +424,109 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    String hint,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        validator: (value) =>
+            (value == null || value.isEmpty) ? "Campo obrigatório" : null,
+      ),
+    );
+  }
+
+  Widget _buildMotivoParadaItem(MotivoParada parada) {
+    final duracaoMin = parada.duracao.inMinutes;
+    final h = duracaoMin ~/ 60;
+    final m = duracaoMin % 60;
+    final tempoParada = (h > 0) ? '$h h $m min' : '$m min';
+
+    return Card(
+      color: Colors.white,
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.green.shade600, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Título do motivo
+            Text(
+              'Motivo: ${parada.descricao}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+
+            // Início
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                children: [
+                  const TextSpan(
+                    text: 'Início: ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: _dateTimeFormat.format(parada.inicio),
+                  ),
+                ],
+              ),
+            ),
+
+            // Fim
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                children: [
+                  const TextSpan(
+                    text: 'Fim: ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: _dateTimeFormat.format(parada.fim),
+                  ),
+                ],
+              ),
+            ),
+
+            // Tempo parado
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                children: [
+                  const TextSpan(
+                    text: 'Tempo parado: ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: tempoParada,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
