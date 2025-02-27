@@ -9,7 +9,10 @@ import 'package:senior/data/views/widgets/messages/dialog_message.dart';
 class ListViewComponents extends StatefulWidget {
   final Map<String, dynamic> colaborador;
 
-  ListViewComponents({super.key, required this.colaborador});
+  ListViewComponents(
+      {super.key,
+      required this.colaborador,
+      required Null Function(dynamic horasSelecionadas) onHorasSelecionadas});
 
   @override
   _ListViewComponentsState createState() => _ListViewComponentsState();
