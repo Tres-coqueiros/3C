@@ -81,6 +81,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     if (_formKey.currentState!.validate() &&
         !_horarioError &&
         !_horimetroError) {
+      // Monta o registro parcial (NÃO adiciona em listaDeRegistros para evitar duplicação)
       final registro = {
         'matricula': _matriculaController.text,
         'horarioInicial': _horarioInicial,
@@ -88,13 +89,14 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
         'operacoes': [],
       };
 
-      listaDeRegistros.add(registro);
+      // Removido: listaDeRegistros.add(registro);
 
+      // Navega para a próxima tela (RegisterActivityPage)
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => RegisterActivityPage(
-            dados: listaDeRegistros,
+            dados: listaDeRegistros, // Lista global atual
             informacoesGerais: registro,
             atividade: registro,
           ),
@@ -106,6 +108,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Sem AppBar
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -202,7 +205,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
 
-                // Aqui inserimos os botões p/ data/hora
+                // Botões p/ data/hora
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -230,6 +233,13 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     ),
                   ),
                 const SizedBox(height: 24),
+
+                // (Campo de Matrícula, se quiser ativar, basta descomentar)
+                // _buildTextField(
+                //   "Matrícula",
+                //   _matriculaController,
+                //   "Digite a Matrícula",
+                // ),
 
                 // Botão
                 ButtonComponents(

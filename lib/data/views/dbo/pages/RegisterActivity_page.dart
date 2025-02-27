@@ -6,7 +6,8 @@ import 'package:senior/data/views/widgets/components/app_colors_components.dart'
 import 'package:senior/data/views/widgets/components/button_components.dart';
 
 class RegisterActivityPage extends StatefulWidget {
-  final List<dynamic> dados;
+  final List<dynamic>
+      dados; // Normalmente é a mesma referência de listaDeRegistros
   final Map<String, dynamic> informacoesGerais;
 
   const RegisterActivityPage({
@@ -48,6 +49,8 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
       TextEditingController();
   final TextEditingController _maquinaController = TextEditingController();
   final TextEditingController _operacaoController = TextEditingController();
+  final TextEditingController _areaTrabalhadaController =
+      TextEditingController();
   final TextEditingController _motivoTempController = TextEditingController();
   final TextEditingController _talhaoController = TextEditingController();
   final TextEditingController _culturaController = TextEditingController();
@@ -60,8 +63,9 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   String? _horarioFinal;
   bool _horaRangeError = false;
   bool _horimetroError = false;
+  String? _horimetroErrorMessage;
 
-  // Variáveis para mostrar resultado do cálculo
+  // Exibição de horas trabalhadas e diferença de horímetro
   String _tempoTrabalhado = '';
   String _horimetroTotal = '';
 
@@ -115,7 +119,8 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     if (fim.isBefore(inicio)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text("Hora final não pode ser antes da inicial!")),
+          content: Text("Hora final não pode ser antes da inicial!"),
+        ),
       );
       return;
     }
@@ -160,10 +165,25 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                 _dateTimeFormat.parse(_horarioInicial!),
               );
 
-      // Verifica se horímetro final <= inicial
-      _horimetroError = horimetroInicial != null &&
-          horimetroFinal != null &&
-          horimetroFinal <= horimetroInicial;
+      // Verifica as condições de erro para horímetro
+      if (horimetroInicial != null && horimetroFinal != null) {
+        if (horimetroFinal <= horimetroInicial) {
+          _horimetroError = true;
+          _horimetroErrorMessage =
+              '⚠ Horímetro Final deve ser maior que o Inicial!';
+        } else if ((horimetroFinal - horimetroInicial) > 12) {
+          _horimetroError = true;
+          _horimetroErrorMessage =
+              '⚠ Horímetro excede as 12 horas de trabalho!';
+        } else {
+          _horimetroError = false;
+          _horimetroErrorMessage = null;
+        }
+      } else {
+        // Se não conseguiu converter, não marcamos erro específico
+        _horimetroError = false;
+        _horimetroErrorMessage = null;
+      }
     });
 
     if (_formKey.currentState!.validate() &&
@@ -201,6 +221,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
             : 'Não informado',
         'maquina': _maquinaController.text,
         'operacao': _operacaoController.text,
+        'areaTrabalhada': _areaTrabalhadaController.text,
         'motivosParada': _motivosParada.map((p) {
           return {
             'descricao': p.descricao,
@@ -219,9 +240,8 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         'horimetroTotal': horimetroTotal,
       };
 
-      if (!_dados.contains(combinedData)) {
+      if (!listaDeRegistros.contains(combinedData)) {
         setState(() {
-          _dados.add(combinedData);
           listaDeRegistros.add(combinedData);
         });
       }
@@ -239,9 +259,12 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     }
   }
 
-  /// Mesma aparência dos TextFields do RegisterPublicDBO
+  /// Mantém a aparência dos TextFields do RegisterPublicDBO
   Widget _buildTextField(
-      String label, TextEditingController controller, String hint) {
+    String label,
+    TextEditingController controller,
+    String hint,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
@@ -261,7 +284,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     );
   }
 
-  /// Exibe cada motivo de parada com cartão estilizado
+  /// Layout mais organizado para cada Motivo de Parada
   Widget _buildMotivoParadaItem(MotivoParada parada) {
     final duracaoMin = parada.duracao.inMinutes;
     final h = duracaoMin ~/ 60;
@@ -269,17 +292,73 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     final tempoParada = (h > 0) ? '$h h $m min' : '$m min';
 
     return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 4),
+      color: Colors.white,
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.green.shade600, width: 1.5),
       ),
-      child: ListTile(
-        title: Text(parada.descricao),
-        subtitle: Text(
-          'Início: ${_dateTimeFormat.format(parada.inicio)}\n'
-          'Fim: ${_dateTimeFormat.format(parada.fim)}\n'
-          'Tempo parado: $tempoParada',
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Título do motivo
+            Text(
+              'Motivo: ${parada.descricao}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+
+            // Início
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                children: [
+                  const TextSpan(
+                    text: 'Início: ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: _dateTimeFormat.format(parada.inicio),
+                  ),
+                ],
+              ),
+            ),
+
+            // Fim
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                children: [
+                  const TextSpan(
+                    text: 'Fim: ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: _dateTimeFormat.format(parada.fim),
+                  ),
+                ],
+              ),
+            ),
+
+            // Tempo parado
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                children: [
+                  const TextSpan(
+                    text: 'Tempo parado: ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: tempoParada,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -288,14 +367,11 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // No RegisterPublicDBO, não há cor de fundo explícita; mas se quiser igual:
-      // backgroundColor: Colors.white,
+      // AppBar para navegar e acessar histórico
       appBar: AppBar(
         backgroundColor: Colors.green[800],
-        title: const Text(
-          'Cadastro de Atividades',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Cadastro de Atividades',
+            style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -315,7 +391,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Campos de texto com o estilo do RegisterPublicDBO
                 _buildTextField(
                     "Patrimônio", _patrimonioController, "Digite o Patrimônio"),
                 _buildTextField("Patrimônio Implemento",
@@ -324,6 +399,8 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                     "Maquina", _maquinaController, "Digite o Patrimônio"),
                 _buildTextField(
                     "Operação", _operacaoController, "Digite a Operação"),
+                _buildTextField("Área Trabalhada", _areaTrabalhadaController,
+                    "Digite a área trabalhada (ex: 10 ha)"),
 
                 // Linha "Motivo de Parada" + botão (+)
                 Row(
@@ -357,7 +434,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                   ],
                 ),
 
-                // Lista de motivos já adicionados
                 if (_motivosParada.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
@@ -404,52 +480,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                 ),
 
                 const SizedBox(height: 8),
-                // Botões de data/hora
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => _selecionarHorario(context, true),
-                        child: Text(
-                          _horarioInicial ?? "Selecionar Hora Inicial",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => _selecionarHorario(context, false),
-                        child: Text(
-                          _horarioFinal ?? "Selecionar Hora Final",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Erros
+                // Mensagens de erro
                 if (_horaRangeError)
                   const Padding(
                     padding: EdgeInsets.only(top: 8.0),
@@ -461,19 +492,18 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                       ),
                     ),
                   ),
-                if (_horimetroError)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
+                if (_horimetroError && _horimetroErrorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
-                      '⚠ Horímetro Final deve ser maior que o Inicial!',
-                      style: TextStyle(
+                      _horimetroErrorMessage!,
+                      style: const TextStyle(
                         color: Colors.red,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
 
-                // Mostra resultados de horas e horímetro
                 if (_tempoTrabalhado.isNotEmpty || _horimetroTotal.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -501,7 +531,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                   ),
 
                 const SizedBox(height: 16),
-                // Botão final no estilo do RegisterPublicDBO
+                // Botão final
                 Center(
                   child: ButtonComponents(
                     onPressed: _handleAdicionar,
