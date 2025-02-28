@@ -14,9 +14,11 @@ class LastRegisterPage extends StatefulWidget {
 
 class _LastRegisterPageState extends State<LastRegisterPage> {
   final TextEditingController _novoMotivoController = TextEditingController();
+  final TextEditingController _horimetroFinalController =
+      TextEditingController();
   final DateFormat _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
 
-  // Armazenamos localmente a lista de motivos de parada para edição
+  // Lista local de motivos de parada
   late List<dynamic> _motivosParada;
 
   // Flag para saber se o registro está concluído
@@ -26,7 +28,7 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
   void initState() {
     super.initState();
 
-    // Se "motivosParada" existe e é uma lista, fazemos uma cópia local
+    // Carrega motivosParada localmente
     if (widget.registro.containsKey('motivosParada') &&
         widget.registro['motivosParada'] is List) {
       _motivosParada = List.from(widget.registro['motivosParada']);
@@ -34,11 +36,16 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
       _motivosParada = [];
     }
 
-    // Verifica se o registro já está concluído
+    // Verifica se está concluído
     _isConcluido = (widget.registro['status'] == 'concluido');
+
+    // Carrega o horímetro final (se existir)
+    final horimetroFinalStr =
+        widget.registro['horimetroFinal']?.toString() ?? '';
+    _horimetroFinalController.text = horimetroFinalStr;
   }
 
-  /// Retorna um widget para cada campo do registro (exceto motivosParada)
+  /// Monta widget de exibição para cada campo (exceto motivosParada e horimetroFinal)
   Widget _buildDetailRow(String label, dynamic value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -79,10 +86,9 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
     return selecionado;
   }
 
-  // Adiciona um novo motivo de parada
+  // Adiciona novo motivo de parada
   Future<void> _addNovoMotivo() async {
-    // Se o registro está concluído, não faz nada
-    if (_isConcluido) return;
+    if (_isConcluido) return; // Se concluído, não faz nada
 
     final descricao = _novoMotivoController.text.trim();
     if (descricao.isEmpty) {
@@ -123,14 +129,46 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
 
   // Salva alterações no registro global e fecha a tela
   void _salvarAlteracoes() {
-    // Se está concluído, não atualiza nada
+    // Se concluído, não atualiza nada
     if (_isConcluido) {
       Navigator.pop(context);
       return;
     }
 
+    // Regras de horímetro: Final não pode ser menor que Inicial, nem exceder 12
+    final horimetroFinalStr = _horimetroFinalController.text.trim();
+    final double? horimetroFinal = double.tryParse(horimetroFinalStr);
+
+    // Se o registro tiver horimetroInicial, convertemos
+    final horimetroInicialStr = widget.registro['horimetroInicial']?.toString();
+    final double? horimetroInicial = horimetroInicialStr != null
+        ? double.tryParse(horimetroInicialStr)
+        : null;
+
+    if (horimetroFinal != null && horimetroInicial != null) {
+      if (horimetroFinal <= horimetroInicial) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Horímetro Final deve ser maior que o Inicial!'),
+          ),
+        );
+        return; // Impede de salvar
+      }
+      if ((horimetroFinal - horimetroInicial) > 12) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Horímetro excede as 12 horas de trabalho!'),
+          ),
+        );
+        return; // Impede de salvar
+      }
+    }
+
     // Atualiza o registro original com a nova lista de motivos
     widget.registro['motivosParada'] = _motivosParada;
+
+    // Atualiza o horimetroFinal no registro
+    widget.registro['horimetroFinal'] = _horimetroFinalController.text;
 
     // Também atualiza na listaDeRegistros global
     final idx = listaDeRegistros.indexOf(widget.registro);
@@ -143,7 +181,6 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Se o registro está vazio, exibimos mensagem
     if (widget.registro.isEmpty) {
       return Scaffold(
         appBar: AppBar(
@@ -159,14 +196,11 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
       );
     }
 
-    // Caso o registro tenha dados, exibimos
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalhes do Registro'),
         backgroundColor: Colors.green[800],
         actions: [
-          // Se estiver concluído, exibe só um ícone de "Fechar"
-          // Se quiser remover completamente, pode ocultar esse botão
           IconButton(
             onPressed: _salvarAlteracoes,
             icon: const Icon(Icons.save),
@@ -180,10 +214,10 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Exibição dos demais campos (sem edição)
+            // Exibe demais campos (exceto motivosParada e horimetroFinal)
             ...widget.registro.entries.map((entry) {
-              // Se for 'motivosParada', não exibimos aqui (pois terá exibição custom)
-              if (entry.key == 'motivosParada') {
+              if (entry.key == 'motivosParada' ||
+                  entry.key == 'horimetroFinal') {
                 return const SizedBox.shrink();
               }
               return Column(
@@ -194,7 +228,7 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
               );
             }).toList(),
 
-            // Se concluído, exibe mensagem que não pode editar
+            // Se concluído, exibe horimetroFinal em modo leitura
             if (_isConcluido) ...[
               const SizedBox(height: 16),
               const Text(
@@ -202,8 +236,41 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Text('Edição de motivos de parada não é permitida.'),
+              const SizedBox(height: 16),
+              // Exibe Horímetro Final em modo somente leitura
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Horímetro Final: ',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      widget.registro['horimetroFinal']?.toString() ??
+                          'Não informado',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
             ] else ...[
-              // Caso não concluído, permite editar
+              // Se não concluído, pode editar Horímetro Final e Motivos
+              const SizedBox(height: 16),
+              TextField(
+                controller: _horimetroFinalController,
+                decoration: const InputDecoration(
+                  labelText: 'Horímetro Final',
+                  hintText: 'Digite o Horímetro Final',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+
               const SizedBox(height: 16),
               const Text(
                 'Editar Motivos de Parada',
@@ -211,7 +278,6 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
               ),
               const SizedBox(height: 8),
 
-              // Campo para digitar um novo motivo
               Row(
                 children: [
                   Expanded(
@@ -234,7 +300,6 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
             ],
 
             const SizedBox(height: 16),
-            // Lista de motivos de parada
             if (_motivosParada.isEmpty)
               const Text('Nenhum motivo de parada cadastrado.')
             else
