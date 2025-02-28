@@ -150,6 +150,22 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       areamaior = areaTrabalhada > areaTalhao;
     });
 
+    // Adicionamos verificação: área trabalhada não pode ser maior que a área
+    final areaTalhaoStr = aretalhaoController.text.trim();
+    final areaTrabalhadaStr = areaTrabalhadaController.text.trim();
+
+    final double areaTalhao = double.tryParse(areaTalhaoStr) ?? 0;
+    final double areaTrabalhada = double.tryParse(areaTrabalhadaStr) ?? 0;
+
+    if (areaTrabalhada > areaTalhao) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('A área trabalhada não pode ser maior que a área!'),
+        ),
+      );
+      return; // Impede de prosseguir
+    }
+
     if (_formKey.currentState!.validate() &&
         !_horarioError &&
         !_horimetroError) {
@@ -300,6 +316,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   ),
                 const SizedBox(height: 16),
 
+                // Jornada
                 const Text(
                   "Jornada de Trabalho",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -352,6 +369,10 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     );
   }
 
+<<<<<<< HEAD
+=======
+  /// TextField genérico
+>>>>>>> 76a28411aad0624ae2e2d477025b65e81d1fdd68
   Widget _buildTextField(
     String label, {
     required TextEditingController cultureController,
@@ -380,6 +401,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     );
   }
 
+  /// Botão de seleção de horário
   Widget _buildTimePicker(String label, String? time, bool isInicial) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
