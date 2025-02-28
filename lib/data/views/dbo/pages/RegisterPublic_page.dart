@@ -25,17 +25,26 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   final TextEditingController fazendaController = TextEditingController();
   final TextEditingController matriculaController = TextEditingController();
   final TextEditingController cicloController = TextEditingController();
+  final TextEditingController aretalhaoController = TextEditingController();
   final TextEditingController areaTrabalhadaController =
       TextEditingController();
 
   String? _horarioInicial;
   String? _horarioFinal;
   Operador? operadorSelecionado;
-  String? safraSelecionada;
+  int? safraSelecionada;
+  int? talhaoSelecionado;
+  int? culturaSelecionada;
+  int? fazendaSelecionada;
+  String? cicloSelecionada;
 
   bool _horarioError = false;
   bool _horimetroError = false;
+
+  // Aqui ficam os dados retornados pelo getOperacao
   List<Map<String, dynamic>> getOperacao = [];
+
+  // Lista de operadores retornada pelo getOperador
   List<Operador> getOperador = [];
 
   @override
@@ -51,6 +60,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       setState(() {
         getOperacao = result;
       });
+      print("RESULT: $result");
     } catch (error) {
       print('Error em buscar todas as operações: $error');
     }
@@ -69,31 +79,49 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     }
   }
 
-  List<Map<String, dynamic>> getTalhoesBySafra(String safraId) {
-    return getOperacao
-        .where((op) => op['safraId'].toString() == safraId)
-        .map((op) => {'Talhao': op['Talhao']})
-        .toList();
-  }
-
-  List<Map<String, dynamic>> getCiclosBySafra(String safraId) {
-    return getOperacao
-        .where((op) => op['safraId'].toString() == safraId)
-        .map((op) => {'Cicloprod': op['Cicloprod']})
-        .toList();
-  }
-
+  /// Retorna a lista de safra única, incluindo 'Fazenda' e, se quiser, 'cultura' (se existir).
   List<Map<String, dynamic>> getUniqueSafras() {
-    final seen = <String>{};
-    return getOperacao.where((op) {
-      final safraId = op['safraId'].toString();
-      if (seen.contains(safraId)) {
-        return false;
-      } else {
-        seen.add(safraId);
-        return true;
+    final seen = <int>{};
+    final List<Map<String, dynamic>> safraList = [];
+
+    for (final op in getOperacao) {
+      final sid = op['safraId'] as int?;
+      if (sid != null && !seen.contains(sid)) {
+        seen.add(sid);
+        safraList.add({
+          'safraId': op['safraId'],
+          'Safra': op['Safra'], // ex: "Safra 2023"
+          'Fazenda': op['Fazenda'], // ex: "Fazenda A"
+          // Se quiser exibir cultura aqui, adicione: 'cultura': op['cultura']
+        });
       }
-    }).toList();
+    }
+    return safraList;
+  }
+
+  /// Retorna lista de ciclos para a safraId, incluindo 'cicloId', 'Cicloprod', 'cultura', etc.
+  List<Map<String, dynamic>> getCiclosBySafra(int safraId) {
+    return getOperacao
+        .where((op) => op['safraId'] == safraId)
+        .map((op) => {
+              'cicloId': op['cicloId'],
+              'Cicloprod': op['Cicloprod'],
+              'cultura': op['cultura'],
+              'area': op['area'], // se quiser preencher areaTrabalhada aqui
+            })
+        .toList();
+  }
+
+  /// Retorna lista de talhões para a safraId, incluindo 'talhaoId', 'Talhao', 'area', etc.
+  List<Map<String, dynamic>> getTalhaoBySafra(int safraId) {
+    return getOperacao
+        .where((op) => op['safraId'] == safraId)
+        .map((op) => {
+              'talhaoId': op['talhaoId'],
+              'Talhao': op['Talhao'],
+              'area': op['area'],
+            })
+        .toList();
   }
 
   void _selecionarHorario(BuildContext context, bool isInicial) {
@@ -133,13 +161,14 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => BaseLayout(
-                  body: RegisterActivityPage(
-                    dados: listaDeRegistros,
-                    informacoesGerais: registro,
-                    atividade: registro,
-                  ),
-                )),
+          builder: (context) => BaseLayout(
+            body: RegisterActivityPage(
+              dados: listaDeRegistros,
+              informacoesGerais: registro,
+              atividade: registro,
+            ),
+          ),
+        ),
       );
     }
   }
@@ -155,6 +184,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Operador
                 SearchableDropdown(
                   items: getOperador,
                   itemLabel: (operador) => operador.Nome,
@@ -167,66 +197,102 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   hintText: "Selecione o operador",
                 ),
                 const SizedBox(height: 8),
+
+                // Safra
                 SearchableDropdown(
                   items: getUniqueSafras(),
                   itemLabel: (safra) => safra['Safra'],
                   onItemSelected: (safra) {
                     setState(() {
-                      safraSelecionada = safra['safraId'].toString();
-                      fazendaController.text = safra['Fazenda'].toString();
-                      culturaController.text = safra['cultura'];
+                      safraSelecionada = safra['safraId'];
+                      // Exemplo: preenche fazenda, cultura (se existir)
+                      fazendaController.text =
+                          safra['Fazenda']?.toString() ?? '';
+                      // Se tivesse safra['cultura'], poderia setar: culturaController.text = safra['cultura'] ?? '';
                     });
                   },
                   labelText: "Safra",
                   hintText: "Selecione a safra",
                 ),
                 const SizedBox(height: 8),
+
+                // Ciclo
                 SearchableDropdown(
-                  items: getCiclosBySafra(safraSelecionada ?? ''),
-                  itemLabel: (ciclo) => ciclo['Cicloprod'],
+                  items: getCiclosBySafra(safraSelecionada ?? 0),
+                  itemLabel: (ciclo) => ciclo['Cicloprod'] ?? '',
                   onItemSelected: (ciclo) {
-                    print('Ciclo selecionado: $ciclo');
                     setState(() {
+                      cicloSelecionada = ciclo['cicloId']?.toString() ?? '';
                       cicloController.text = ciclo['Cicloprod'] ?? '';
-                      areaTrabalhadaController.text = ciclo['area'] ?? '';
+                      culturaController.text = ciclo['cultura'] ?? '';
+                      // Se quiser setar areaTrabalhadaController:
+                      // areaTrabalhadaController.text = ciclo['area']?.toString() ?? '';
                     });
                   },
                   labelText: "Ciclo",
                   hintText: "Selecione o ciclo",
                 ),
                 const SizedBox(height: 8),
+
+                // Cultura
                 _buildTextField(
                   "Cultura",
-                  culturaController,
-                  "Cultura",
+                  cultureController: culturaController,
+                  hint: "Cultura",
                   readOnly: true,
                 ),
+
+                // Fazenda
                 _buildTextField(
                   "Fazenda",
-                  fazendaController,
-                  "Fazenda",
+                  cultureController: fazendaController,
+                  hint: "Fazenda",
                   readOnly: true,
                 ),
                 const SizedBox(height: 8),
+
+                // Talhão
                 SearchableDropdown(
-                  items: getTalhoesBySafra(safraSelecionada ?? ''),
-                  itemLabel: (talhao) => talhao['Talhao'],
+                  items: getTalhaoBySafra(safraSelecionada ?? 0),
+                  itemLabel: (talhao) => talhao['Talhao'] ?? '',
                   onItemSelected: (talhao) {
                     setState(() {
-                      talhaoController.text = talhao['Talhao'].toString() ?? '';
+                      talhaoSelecionado = talhao['talhaoId'];
+                      talhaoController.text =
+                          talhao['Talhao']?.toString() ?? '';
+                      aretalhaoController.text =
+                          talhao['area']?.toString() ?? '';
                     });
                   },
                   labelText: "Talhão",
                   hintText: "Selecione o talhão",
                 ),
-                _buildTextField("Área Trabalhada", areaTrabalhadaController,
-                    "Digite a área trabalhada (ex: 10 ha)"),
+                const SizedBox(height: 8),
+
+                // Área do Talhão
+                _buildTextField(
+                  "Área",
+                  cultureController: aretalhaoController,
+                  hint: "Área",
+                  readOnly: true,
+                ),
+                const SizedBox(height: 8),
+
+                // Área Trabalhada
+                _buildTextField(
+                  "Área Trabalhada",
+                  cultureController: areaTrabalhadaController,
+                  hint: "Digite a área trabalhada (ex: 10 ha)",
+                ),
                 const SizedBox(height: 16),
+
                 const Text(
                   "Jornada de Trabalho",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
+
+                // Horários
                 Row(
                   children: [
                     Expanded(
@@ -252,16 +318,16 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     ),
                   ),
                 const SizedBox(height: 24),
+
+                // Botão
                 ButtonComponents(
                   onPressed: _salvarRegistro,
                   text: 'Salvar e Avançar',
                   textColor: AppColorsComponents.hashours,
                   backgroundColor: AppColorsComponents.primary,
                   fontSize: 18,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 37,
-                    vertical: 12,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 37, vertical: 12),
                   textAlign: Alignment.center,
                 ),
               ],
@@ -272,19 +338,18 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     );
   }
 
+  /// Criação de textField para cultura/fazenda etc.
   Widget _buildTextField(
-    String label,
-    TextEditingController controller,
-    String hint, {
+    String label, {
+    required TextEditingController cultureController,
+    required String hint,
     bool readOnly = false,
-    List list = const [],
     bool isNumeric = false,
-    Function(dynamic value)? onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
-        controller: controller,
+        controller: cultureController,
         readOnly: readOnly,
         keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
         decoration: InputDecoration(
@@ -298,7 +363,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
         ),
         validator: (value) =>
             (value == null || value.isEmpty) ? "Campo obrigatório" : null,
-        onChanged: onChanged,
       ),
     );
   }
