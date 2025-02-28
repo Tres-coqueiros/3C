@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
-import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/global_data.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';

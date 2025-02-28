@@ -16,6 +16,22 @@ class PostServices {
       return false;
     }
   }
+
+  Future<bool> postBDO(data) async {
+    try {
+      final response =
+          await dioAgrimanager.post('postBDO', data: {'data': data});
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      ErrorNotifier.showError(
+          'Erro ao fazer a requisição na API: ${error.toString()}');
+      return false;
+    }
+  }
 }
 
 class GetServices {
