@@ -23,15 +23,48 @@ class RegisterActivityPage extends StatefulWidget {
   State<RegisterActivityPage> createState() => _RegisterActivityPageState();
 }
 
+// Modelo simples para guardar cada "Motivo de Parada"
+class MotivoParada {
+  final String descricao;
+  final DateTime inicio;
+  final DateTime fim;
+
+  MotivoParada({
+    required this.descricao,
+    required this.inicio,
+    required this.fim,
+  });
+
+  Duration get duracao => fim.difference(inicio);
+}
+
+class Patrimonio {
+  final int bensId;
+  final String bens;
+  final String bensImple;
+  final String Unidade;
+
+  Patrimonio({
+    required this.bensId,
+    required this.bens,
+    required this.bensImple,
+    required this.Unidade,
+  });
+}
+
 class _RegisterActivityPageState extends State<RegisterActivityPage> {
   final GetServices getServices = GetServices();
   final _formKey = GlobalKey<FormState>();
   final DateFormat _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
+
   late Map<String, dynamic> _informacoesGerais;
 
+  // Controllers
   final TextEditingController _patrimonioController = TextEditingController();
   final TextEditingController _patrimonioImplementoController =
       TextEditingController();
+  final TextEditingController _descricaoPatrimonioController =
+      TextEditingController(); // NOVO campo
   final TextEditingController _maquinaController = TextEditingController();
   final TextEditingController _operacaoController = TextEditingController();
   final TextEditingController _areaTrabalhadaController =
@@ -42,11 +75,10 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   final TextEditingController _horimetroInicialController =
       TextEditingController();
   final TextEditingController _horimetroFinalController =
-      TextEditingController();
+      TextEditingController(); // Permitir vazio
 
   String? _horarioInicial;
   String? _horarioFinal;
-  int? selectedPatrimonio;
 
   bool _horaRangeError = false;
   bool _horimetroError = false;
@@ -54,7 +86,11 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
 
   String _tempoTrabalhado = '';
   String _horimetroTotal = '';
+
+  // Lista de motivos de parada
   final List<MotivoParada> _motivosParada = [];
+
+  // Lista de patrimônios (máquinas) buscados do backend
   List<Patrimonio> getPatrimonio = [];
 
   @override
@@ -102,6 +138,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     return selecionado;
   }
 
+  // Adiciona motivo de parada
   Future<void> _addMotivoParada() async {
     final descricao = _motivoTempController.text.trim();
     if (descricao.isEmpty) {
@@ -135,6 +172,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     });
   }
 
+  // Seleciona data/hora para horário inicial/final
   void _selecionarHorario(BuildContext context, bool isInicial) {
     DatePicker.showDateTimePicker(
       context,
@@ -154,17 +192,21 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     );
   }
 
+  // Valida e salva a atividade
   void _handleAdicionar() {
     final horimetroInicial = double.tryParse(_horimetroInicialController.text);
     final horimetroFinal = double.tryParse(_horimetroFinalController.text);
 
     setState(() {
+      // Verifica se horário final é antes do inicial
       _horaRangeError = _horarioInicial != null &&
           _horarioFinal != null &&
           _dateTimeFormat.parse(_horarioFinal!).isBefore(
                 _dateTimeFormat.parse(_horarioInicial!),
               );
-      if (horimetroInicial != null && horimetroFinal != null) {
+
+      // Se horímetro final estiver preenchido, validamos
+      if (horimetroFinal != null && horimetroInicial != null) {
         if (horimetroFinal <= horimetroInicial) {
           _horimetroError = true;
           _horimetroErrorMessage =
@@ -178,6 +220,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
           _horimetroErrorMessage = null;
         }
       } else {
+        // Se Horímetro Final não foi preenchido, não gera erro
         _horimetroError = false;
         _horimetroErrorMessage = null;
       }
@@ -186,6 +229,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     if (_formKey.currentState!.validate() &&
         !_horaRangeError &&
         !_horimetroError) {
+      // Calcula tempo total de horas
       String tempoTrabalhado = '';
       if (_horarioInicial != null && _horarioFinal != null) {
         final inicio = _dateTimeFormat.parse(_horarioInicial!);
@@ -196,6 +240,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         tempoTrabalhado = horas > 0 ? '$horas h $minutos min' : '$minutos min';
       }
 
+      // Calcula diferença de horímetro
       String horimetroTotal = '';
       if (horimetroInicial != null && horimetroFinal != null) {
         final dif = horimetroFinal - horimetroInicial;
@@ -207,12 +252,16 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         _horimetroTotal = horimetroTotal;
       });
 
+      // Monta map final
       final combinedData = {
         ..._informacoesGerais,
         'patrimonio': _patrimonioController.text,
         'patrimonioImplemento': _patrimonioImplementoController.text.isNotEmpty
             ? _patrimonioImplementoController.text
             : 'Não informado',
+        'descricaoPatrimonio': _descricaoPatrimonioController.text.isNotEmpty
+            ? _descricaoPatrimonioController.text
+            : 'Não informado', // NOVO campo
         'maquina': _maquinaController.text,
         'operacao': _operacaoController.text,
         'areaTrabalhada': _areaTrabalhadaController.text,
@@ -229,7 +278,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         'horaInicial': _horarioInicial ?? 'Não informado',
         'horaFinal': _horarioFinal ?? 'Não informado',
         'horimetroInicial': _horimetroInicialController.text,
-        'horimetroFinal': _horimetroFinalController.text,
+        'horimetroFinal': _horimetroFinalController.text, // Pode ficar vazio
         'tempoTrabalhado': tempoTrabalhado,
         'horimetroTotal': horimetroTotal,
       };
@@ -256,6 +305,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Não definimos appBar para manter coerência com a tela anterior
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -264,20 +314,47 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Dropdown p/ selecionar Patrimônio
                 SearchableDropdown(
-                    items: getPatrimonio,
-                    itemLabel: (patrimonio) => patrimonio.bens,
-                    onItemSelected: (patrimonio) {
-                      selectedPatrimonio = patrimonio.bensId;
+                  items: getPatrimonio,
+                  itemLabel: (patrimonio) => patrimonio.bens,
+                  onItemSelected: (patrimonio) {
+                    setState(() {
                       _patrimonioController.text = patrimonio.bens;
                       _maquinaController.text = patrimonio.bensImple;
-                    }),
-                _buildTextField("Patrimônio Implemento",
-                    _patrimonioImplementoController, "Digite o Patrimônio"),
+                    });
+                  },
+                ),
+
+                // 1) Maquina
                 _buildTextField(
-                    "Maquina", _maquinaController, "Digite o Patrimônio"),
+                  "Maquina",
+                  _maquinaController,
+                  "Digite o Patrimônio",
+                ),
+
+                // 2) Patrimônio Implemento
                 _buildTextField(
-                    "Operação", _operacaoController, "Digite a Operação"),
+                  "Patrimônio Implemento",
+                  _patrimonioImplementoController,
+                  "Digite o Patrimônio",
+                ),
+
+                // 3) Descrição Patrimônio (NOVO campo)
+                _buildTextField(
+                  "Descrição Patrimônio",
+                  _descricaoPatrimonioController,
+                  "Digite a descrição do patrimônio",
+                ),
+
+                // Operação
+                _buildTextField(
+                  "Operação",
+                  _operacaoController,
+                  "Digite a Operação",
+                ),
+
+                // Linha "Motivo de Parada" + botão (+)
                 Row(
                   children: [
                     Expanded(
@@ -309,6 +386,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                   ],
                 ),
 
+                // Lista de motivos já adicionados
                 if (_motivosParada.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
@@ -345,17 +423,19 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                     ),
                     const SizedBox(width: 16),
                     Expanded(
+                      // Horímetro Final pode ficar vazio
                       child: _buildTextField(
                         "Horímetro Final",
                         _horimetroFinalController,
-                        "Digite o Horímetro",
+                        "Digite o Horímetro (opcional)",
+                        isHorimetroFinal: true, // extra param
                       ),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 8),
-                // Mensagens de erro
+                // Erros
                 if (_horaRangeError)
                   const Padding(
                     padding: EdgeInsets.only(top: 8.0),
@@ -379,6 +459,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                     ),
                   ),
 
+                // Mostra resultados de horas e horímetro
                 if (_tempoTrabalhado.isNotEmpty || _horimetroTotal.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -429,11 +510,13 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     );
   }
 
+  // Campo de texto genérico
   Widget _buildTextField(
     String label,
     TextEditingController controller,
-    String hint,
-  ) {
+    String hint, {
+    bool isHorimetroFinal = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
@@ -447,12 +530,18 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
           filled: true,
           fillColor: Colors.white,
         ),
-        validator: (value) =>
-            (value == null || value.isEmpty) ? "Campo obrigatório" : null,
+        // Se for Horímetro Final, não exigimos "Campo obrigatório"
+        validator: (value) {
+          if (!isHorimetroFinal && (value == null || value.isEmpty)) {
+            return "Campo obrigatório";
+          }
+          return null; // se horímetro final estiver vazio, passa
+        },
       ),
     );
   }
 
+  // Motivo de parada item
   Widget _buildMotivoParadaItem(MotivoParada parada) {
     final duracaoMin = parada.duracao.inMinutes;
     final h = duracaoMin ~/ 60;
@@ -479,52 +568,17 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
             ),
             const SizedBox(height: 6),
 
-            // Início
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 14, color: Colors.black),
-                children: [
-                  const TextSpan(
-                    text: 'Início: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(
-                    text: _dateTimeFormat.format(parada.inicio),
-                  ),
-                ],
-              ),
+            Text(
+              'Início: ${_dateTimeFormat.format(parada.inicio)}',
+              style: const TextStyle(fontSize: 14),
             ),
-
-            // Fim
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 14, color: Colors.black),
-                children: [
-                  const TextSpan(
-                    text: 'Fim: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(
-                    text: _dateTimeFormat.format(parada.fim),
-                  ),
-                ],
-              ),
+            Text(
+              'Fim: ${_dateTimeFormat.format(parada.fim)}',
+              style: const TextStyle(fontSize: 14),
             ),
-
-            // Tempo parado
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 14, color: Colors.black),
-                children: [
-                  const TextSpan(
-                    text: 'Tempo parado: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(
-                    text: tempoParada,
-                  ),
-                ],
-              ),
+            Text(
+              'Tempo parado: $tempoParada',
+              style: const TextStyle(fontSize: 14),
             ),
           ],
         ),
