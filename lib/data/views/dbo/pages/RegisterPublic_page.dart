@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
@@ -37,14 +39,10 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   int? culturaSelecionada;
   int? fazendaSelecionada;
   String? cicloSelecionada;
-
   bool _horarioError = false;
   bool _horimetroError = false;
-
-  // Aqui ficam os dados retornados pelo getOperacao
+  bool areamaior = false;
   List<Map<String, dynamic>> getOperacao = [];
-
-  // Lista de operadores retornada pelo getOperador
   List<Operador> getOperador = [];
 
   @override
@@ -60,7 +58,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       setState(() {
         getOperacao = result;
       });
-      print("RESULT: $result");
     } catch (error) {
       print('Error em buscar todas as operações: $error');
     }
@@ -79,7 +76,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     }
   }
 
-  /// Retorna a lista de safra única, incluindo 'Fazenda' e, se quiser, 'cultura' (se existir).
   List<Map<String, dynamic>> getUniqueSafras() {
     final seen = <int>{};
     final List<Map<String, dynamic>> safraList = [];
@@ -90,32 +86,33 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
         seen.add(sid);
         safraList.add({
           'safraId': op['safraId'],
-          'Safra': op['Safra'], // ex: "Safra 2023"
-          'Fazenda': op['Fazenda'], // ex: "Fazenda A"
-          // Se quiser exibir cultura aqui, adicione: 'cultura': op['cultura']
+          'Safra': op['Safra'],
+          'Fazenda': op['Fazenda'],
         });
       }
     }
     return safraList;
   }
 
-  /// Retorna lista de ciclos para a safraId, incluindo 'cicloId', 'Cicloprod', 'cultura', etc.
   List<Map<String, dynamic>> getCiclosBySafra(int safraId) {
+    final seen = <int>{};
     return getOperacao
         .where((op) => op['safraId'] == safraId)
+        .where((op) => seen.add(op['cicloId']))
         .map((op) => {
               'cicloId': op['cicloId'],
               'Cicloprod': op['Cicloprod'],
               'cultura': op['cultura'],
-              'area': op['area'], // se quiser preencher areaTrabalhada aqui
+              'area': op['area'],
             })
         .toList();
   }
 
-  /// Retorna lista de talhões para a safraId, incluindo 'talhaoId', 'Talhao', 'area', etc.
   List<Map<String, dynamic>> getTalhaoBySafra(int safraId) {
+    final seen = <int>{};
     return getOperacao
         .where((op) => op['safraId'] == safraId)
+        .where((op) => seen.add(op['talhaoId']))
         .map((op) => {
               'talhaoId': op['talhaoId'],
               'Talhao': op['Talhao'],
@@ -144,8 +141,13 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   }
 
   void _salvarRegistro() {
+    double areaTalhao = double.tryParse(aretalhaoController.text) ?? 0.0;
+    double areaTrabalhada =
+        double.tryParse(areaTrabalhadaController.text) ?? 0.0;
+
     setState(() {
       _horarioError = _horarioInicial == null || _horarioFinal == null;
+      areamaior = areaTrabalhada > areaTalhao;
     });
 
     if (_formKey.currentState!.validate() &&
@@ -157,6 +159,11 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
         'horarioFinal': _horarioFinal,
         'operacoes': [],
       };
+
+      if (_formKey.currentState!.validate() && areaTalhao > areaTalhao) {
+        areamaior = true;
+        return;
+      }
 
       Navigator.push(
         context,
@@ -205,10 +212,8 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   onItemSelected: (safra) {
                     setState(() {
                       safraSelecionada = safra['safraId'];
-                      // Exemplo: preenche fazenda, cultura (se existir)
                       fazendaController.text =
                           safra['Fazenda']?.toString() ?? '';
-                      // Se tivesse safra['cultura'], poderia setar: culturaController.text = safra['cultura'] ?? '';
                     });
                   },
                   labelText: "Safra",
@@ -225,8 +230,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                       cicloSelecionada = ciclo['cicloId']?.toString() ?? '';
                       cicloController.text = ciclo['Cicloprod'] ?? '';
                       culturaController.text = ciclo['cultura'] ?? '';
-                      // Se quiser setar areaTrabalhadaController:
-                      // areaTrabalhadaController.text = ciclo['area']?.toString() ?? '';
                     });
                   },
                   labelText: "Ciclo",
@@ -284,6 +287,17 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   cultureController: areaTrabalhadaController,
                   hint: "Digite a área trabalhada (ex: 10 ha)",
                 ),
+                if (areamaior)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'Àrea Trabalhada é maior que a Àrea do Talhão!',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 16),
 
                 const Text(
@@ -338,7 +352,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     );
   }
 
-  /// Criação de textField para cultura/fazenda etc.
   Widget _buildTextField(
     String label, {
     required TextEditingController cultureController,
