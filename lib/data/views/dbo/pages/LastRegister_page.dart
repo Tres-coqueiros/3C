@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/global_data.dart';
 
 class LastRegisterPage extends StatefulWidget {
@@ -13,6 +14,8 @@ class LastRegisterPage extends StatefulWidget {
 }
 
 class _LastRegisterPageState extends State<LastRegisterPage> {
+  PostServices postServices = PostServices();
+
   final TextEditingController _novoMotivoController = TextEditingController();
   final TextEditingController _horimetroFinalController =
       TextEditingController();
@@ -119,12 +122,12 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
       'inicio': _dateTimeFormat.format(inicio),
       'fim': _dateTimeFormat.format(fim),
       'duracaoMin': duracaoMin,
+      'horimetroFinal': _horimetroFinalController.text,
     };
 
-    setState(() {
-      _motivosParada.add(novoMotivo);
-      _novoMotivoController.clear();
-    });
+    bool success = await postServices.postBDOMotivo(novoMotivo);
+    print('novoMotivo $novoMotivo');
+    if (success) {}
   }
 
   // Salva alterações no registro global e fecha a tela
@@ -185,7 +188,8 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Detalhes do Registro'),
-          backgroundColor: Colors.green[800],
+          shadowColor: Colors.white,
+          backgroundColor: const Color.fromARGB(255, 26, 55, 27),
         ),
         body: const Center(
           child: Text(

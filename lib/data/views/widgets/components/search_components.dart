@@ -82,6 +82,13 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: ListView.builder(
                         padding: EdgeInsets.zero,
@@ -89,7 +96,14 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                         itemBuilder: (context, index) {
                           final item = filteredItems[index];
                           return ListTile(
-                            title: Text(widget.itemLabel(item)),
+                            title: Text(
+                              widget.itemLabel(item),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[800],
+                              ),
+                            ),
                             onTap: () {
                               _searchController.text = widget.itemLabel(item);
                               widget.onItemSelected(item);
@@ -131,21 +145,37 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
     return CompositedTransformTarget(
       link: _layerLink,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            widget.labelText,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 4),
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              labelText: widget.labelText,
               hintText: widget.hintText,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: Colors.grey.shade400,
+                  color: Colors.grey[300]!,
+                  width: 1.5,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.grey[300]!,
                   width: 1.5,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
                   color: AppColorsComponents.primary,
                   width: 2,
@@ -153,9 +183,21 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
               ),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: EdgeInsets.symmetric(vertical: 8),
-              prefixIcon:
-                  Icon(Icons.search, color: AppColorsComponents.primary),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Colors.grey[600],
+              ),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.close, color: Colors.grey[600]),
+                      onPressed: () {
+                        _searchController.clear();
+                        _filterItems();
+                      },
+                    )
+                  : null,
             ),
           ),
         ],

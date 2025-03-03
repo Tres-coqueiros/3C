@@ -7,8 +7,10 @@ import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/global_data.dart';
 import 'package:senior/data/views/dbo/pages/RegisterActivity_page.dart';
+import 'package:senior/data/views/horaextras/pages/loading_page.dart';
 import 'package:senior/data/views/widgets/base_layout.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
+import 'package:senior/data/views/widgets/components/app_text_components.dart';
 import 'package:senior/data/views/widgets/components/button_components.dart';
 import 'package:senior/data/views/widgets/components/search_components.dart';
 
@@ -45,6 +47,8 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   bool areamaior = false;
   List<Map<String, dynamic>> getOperacao = [];
   List<Operador> getOperador = [];
+
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -160,12 +164,6 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       "areaTrabalhada": areaTrabalhada,
     };
 
-    final registro = {
-      'matricula': matriculaController.text,
-      'horarioInicial': _horarioInicial,
-      'horarioFinal': _horarioFinal,
-      'operacoes': [],
-    };
     setState(() {
       _horarioError = _horarioInicial == null || _horarioFinal == null;
       areamaior = areaTrabalhada > areaTalhao;
@@ -176,11 +174,28 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       return;
     }
 
-    bool sucess = await postServices.postBDO(data);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return LoadingPage(message: "Carregando...");
+      },
+    );
+
+    final response = await postServices.postBDO(data);
     await Future.delayed(const Duration(seconds: 2));
 
-    print(sucess);
-    if (!sucess) {
+    if (response['success']) {
+      final generatedId = response['id'];
+
+      final registro = {
+        'generatedId': generatedId,
+        'matricula': matriculaController.text,
+        'horarioInicial': _horarioInicial,
+        'horarioFinal': _horarioFinal,
+        'operacoes': [],
+      };
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -193,7 +208,13 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
           ),
         ),
       );
-    } else {}
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Erro ao salvar dados!"),
+        ),
+      );
+    }
   }
 
   @override
@@ -253,20 +274,18 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   labelText: "Ciclo",
                   hintText: "Selecione o ciclo",
                 ),
-                const SizedBox(height: 8),
-                _buildTextField(
-                  "Cultura",
-                  cultureController: culturaController,
+                AppTextComponents(
+                  label: "Cultura",
+                  controller: culturaController,
                   hint: "Cultura",
                   readOnly: true,
                 ),
-                _buildTextField(
-                  "Fazenda",
-                  cultureController: fazendaController,
+                AppTextComponents(
+                  label: "Fazenda",
+                  controller: fazendaController,
                   hint: "Fazenda",
                   readOnly: true,
                 ),
-                const SizedBox(height: 8),
                 SearchableDropdown(
                   items: getTalhaoBySafra(safraSelecionada ?? 0),
                   itemLabel: (talhao) => talhao['Talhao'] ?? '',
@@ -281,21 +300,15 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   labelText: "Talhão",
                   hintText: "Selecione o talhão",
                 ),
-                const SizedBox(height: 8),
-
-                // Área do Talhão
-                _buildTextField(
-                  "Área",
-                  cultureController: aretalhaoController,
+                AppTextComponents(
+                  label: "Área",
+                  controller: aretalhaoController,
                   hint: "Área",
                   readOnly: true,
                 ),
-                const SizedBox(height: 8),
-
-                // Área Trabalhada
-                _buildTextField(
-                  "Área Trabalhada",
-                  cultureController: areaTrabalhadaController,
+                AppTextComponents(
+                  label: "Área Trabalhada",
+                  controller: areaTrabalhadaController,
                   hint: "Digite a área trabalhada (ex: 10 ha)",
                 ),
                 if (areamaior)
@@ -310,15 +323,11 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     ),
                   ),
                 const SizedBox(height: 16),
-
-                // Jornada
                 const Text(
                   "Jornada de Trabalho",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-
-                // Horários
                 Row(
                   children: [
                     Expanded(
@@ -364,52 +373,39 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     );
   }
 
-  Widget _buildTextField(
-    String label, {
-    required TextEditingController cultureController,
-    required String hint,
-    bool readOnly = false,
-    bool isNumeric = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        controller: cultureController,
-        readOnly: readOnly,
-        keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        validator: (value) =>
-            (value == null || value.isEmpty) ? "Campo obrigatório" : null,
-      ),
-    );
-  }
-
-  /// Botão de seleção de horário
   Widget _buildTimePicker(String label, String? time, bool isInicial) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey,
+          ),
+        ),
         const SizedBox(height: 4),
         ElevatedButton(
           onPressed: () => _selecionarHorario(context, isInicial),
           style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            backgroundColor: Colors.grey[50],
+            foregroundColor: Colors.grey[800],
+            padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(color: Colors.grey[300]!),
             ),
+            elevation: 0,
           ),
-          child: Text(
-            time ?? "Selecione",
-            style: const TextStyle(fontSize: 14),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                time ?? "Selecionar horário",
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
           ),
         ),
       ],

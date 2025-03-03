@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:senior/data/core/repository/client_repository.dart';
 import 'package:senior/data/core/repository/exceptions_network.dart';
 
@@ -17,10 +19,10 @@ class PostServices {
     }
   }
 
-  Future<bool> postBDO(data) async {
+  Future<bool> postBDOperacao(data) async {
     try {
       final response =
-          await dioAgrimanager.post('postBDO', data: {'data': data});
+          await dioAgrimanager.post('postBDOperacao', data: {'data': data});
       if (response.statusCode == 200) {
         return true;
       } else {
@@ -30,6 +32,47 @@ class PostServices {
       ErrorNotifier.showError(
           'Erro ao fazer a requisição na API: ${error.toString()}');
       return false;
+    }
+  }
+
+  Future<bool> postBDOMotivo(data) async {
+    try {
+      final response =
+          await dioAgrimanager.post('postBDOMotivo', data: {'data': data});
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      ErrorNotifier.showError(
+          'Erro ao fazer a requisição na API: ${error.toString()}');
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> postBDO(data) async {
+    try {
+      final response =
+          await dioAgrimanager.post('postBDO', data: {'data': data});
+
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'id': response.data['id'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': 'Falha na requisição: ${response.statusCode}',
+        };
+      }
+    } catch (error) {
+      ErrorNotifier.showError('Erro na requisição');
+      return {
+        'success': false,
+        'message': 'Falha na requisição',
+      };
     }
   }
 }
@@ -108,6 +151,22 @@ class GetServices {
       final response = await dioAgrimanager.get('getMaquina');
       if (response.data != null && response.data['getMaquina'] != null) {
         return List<Map<String, dynamic>>.from(response.data['getMaquina']);
+      } else {
+        ErrorNotifier.showError(
+            'Erro ao fazer busca de operador: ${response.statusMessage}');
+        return [];
+      }
+    } catch (error) {
+      print('Erro ao fazer a consulta na API Maquinas: $error');
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getServicos() async {
+    try {
+      final response = await dioAgrimanager.get('getServicos');
+      if (response.data != null && response.data['getServicos'] != null) {
+        return List<Map<String, dynamic>>.from(response.data['getServicos']);
       } else {
         ErrorNotifier.showError(
             'Erro ao fazer busca de operador: ${response.statusMessage}');

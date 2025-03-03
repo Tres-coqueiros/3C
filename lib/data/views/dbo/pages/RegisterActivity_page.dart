@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
+import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/global_data.dart';
+import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
+import 'package:senior/data/views/widgets/base_layout.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
+import 'package:senior/data/views/widgets/components/app_text_components.dart';
 import 'package:senior/data/views/widgets/components/button_components.dart';
 import 'package:senior/data/views/widgets/components/search_components.dart';
 
@@ -22,37 +26,9 @@ class RegisterActivityPage extends StatefulWidget {
   State<RegisterActivityPage> createState() => _RegisterActivityPageState();
 }
 
-// Modelo simples para guardar cada "Motivo de Parada"
-class MotivoParada {
-  final String descricao;
-  final DateTime inicio;
-  final DateTime fim;
-
-  MotivoParada({
-    required this.descricao,
-    required this.inicio,
-    required this.fim,
-  });
-
-  Duration get duracao => fim.difference(inicio);
-}
-
-class Patrimonio {
-  final int bensId;
-  final String bens;
-  final String bensImple;
-  final String Unidade;
-
-  Patrimonio({
-    required this.bensId,
-    required this.bens,
-    required this.bensImple,
-    required this.Unidade,
-  });
-}
-
 class _RegisterActivityPageState extends State<RegisterActivityPage> {
   final GetServices getServices = GetServices();
+  final PostServices postServices = PostServices();
   final _formKey = GlobalKey<FormState>();
   final DateFormat _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
 
@@ -62,8 +38,8 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   final TextEditingController _patrimonioController = TextEditingController();
   final TextEditingController _patrimonioImplementoController =
       TextEditingController();
-  final TextEditingController _descricaoPatrimonioController =
-      TextEditingController(); // NOVO campo
+  final TextEditingController codigopatrimonioController =
+      TextEditingController();
   final TextEditingController _maquinaController = TextEditingController();
   final TextEditingController _operacaoController = TextEditingController();
   final TextEditingController _areaTrabalhadaController =
@@ -74,10 +50,12 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   final TextEditingController _horimetroInicialController =
       TextEditingController();
   final TextEditingController _horimetroFinalController =
-      TextEditingController(); // Permitir vazio
+      TextEditingController();
 
   String? _horarioInicial;
   String? _horarioFinal;
+  int? selectedBens;
+  int? selectedServico;
 
   bool _horaRangeError = false;
   bool _horimetroError = false;
@@ -86,16 +64,16 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   String _tempoTrabalhado = '';
   String _horimetroTotal = '';
 
-  // Lista de motivos de parada
   final List<MotivoParada> _motivosParada = [];
 
-  // Lista de patrimônios (máquinas) buscados do backend
   List<Patrimonio> getPatrimonio = [];
+  List<Servicos> getServicos = [];
 
   @override
   void initState() {
     super.initState();
     fetchPatrimonio();
+    fetchServicos();
     _informacoesGerais = widget.informacoesGerais;
     _horarioInicial = _informacoesGerais['horarioInicial'];
     _horarioFinal = _informacoesGerais['horarioFinal'];
@@ -123,6 +101,27 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     }
   }
 
+  void fetchServicos() async {
+    try {
+      final result = await getServices.getServicos();
+      setState(() {
+        getServicos = result.map((servicos) {
+          return Servicos(
+            Codigo: servicos['Codigo'],
+            Servico: servicos['Servicos'],
+            Tipo: servicos['Tipo'],
+          );
+        }).toList();
+      });
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Erro ao buscar serviços"),
+        ),
+      );
+    }
+  }
+
   Future<DateTime?> _pickDateTime() async {
     DateTime? selecionado;
     await DatePicker.showDateTimePicker(
@@ -137,7 +136,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     return selecionado;
   }
 
-  // Adiciona motivo de parada
   Future<void> _addMotivoParada() async {
     final descricao = _motivoTempController.text.trim();
     if (descricao.isEmpty) {
@@ -171,7 +169,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     });
   }
 
-  // Seleciona data/hora para horário inicial/final
   void _selecionarHorario(BuildContext context, bool isInicial) {
     DatePicker.showDateTimePicker(
       context,
@@ -191,44 +188,28 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     );
   }
 
-  // Valida e salva a atividade
-  void _handleAdicionar() {
-    final horimetroInicial = double.tryParse(_horimetroInicialController.text);
-    final horimetroFinal = double.tryParse(_horimetroFinalController.text);
+  void _handleAdicionar() async {
+    final horimetroInicial =
+        double.tryParse(_horimetroInicialController.text) ?? 00;
+    final horimetroFinal =
+        double.tryParse(_horimetroFinalController.text) ?? 00;
 
     setState(() {
-      // Verifica se horário final é antes do inicial
       _horaRangeError = _horarioInicial != null &&
           _horarioFinal != null &&
           _dateTimeFormat.parse(_horarioFinal!).isBefore(
                 _dateTimeFormat.parse(_horarioInicial!),
               );
 
-      // Se horímetro final estiver preenchido, validamos
-      if (horimetroFinal != null && horimetroInicial != null) {
-        if (horimetroFinal <= horimetroInicial) {
-          _horimetroError = true;
-          _horimetroErrorMessage =
-              '⚠ Horímetro Final deve ser maior que o Inicial!';
-        } else if ((horimetroFinal - horimetroInicial) > 12) {
-          _horimetroError = true;
-          _horimetroErrorMessage =
-              '⚠ Horímetro excede as 12 horas de trabalho!';
-        } else {
-          _horimetroError = false;
-          _horimetroErrorMessage = null;
-        }
-      } else {
-        // Se Horímetro Final não foi preenchido, não gera erro
-        _horimetroError = false;
-        _horimetroErrorMessage = null;
+      if ((horimetroFinal - horimetroInicial) > 12) {
+        _horimetroError = true;
+        _horimetroErrorMessage = '⚠ Horímetro excede as 12 horas de trabalho!';
       }
     });
 
     if (_formKey.currentState!.validate() &&
         !_horaRangeError &&
         !_horimetroError) {
-      // Calcula tempo total de horas
       String tempoTrabalhado = '';
       if (_horarioInicial != null && _horarioFinal != null) {
         final inicio = _dateTimeFormat.parse(_horarioInicial!);
@@ -239,7 +220,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         tempoTrabalhado = horas > 0 ? '$horas h $minutos min' : '$minutos min';
       }
 
-      // Calcula diferença de horímetro
       String horimetroTotal = '';
       if (horimetroInicial != null && horimetroFinal != null) {
         final dif = horimetroFinal - horimetroInicial;
@@ -251,16 +231,15 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         _horimetroTotal = horimetroTotal;
       });
 
-      // Monta map final
       final combinedData = {
         ..._informacoesGerais,
         'patrimonio': _patrimonioController.text,
         'patrimonioImplemento': _patrimonioImplementoController.text.isNotEmpty
             ? _patrimonioImplementoController.text
             : 'Não informado',
-        'descricaoPatrimonio': _descricaoPatrimonioController.text.isNotEmpty
-            ? _descricaoPatrimonioController.text
-            : 'Não informado', // NOVO campo
+        'descricaoPatrimonio': codigopatrimonioController.text.isNotEmpty
+            ? codigopatrimonioController.text
+            : 'Não informado',
         'maquina': _maquinaController.text,
         'operacao': _operacaoController.text,
         'areaTrabalhada': _areaTrabalhadaController.text,
@@ -277,10 +256,40 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         'horaInicial': _horarioInicial ?? 'Não informado',
         'horaFinal': _horarioFinal ?? 'Não informado',
         'horimetroInicial': _horimetroInicialController.text,
-        'horimetroFinal': _horimetroFinalController.text, // Pode ficar vazio
+        'horimetroFinal': _horimetroFinalController.text,
         'tempoTrabalhado': tempoTrabalhado,
         'horimetroTotal': horimetroTotal,
       };
+
+      final data = {
+        'producaoId': _informacoesGerais['generatedId'],
+        'servico': selectedServico,
+        'bens': selectedBens,
+        'motivosParada': _motivosParada.map((p) {
+          return {
+            'descricao': p.descricao,
+            'inicio': _dateTimeFormat.format(p.inicio),
+            'fim': _dateTimeFormat.format(p.fim)
+          };
+        }).toList(),
+        'horimetroInicial': _horimetroInicialController.text,
+        'horimetroFinal': _horimetroFinalController.text,
+      };
+
+      bool response = await postServices.postBDOperacao(data);
+      print(response);
+      if (response) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BaseLayout(
+              body: DetailsregisterPage(
+                registros: [combinedData],
+              ),
+            ),
+          ),
+        );
+      }
 
       if (!listaDeRegistros.contains(combinedData)) {
         setState(() {
@@ -294,17 +303,12 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
           duration: Duration(seconds: 1),
         ),
       );
-
-      Future.delayed(const Duration(seconds: 1), () {
-        Navigator.pop(context);
-      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Não definimos appBar para manter coerência com a tela anterior
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -313,47 +317,46 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Dropdown p/ selecionar Patrimônio
+                Text(
+                  'Código da Operação: ${_informacoesGerais['generatedId'].toString()}',
+                ),
+                const SizedBox(height: 8),
                 SearchableDropdown(
                   items: getPatrimonio,
                   itemLabel: (patrimonio) => patrimonio.bens,
                   onItemSelected: (patrimonio) {
                     setState(() {
+                      selectedBens = patrimonio.bensId;
                       _patrimonioController.text = patrimonio.bens;
                       _maquinaController.text = patrimonio.bensImple;
+                      codigopatrimonioController.text =
+                          patrimonio.bensId.toString();
                     });
                   },
                 ),
 
+                AppTextComponents(
+                  label: "Código Patrimônio",
+                  controller: codigopatrimonioController,
+                  hint: "Digite a descrição do patrimônio",
+                ),
                 // 1) Maquina
-                _buildTextField(
-                  "Maquina",
-                  _maquinaController,
-                  "Digite o Patrimônio",
+                AppTextComponents(
+                  label: "Maquina",
+                  controller: _maquinaController,
+                  hint: "Digite o Patrimônio",
                 ),
 
-                // 2) Patrimônio Implemento
-                _buildTextField(
-                  "Patrimônio Implemento",
-                  _patrimonioImplementoController,
-                  "Digite o Patrimônio",
-                ),
-
-                // 3) Descrição Patrimônio (NOVO campo)
-                _buildTextField(
-                  "Descrição Patrimônio",
-                  _descricaoPatrimonioController,
-                  "Digite a descrição do patrimônio",
-                ),
-
-                // Operação
-                _buildTextField(
-                  "Operação",
-                  _operacaoController,
-                  "Digite a Operação",
-                ),
-
-                // Linha "Motivo de Parada" + botão (+)
+                SearchableDropdown(
+                    items: getServicos,
+                    itemLabel: (servicos) => servicos.Servico,
+                    onItemSelected: (servicos) {
+                      setState(() {
+                        selectedServico = servicos.Codigo;
+                        _operacaoController.text = servicos.Servico;
+                      });
+                    }),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -370,7 +373,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -384,8 +386,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                     ),
                   ],
                 ),
-
-                // Lista de motivos já adicionados
                 if (_motivosParada.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
@@ -409,56 +409,32 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                     ),
                   ),
 
-                const SizedBox(height: 16),
-                // Horímetro
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: _buildTextField(
-                        "Horímetro Inicial",
-                        _horimetroInicialController,
-                        "Digite o Horímetro",
+                      child: AppTextComponents(
+                        label: "Horímetro Inicial",
+                        controller: _horimetroInicialController,
+                        hint: "Digite o Horímetro",
+                        isNumeric: true,
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      // Horímetro Final pode ficar vazio
-                      child: _buildTextField(
-                        "Horímetro Final",
-                        _horimetroFinalController,
-                        "Digite o Horímetro (opcional)",
-                        isHorimetroFinal: true, // extra param
+                      child: AppTextComponents(
+                        label: "Horímetro Final",
+                        controller: _horimetroFinalController,
+                        hint: "Digite o Horímetro (opcional)",
+                        isNumeric: true,
+                        isRequired: false,
                       ),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 8),
-                // Erros
-                if (_horaRangeError)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      '⚠ Horário Final não pode ser menor que o Inicial!',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                if (_horimetroError && _horimetroErrorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      _horimetroErrorMessage!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
 
-                // Mostra resultados de horas e horímetro
                 if (_tempoTrabalhado.isNotEmpty || _horimetroTotal.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -505,37 +481,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // Campo de texto genérico
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller,
-    String hint, {
-    bool isHorimetroFinal = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        // Se for Horímetro Final, não exigimos "Campo obrigatório"
-        validator: (value) {
-          if (!isHorimetroFinal && (value == null || value.isEmpty)) {
-            return "Campo obrigatório";
-          }
-          return null; // se horímetro final estiver vazio, passa
-        },
       ),
     );
   }

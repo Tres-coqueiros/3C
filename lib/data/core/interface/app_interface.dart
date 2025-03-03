@@ -114,3 +114,11 @@ class Patrimonio {
       required this.bensImple,
       required this.Unidade});
 }
+
+class Servicos {
+  int Codigo;
+  String Servico;
+  int Tipo;
+
+  Servicos({required this.Codigo, required this.Servico, required this.Tipo});
+}
