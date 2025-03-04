@@ -3,6 +3,7 @@ import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/global_data.dart';
+import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
 
 class LastRegisterPage extends StatefulWidget {
   final Map<String, dynamic> registro;
@@ -14,24 +15,20 @@ class LastRegisterPage extends StatefulWidget {
 }
 
 class _LastRegisterPageState extends State<LastRegisterPage> {
-  PostServices postServices = PostServices();
+  final PostServices postServices = PostServices();
+  final UpdateServices updateServices = UpdateServices();
 
   final TextEditingController _novoMotivoController = TextEditingController();
   final TextEditingController _horimetroFinalController =
       TextEditingController();
   final DateFormat _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
 
-  // Lista local de motivos de parada
   late List<dynamic> _motivosParada;
-
-  // Flag para saber se o registro está concluído
   late bool _isConcluido;
 
   @override
   void initState() {
     super.initState();
-
-    // Carrega motivosParada localmente
     if (widget.registro.containsKey('motivosParada') &&
         widget.registro['motivosParada'] is List) {
       _motivosParada = List.from(widget.registro['motivosParada']);
@@ -39,16 +36,13 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
       _motivosParada = [];
     }
 
-    // Verifica se está concluído
-    _isConcluido = (widget.registro['status'] == 'concluido');
+    _isConcluido = (widget.registro['Status'] == 'concluido');
 
-    // Carrega o horímetro final (se existir)
     final horimetroFinalStr =
         widget.registro['horimetroFinal']?.toString() ?? '';
     _horimetroFinalController.text = horimetroFinalStr;
   }
 
-  /// Monta widget de exibição para cada campo (exceto motivosParada e horimetroFinal)
   Widget _buildDetailRow(String label, dynamic value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -74,7 +68,6 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
     );
   }
 
-  // Exibe o DateTimePicker para data/hora
   Future<DateTime?> _pickDateTime() async {
     DateTime? selecionado;
     await DatePicker.showDateTimePicker(
@@ -89,9 +82,16 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
     return selecionado;
   }
 
-  // Adiciona novo motivo de parada
   Future<void> _addNovoMotivo() async {
-    if (_isConcluido) return; // Se concluído, não faz nada
+    if (_isConcluido) return;
+
+    final horimetroFinalStr = _horimetroFinalController.text.trim();
+    final double? horimetroFinal = double.tryParse(horimetroFinalStr);
+
+    final horimetroInicialStr = widget.registro['horimetroInicial']?.toString();
+    final double? horimetroInicial = horimetroInicialStr != null
+        ? double.tryParse(horimetroInicialStr)
+        : null;
 
     final descricao = _novoMotivoController.text.trim();
     if (descricao.isEmpty) {
@@ -116,38 +116,6 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
       return;
     }
 
-    final duracaoMin = fim.difference(inicio).inMinutes;
-    final novoMotivo = {
-      'descricao': descricao,
-      'inicio': _dateTimeFormat.format(inicio),
-      'fim': _dateTimeFormat.format(fim),
-      'duracaoMin': duracaoMin,
-      'horimetroFinal': _horimetroFinalController.text,
-    };
-
-    bool success = await postServices.postBDOMotivo(novoMotivo);
-    print('novoMotivo $novoMotivo');
-    if (success) {}
-  }
-
-  // Salva alterações no registro global e fecha a tela
-  void _salvarAlteracoes() {
-    // Se concluído, não atualiza nada
-    if (_isConcluido) {
-      Navigator.pop(context);
-      return;
-    }
-
-    // Regras de horímetro: Final não pode ser menor que Inicial, nem exceder 12
-    final horimetroFinalStr = _horimetroFinalController.text.trim();
-    final double? horimetroFinal = double.tryParse(horimetroFinalStr);
-
-    // Se o registro tiver horimetroInicial, convertemos
-    final horimetroInicialStr = widget.registro['horimetroInicial']?.toString();
-    final double? horimetroInicial = horimetroInicialStr != null
-        ? double.tryParse(horimetroInicialStr)
-        : null;
-
     if (horimetroFinal != null && horimetroInicial != null) {
       if (horimetroFinal <= horimetroInicial) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -155,7 +123,7 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
             content: Text('Horímetro Final deve ser maior que o Inicial!'),
           ),
         );
-        return; // Impede de salvar
+        return;
       }
       if ((horimetroFinal - horimetroInicial) > 12) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -163,34 +131,78 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
             content: Text('Horímetro excede as 12 horas de trabalho!'),
           ),
         );
-        return; // Impede de salvar
+        return;
       }
     }
 
-    // Atualiza o registro original com a nova lista de motivos
-    widget.registro['motivosParada'] = _motivosParada;
+    final duracaoMin = fim.difference(inicio).inMinutes;
+    final novoMotivo = {
+      'producao_id': widget.registro['producao_id'],
+      'servico': widget.registro['servico'],
+      'bem': widget.registro['bem'],
+      'horimentroInicial': widget.registro['horimentro_inicial'],
+      'descricao': descricao,
+      'inicio': _dateTimeFormat.format(inicio),
+      'fim': _dateTimeFormat.format(fim),
+      'duracaoMin': duracaoMin,
+      'horimetroFinal': _horimetroFinalController.text,
+    };
 
-    // Atualiza o horimetroFinal no registro
-    widget.registro['horimetroFinal'] = _horimetroFinalController.text;
+    final success = await postServices.postBDOMotivo(novoMotivo);
+    if (success) {
+      setState(() {
+        _motivosParada.add(novoMotivo);
+        _novoMotivoController.clear();
+      });
 
-    // Também atualiza na listaDeRegistros global
-    final idx = listaDeRegistros.indexOf(widget.registro);
-    if (idx != -1) {
-      listaDeRegistros[idx] = widget.registro;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Motivo adicionado com sucesso!")),
+      );
+    }
+  }
+
+  void _salvarAlteracoes() async {
+    if (_isConcluido) {
+      Navigator.pop(context);
+      return;
     }
 
-    Navigator.pop(context);
+    setState(() {
+      widget.registro['motivosParada'] = _motivosParada;
+      widget.registro['horimetroFinal'] = _horimetroFinalController.text;
+    });
+    final data = {'producao_id': widget.registro['producao_id']};
+
+    try {
+      bool success = await updateServices.updateBDO(data);
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Alterações salvas com sucesso!")),
+        );
+
+        await Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DetailsregisterPage(registros: [widget.registro]),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Falha ao salvar as alterações.")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erro ao salvar alterações: ${e.toString()}")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (widget.registro.isEmpty) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Detalhes do Registro'),
-          shadowColor: Colors.white,
-          backgroundColor: const Color.fromARGB(255, 26, 55, 27),
-        ),
         body: const Center(
           child: Text(
             'Nenhum registro selecionado.',
@@ -200,136 +212,180 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
       );
     }
 
+    final bool hasHorimetroFinal = (widget.registro['horimetroFinal'] != null &&
+        widget.registro['horimetroFinal'].toString().isNotEmpty);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detalhes do Registro'),
-        backgroundColor: Colors.green[800],
-        actions: [
-          IconButton(
-            onPressed: _salvarAlteracoes,
-            icon: const Icon(Icons.save),
-            tooltip: _isConcluido
-                ? 'Registro concluído, sem alterações'
-                : 'Salvar alterações',
-          )
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Exibe demais campos (exceto motivosParada e horimetroFinal)
-            ...widget.registro.entries.map((entry) {
-              if (entry.key == 'motivosParada' ||
-                  entry.key == 'horimetroFinal') {
-                return const SizedBox.shrink();
-              }
-              return Column(
-                children: [
-                  _buildDetailRow(entry.key, entry.value),
-                  const Divider(),
-                ],
-              );
-            }).toList(),
-
-            // Se concluído, exibe horimetroFinal em modo leitura
-            if (_isConcluido) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'Registro Concluído',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const Text('Edição de motivos de parada não é permitida.'),
-              const SizedBox(height: 16),
-              // Exibe Horímetro Final em modo somente leitura
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Horímetro Final: ',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      widget.registro['horimetroFinal']?.toString() ??
-                          'Não informado',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ] else ...[
-              // Se não concluído, pode editar Horímetro Final e Motivos
-              const SizedBox(height: 16),
-              TextField(
-                controller: _horimetroFinalController,
-                decoration: const InputDecoration(
-                  labelText: 'Horímetro Final',
-                  hintText: 'Digite o Horímetro Final',
-                  border: OutlineInputBorder(),
+      body: Container(
+        color: Colors.grey[100],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                keyboardType: TextInputType.number,
-              ),
+                elevation: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      ...widget.registro.entries.map((entry) {
+                        final k = entry.key;
+                        final v = entry.value;
 
-              const SizedBox(height: 16),
-              const Text(
-                'Editar Motivos de Parada',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        if (k == 'motivosParada' || k == 'horimetroFinal') {
+                          return const SizedBox.shrink();
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDetailRow(k, v),
+                            const Divider(height: 8),
+                          ],
+                        );
+                      }).toList(),
+                      if (_isConcluido || hasHorimetroFinal) ...[
+                        const SizedBox(height: 8),
+                        _buildDetailRow(
+                          'horimetroFinal',
+                          widget.registro['horimetroFinal']?.toString() ??
+                              'Não informado',
+                        ),
+                      ],
+                      if (_isConcluido) ...[
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Registro Concluído',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Text(
+                          'Edição de motivos de parada não é permitida.',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 20),
+              if (!_isConcluido) ...[
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        // TÍTULO
+                        const Text(
+                          'Edição de Motivos / Horímetro',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _novoMotivoController,
+                          maxLines: 2,
+                          decoration: InputDecoration(
+                            labelText: 'Motivo de Parada',
+                            hintText: 'Ex: Chuva forte',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _novoMotivoController,
-                      decoration: const InputDecoration(
-                        labelText: 'Novo Motivo',
-                        hintText: 'Ex: Chuva',
-                      ),
+                        const SizedBox(height: 16),
+                        if (!hasHorimetroFinal) ...[
+                          TextField(
+                            controller: _horimetroFinalController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Horímetro Final',
+                              hintText: 'Digite o Horímetro Final',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: _addNovoMotivo,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Adicionar'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[700],
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    onPressed: _addNovoMotivo,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Adicionar'),
-                  ),
-                ],
+                ),
+              ],
+              const SizedBox(height: 20),
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _motivosParada.isEmpty
+                      ? const Text('Nenhum motivo de parada cadastrado.')
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _motivosParada.length,
+                          itemBuilder: (context, index) {
+                            final m = _motivosParada[index];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                side: const BorderSide(
+                                  color: Colors.grey,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: ListTile(
+                                title: Text(m['descricao'] ?? 'Sem descrição'),
+                                subtitle: Text(
+                                  'Início: ${m['inicio']}\n'
+                                  'Fim: ${m['fim']}\n'
+                                  'Duração: ${m['duracaoMin']} min',
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
               ),
+              const SizedBox(height: 40),
             ],
-
-            const SizedBox(height: 16),
-            if (_motivosParada.isEmpty)
-              const Text('Nenhum motivo de parada cadastrado.')
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _motivosParada.length,
-                itemBuilder: (context, index) {
-                  final m = _motivosParada[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: ListTile(
-                      title: Text(m['descricao'] ?? 'Sem descrição'),
-                      subtitle: Text(
-                        'Início: ${m['inicio']}\n'
-                        'Fim: ${m['fim']}\n'
-                        'Duração: ${m['duracaoMin']} min',
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-            const SizedBox(height: 40),
-          ],
+          ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _salvarAlteracoes,
+        backgroundColor: Colors.green[800],
+        child: const Icon(Icons.save, color: Colors.white),
       ),
     );
   }

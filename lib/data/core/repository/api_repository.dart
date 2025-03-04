@@ -38,10 +38,10 @@ class PostServices {
     }
   }
 
-  Future<bool> postBDOMotivo(data) async {
+  Future<bool> postBDOMotivo(novoMotivo) async {
     try {
-      final response =
-          await dioAgrimanager.post('postBDOMotivo', data: {'data': data});
+      final response = await dioAgrimanager
+          .post('postBDOmotivo', data: {'data': novoMotivo});
       if (response.statusCode == 200) {
         return true;
       } else {
@@ -178,6 +178,40 @@ class GetServices {
     } catch (error) {
       print('Erro ao fazer a consulta na API Maquinas: $error');
       return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getBDO() async {
+    try {
+      final response = await dioAgrimanager.get('getBDO');
+      if (response.data != null && response.data['getBDO'] != null) {
+        return List<Map<String, dynamic>>.from(response.data['getBDO']);
+      } else {
+        ErrorNotifier.showError(
+            'Erro ao fazer busca de BDO: ${response.statusMessage}');
+        return [];
+      }
+    } catch (error) {
+      print('Erro ao fazer a consulta na API BDO: $error');
+      return [];
+    }
+  }
+}
+
+class UpdateServices {
+  Future<bool> updateBDO(data) async {
+    try {
+      final response =
+          await dioAgrimanager.put('updateBDO', data: {'data': data});
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      ErrorNotifier.showError(
+          'Erro ao fazer a requisição na API: ${error.toString()}');
+      return false;
     }
   }
 }

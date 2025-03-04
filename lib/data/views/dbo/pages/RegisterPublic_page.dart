@@ -5,6 +5,7 @@ import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
+import 'package:senior/data/core/repository/exceptions_network.dart';
 import 'package:senior/data/global_data.dart';
 import 'package:senior/data/views/dbo/pages/RegisterActivity_page.dart';
 import 'package:senior/data/views/horaextras/pages/loading_page.dart';
@@ -22,7 +23,7 @@ class RegisterPublicDBO extends StatefulWidget {
 class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   final GetServices getServices = GetServices();
   final PostServices postServices = PostServices();
-  final _formKey = GlobalKey<FormState>();
+  final formKey = GlobalKey<FormState>();
 
   final TextEditingController safraController = TextEditingController();
   final TextEditingController talhaoController = TextEditingController();
@@ -36,17 +37,17 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
 
   String? _horarioInicial;
   String? _horarioFinal;
-  int? operadorSelecionado;
+  String? operadorSelecionado;
+  int? matricula;
   int? safraSelecionada;
-  int? talhaoSelecionado;
-  int? culturaSelecionada;
-  int? fazendaSelecionada;
-  int? cicloSelecionada;
+
   bool _horarioError = false;
   bool _horimetroError = false;
   bool areamaior = false;
+
   List<Map<String, dynamic>> getOperacao = [];
   List<Operador> getOperador = [];
+  List<Map<String, dynamic>> getMatricula = [];
 
   bool isLoading = false;
 
@@ -55,6 +56,24 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     super.initState();
     fetchOperacao();
     fetchOperador();
+    fetchMatricula();
+  }
+
+  void fetchMatricula() async {
+    try {
+      final result = await getServices.getLogin();
+
+      if (result.isNotEmpty) {
+        matricula = result[0]['numcad'];
+      }
+      print('matricula $matricula');
+      setState(() {
+        getMatricula = result;
+      });
+    } catch (error) {
+      print('Erro ao buscar gestor: $error');
+      ErrorNotifier.showError("Erro ao buscar gestor: $error");
+    }
   }
 
   void fetchOperacao() async {
@@ -148,32 +167,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
     );
   }
 
-  void _salvarRegistro() async {
-    double areaTalhao = double.tryParse(aretalhaoController.text) ?? 0.0;
-    double areaTrabalhada =
-        double.tryParse(areaTrabalhadaController.text) ?? 0.0;
-
-    final data = {
-      "cadOperador": operadorSelecionado,
-      "safra": safraSelecionada,
-      "talhao": talhaoSelecionado,
-      "fazenda": fazendaSelecionada,
-      "cultura": culturaSelecionada,
-      "ciclo": cicloSelecionada,
-      "areaTalhao": areaTalhao,
-      "areaTrabalhada": areaTrabalhada,
-    };
-
-    setState(() {
-      _horarioError = _horarioInicial == null || _horarioFinal == null;
-      areamaior = areaTrabalhada > areaTalhao;
-    });
-
-    if (_formKey.currentState!.validate() && areaTrabalhada > areaTalhao) {
-      areamaior = true;
-      return;
-    }
-
+  Future<void> _salvarDados() async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -182,36 +176,77 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       },
     );
 
-    final response = await postServices.postBDO(data);
-    await Future.delayed(const Duration(seconds: 2));
+    double areaTalhao = double.tryParse(aretalhaoController.text) ?? 0.0;
+    double areaTrabalhada =
+        double.tryParse(areaTrabalhadaController.text) ?? 0.0;
 
-    if (response['success']) {
-      final generatedId = response['id'];
+    final data = {
+      "cadOperador": operadorSelecionado,
+      "safra": safraController.text.trim(),
+      "talhao": talhaoController.text.trim(),
+      "fazenda": fazendaController.text.trim(),
+      "cultura": culturaController.text.trim(),
+      "ciclo": cicloController.text.trim(),
+      "areaTalhao": areaTalhao,
+      "areaTrabalhada": areaTrabalhada,
+      "JornadaInicial": _horarioInicial,
+      "JornadaFinal": _horarioFinal,
+      "usuario_id": matricula
+    };
 
-      final registro = {
-        'generatedId': generatedId,
-        'matricula': matriculaController.text,
-        'horarioInicial': _horarioInicial,
-        'horarioFinal': _horarioFinal,
-        'operacoes': [],
-      };
+    print('data $data');
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => BaseLayout(
-            body: RegisterActivityPage(
-              dados: listaDeRegistros,
-              informacoesGerais: registro,
-              atividade: registro,
+    setState(() {
+      _horarioError = _horarioInicial == null || _horarioFinal == null;
+      areamaior = areaTrabalhada > areaTalhao;
+    });
+
+    if (formKey.currentState!.validate() && areaTrabalhada > areaTalhao) {
+      areamaior = true;
+      return;
+    }
+
+    try {
+      final response = await postServices.postBDO(data);
+      await Future.delayed(const Duration(seconds: 2));
+
+      Navigator.of(context).pop();
+      if (response['success']) {
+        final generatedId = response['id'];
+
+        final registro = {
+          'generatedId': generatedId,
+          'matricula': matriculaController.text.trim(),
+          'horarioInicial': _horarioInicial,
+          'horarioFinal': _horarioFinal,
+          'operacoes': [],
+        };
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BaseLayout(
+              body: RegisterActivityPage(
+                dados: listaDeRegistros,
+                informacoesGerais: registro,
+                atividade: registro,
+              ),
             ),
           ),
-        ),
-      );
-    } else {
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Erro ao salvar dados!"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Erro ao salvar dados!"),
+        SnackBar(
+          content: Text("Erro: ${e.toString()}"),
+          backgroundColor: Colors.red,
         ),
       );
     }
@@ -224,7 +259,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Form(
-            key: _formKey,
+            key: formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -233,9 +268,9 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   itemLabel: (operador) => operador.Nome,
                   onItemSelected: (operador) {
                     setState(() {
-                      operadorSelecionado = operador.Codigo;
+                      operadorSelecionado = operador.Nome;
                     });
-                    operadorSelecionado = operador.Codigo;
+                    operadorSelecionado = operador.Nome;
                   },
                   labelText: "Operador",
                   hintText: "Selecione o operador",
@@ -247,11 +282,8 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   onItemSelected: (safra) {
                     setState(() {
                       safraSelecionada = safra['safraId'];
-                      print(safra['FazendaId']);
-                      fazendaSelecionada = safra['FazendaId'];
-                      fazendaController.text = safra['Fazenda'] ?? '';
-
-                      print(fazendaSelecionada);
+                      safraController.text = safra['Safra'];
+                      fazendaController.text = safra['Fazenda'];
                     });
                   },
                   labelText: "Safra",
@@ -263,12 +295,8 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   itemLabel: (ciclo) => ciclo['Cicloprod'] ?? '',
                   onItemSelected: (ciclo) {
                     setState(() {
-                      print('safraSelecionada $safraSelecionada');
-                      print(ciclo['culturaId']);
-                      cicloSelecionada = ciclo['cicloId'];
-                      culturaSelecionada = ciclo['culturaId'];
-                      cicloController.text = ciclo['Cicloprod'] ?? '';
-                      culturaController.text = ciclo['cultura'] ?? '';
+                      cicloController.text = ciclo['Cicloprod'];
+                      culturaController.text = ciclo['cultura'];
                     });
                   },
                   labelText: "Ciclo",
@@ -288,13 +316,11 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                 ),
                 SearchableDropdown(
                   items: getTalhaoBySafra(safraSelecionada ?? 0),
-                  itemLabel: (talhao) => talhao['Talhao'] ?? '',
+                  itemLabel: (talhao) => talhao['Talhao'],
                   onItemSelected: (talhao) {
                     setState(() {
-                      talhaoSelecionado = talhao['talhaoId'];
                       talhaoController.text = talhao['Talhao'];
-                      aretalhaoController.text =
-                          talhao['area'].toString() ?? '';
+                      aretalhaoController.text = talhao['area'].toString();
                     });
                   },
                   labelText: "Talhão",
@@ -356,7 +382,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
 
                 // Botão
                 ButtonComponents(
-                  onPressed: _salvarRegistro,
+                  onPressed: _salvarDados,
                   text: 'Salvar e Avançar',
                   textColor: AppColorsComponents.hashours,
                   backgroundColor: AppColorsComponents.primary,

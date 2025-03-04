@@ -30,42 +30,39 @@ class RegisterActivityPage extends StatefulWidget {
 class _RegisterActivityPageState extends State<RegisterActivityPage> {
   final GetServices getServices = GetServices();
   final PostServices postServices = PostServices();
-  final _formKey = GlobalKey<FormState>();
-  final DateFormat _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
+  final formKey = GlobalKey<FormState>();
+  final DateFormat dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
 
-  late Map<String, dynamic> _informacoesGerais;
+  late Map<String, dynamic> informacoesGerais;
 
-  // Controllers
-  final TextEditingController _patrimonioController = TextEditingController();
-  final TextEditingController _patrimonioImplementoController =
+  final TextEditingController patrimonioController = TextEditingController();
+  final TextEditingController patrimonioImplementoController =
       TextEditingController();
   final TextEditingController codigopatrimonioController =
       TextEditingController();
-  final TextEditingController _maquinaController = TextEditingController();
-  final TextEditingController _operacaoController = TextEditingController();
-  final TextEditingController _areaTrabalhadaController =
+  final TextEditingController maquinaController = TextEditingController();
+  final TextEditingController operacaoController = TextEditingController();
+  final TextEditingController areaTrabalhadaController =
       TextEditingController();
-  final TextEditingController _motivoTempController = TextEditingController();
-  final TextEditingController _talhaoController = TextEditingController();
-  final TextEditingController _culturaController = TextEditingController();
-  final TextEditingController _horimetroInicialController =
+  final TextEditingController motivoTempController = TextEditingController();
+  final TextEditingController talhaoController = TextEditingController();
+  final TextEditingController culturaController = TextEditingController();
+  final TextEditingController horimetroInicialController =
       TextEditingController();
-  final TextEditingController _horimetroFinalController =
+  final TextEditingController horimetroFinalController =
       TextEditingController();
 
-  String? _horarioInicial;
-  String? _horarioFinal;
-  int? selectedBens;
-  int? selectedServico;
+  String? horarioInicial;
+  String? horarioFinal;
 
-  bool _horaRangeError = false;
-  bool _horimetroError = false;
-  String? _horimetroErrorMessage;
+  bool horaRangeError = false;
+  bool horimetroError = false;
+  String? horimetroErrorMessage;
 
   String _tempoTrabalhado = '';
   String _horimetroTotal = '';
 
-  final List<MotivoParada> _motivosParada = [];
+  final List<MotivoParada> motivosParada = [];
 
   List<Patrimonio> getPatrimonio = [];
   List<Servicos> getServicos = [];
@@ -75,9 +72,9 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     super.initState();
     fetchPatrimonio();
     fetchServicos();
-    _informacoesGerais = widget.informacoesGerais;
-    _horarioInicial = _informacoesGerais['horarioInicial'];
-    _horarioFinal = _informacoesGerais['horarioFinal'];
+    informacoesGerais = widget.informacoesGerais;
+    horarioInicial = informacoesGerais['horarioInicial'];
+    horarioFinal = informacoesGerais['horarioFinal'];
   }
 
   void fetchPatrimonio() async {
@@ -138,7 +135,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   }
 
   Future<void> _addMotivoParada() async {
-    final descricao = _motivoTempController.text.trim();
+    final descricao = motivoTempController.text.trim();
     if (descricao.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -165,8 +162,8 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
 
     final parada = MotivoParada(descricao: descricao, inicio: inicio, fim: fim);
     setState(() {
-      _motivosParada.add(parada);
-      _motivoTempController.clear();
+      motivosParada.add(parada);
+      motivoTempController.clear();
     });
   }
 
@@ -176,11 +173,11 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
       showTitleActions: true,
       onConfirm: (date) {
         setState(() {
-          final formatted = _dateTimeFormat.format(date);
+          final formatted = dateTimeFormat.format(date);
           if (isInicial) {
-            _horarioInicial = formatted;
+            horarioInicial = formatted;
           } else {
-            _horarioFinal = formatted;
+            horarioFinal = formatted;
           }
         });
       },
@@ -191,30 +188,29 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
 
   void _handleAdicionar() async {
     final horimetroInicial =
-        double.tryParse(_horimetroInicialController.text) ?? 00;
-    final horimetroFinal =
-        double.tryParse(_horimetroFinalController.text) ?? 00;
+        double.tryParse(horimetroInicialController.text) ?? 00;
+    final horimetroFinal = double.tryParse(horimetroFinalController.text) ?? 00;
 
     setState(() {
-      _horaRangeError = _horarioInicial != null &&
-          _horarioFinal != null &&
-          _dateTimeFormat.parse(_horarioFinal!).isBefore(
-                _dateTimeFormat.parse(_horarioInicial!),
+      horaRangeError = horarioInicial != null &&
+          horarioFinal != null &&
+          dateTimeFormat.parse(horarioFinal!).isBefore(
+                dateTimeFormat.parse(horarioInicial!),
               );
 
       if ((horimetroFinal - horimetroInicial) > 12) {
-        _horimetroError = true;
-        _horimetroErrorMessage = '⚠ Horímetro excede as 12 horas de trabalho!';
+        horimetroError = true;
+        horimetroErrorMessage = '⚠ Horímetro excede as 12 horas de trabalho!';
       }
     });
 
-    if (_formKey.currentState!.validate() &&
-        !_horaRangeError &&
-        !_horimetroError) {
+    if (formKey.currentState!.validate() &&
+        !horaRangeError &&
+        !horimetroError) {
       String tempoTrabalhado = '';
-      if (_horarioInicial != null && _horarioFinal != null) {
-        final inicio = _dateTimeFormat.parse(_horarioInicial!);
-        final fim = _dateTimeFormat.parse(_horarioFinal!);
+      if (horarioInicial != null && horarioFinal != null) {
+        final inicio = dateTimeFormat.parse(horarioInicial!);
+        final fim = dateTimeFormat.parse(horarioFinal!);
         final duracao = fim.difference(inicio);
         final horas = duracao.inHours;
         final minutos = duracao.inMinutes % 60;
@@ -233,48 +229,48 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
       });
 
       final combinedData = {
-        ..._informacoesGerais,
-        'patrimonio': _patrimonioController.text,
-        'patrimonioImplemento': _patrimonioImplementoController.text.isNotEmpty
-            ? _patrimonioImplementoController.text
+        ...informacoesGerais,
+        'patrimonio': patrimonioController.text,
+        'patrimonioImplemento': patrimonioImplementoController.text.isNotEmpty
+            ? patrimonioImplementoController.text
             : 'Não informado',
         'descricaoPatrimonio': codigopatrimonioController.text.isNotEmpty
             ? codigopatrimonioController.text
             : 'Não informado',
-        'maquina': _maquinaController.text,
-        'operacao': _operacaoController.text,
-        'areaTrabalhada': _areaTrabalhadaController.text,
-        'motivosParada': _motivosParada.map((p) {
+        'maquina': maquinaController.text,
+        'operacao': operacaoController.text,
+        'areaTrabalhada': areaTrabalhadaController.text,
+        'motivosParada': motivosParada.map((p) {
           return {
             'descricao': p.descricao,
-            'inicio': _dateTimeFormat.format(p.inicio),
-            'fim': _dateTimeFormat.format(p.fim),
+            'inicio': dateTimeFormat.format(p.inicio),
+            'fim': dateTimeFormat.format(p.fim),
             'duracaoMin': p.duracao.inMinutes,
           };
         }).toList(),
-        'talhao': _talhaoController.text,
-        'cultura': _culturaController.text,
-        'horaInicial': _horarioInicial ?? 'Não informado',
-        'horaFinal': _horarioFinal ?? 'Não informado',
-        'horimetroInicial': _horimetroInicialController.text,
-        'horimetroFinal': _horimetroFinalController.text,
+        'talhao': talhaoController.text,
+        'cultura': culturaController.text,
+        'horaInicial': horarioInicial ?? 'Não informado',
+        'horaFinal': horarioFinal ?? 'Não informado',
+        'horimetroInicial': horimetroInicialController.text,
+        'horimetroFinal': horimetroFinalController.text,
         'tempoTrabalhado': tempoTrabalhado,
         'horimetroTotal': horimetroTotal,
       };
 
       final data = {
-        'producaoId': _informacoesGerais['generatedId'],
-        'servico': selectedServico,
-        'bens': selectedBens,
-        'motivosParada': _motivosParada.map((p) {
+        'producaoId': informacoesGerais['generatedId'],
+        'servico': operacaoController.text.trim(),
+        'bens': patrimonioController.text.trim(),
+        'motivosParada': motivosParada.map((p) {
           return {
             'descricao': p.descricao,
-            'inicio': _dateTimeFormat.format(p.inicio),
-            'fim': _dateTimeFormat.format(p.fim)
+            'inicio': dateTimeFormat.format(p.inicio),
+            'fim': dateTimeFormat.format(p.fim)
           };
         }).toList(),
-        'horimetroInicial': _horimetroInicialController.text,
-        'horimetroFinal': _horimetroFinalController.text,
+        'horimetroInicial': horimetroInicialController.text,
+        'horimetroFinal': horimetroFinalController.text,
       };
 
       showDialog(
@@ -322,12 +318,12 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Form(
-            key: _formKey,
+            key: formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Código da Operação: ${_informacoesGerais['generatedId'].toString()}',
+                  'Código da Operação: ${informacoesGerais['generatedId'].toString()}',
                 ),
                 const SizedBox(height: 8),
                 SearchableDropdown(
@@ -335,9 +331,8 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                   itemLabel: (patrimonio) => patrimonio.bens,
                   onItemSelected: (patrimonio) {
                     setState(() {
-                      selectedBens = patrimonio.bensId;
-                      _patrimonioController.text = patrimonio.bens;
-                      _maquinaController.text = patrimonio.bensImple;
+                      patrimonioController.text = patrimonio.bens;
+                      maquinaController.text = patrimonio.bensImple;
                       codigopatrimonioController.text =
                           patrimonio.bensId.toString();
                     });
@@ -352,7 +347,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                 // 1) Maquina
                 AppTextComponents(
                   label: "Maquina",
-                  controller: _maquinaController,
+                  controller: maquinaController,
                   hint: "Digite o Patrimônio",
                 ),
 
@@ -361,8 +356,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                     itemLabel: (servicos) => servicos.Servico,
                     onItemSelected: (servicos) {
                       setState(() {
-                        selectedServico = servicos.Codigo;
-                        _operacaoController.text = servicos.Servico;
+                        operacaoController.text = servicos.Servico;
                       });
                     }),
                 const SizedBox(height: 12),
@@ -370,7 +364,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                   children: [
                     Expanded(
                       child: TextFormField(
-                        controller: _motivoTempController,
+                        controller: motivoTempController,
                         decoration: InputDecoration(
                           labelText: "Motivo de Parada",
                           hintText: "Ex: Falta de material",
@@ -395,7 +389,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                     ),
                   ],
                 ),
-                if (_motivosParada.isNotEmpty)
+                if (motivosParada.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Column(
@@ -408,10 +402,9 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                         ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _motivosParada.length,
+                          itemCount: motivosParada.length,
                           itemBuilder: (context, index) {
-                            return _buildMotivoParadaItem(
-                                _motivosParada[index]);
+                            return _buildMotivoParadaItem(motivosParada[index]);
                           },
                         ),
                       ],
@@ -424,7 +417,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                     Expanded(
                       child: AppTextComponents(
                         label: "Horímetro Inicial",
-                        controller: _horimetroInicialController,
+                        controller: horimetroInicialController,
                         hint: "Digite o Horímetro",
                         isNumeric: true,
                       ),
@@ -433,7 +426,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                     Expanded(
                       child: AppTextComponents(
                         label: "Horímetro Final",
-                        controller: _horimetroFinalController,
+                        controller: horimetroFinalController,
                         hint: "Digite o Horímetro (opcional)",
                         isNumeric: true,
                         isRequired: false,
@@ -494,7 +487,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
     );
   }
 
-  // Motivo de parada item
   Widget _buildMotivoParadaItem(MotivoParada parada) {
     final duracaoMin = parada.duracao.inMinutes;
     final h = duracaoMin ~/ 60;
@@ -522,11 +514,11 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
             const SizedBox(height: 6),
 
             Text(
-              'Início: ${_dateTimeFormat.format(parada.inicio)}',
+              'Início: ${dateTimeFormat.format(parada.inicio)}',
               style: const TextStyle(fontSize: 14),
             ),
             Text(
-              'Fim: ${_dateTimeFormat.format(parada.fim)}',
+              'Fim: ${dateTimeFormat.format(parada.fim)}',
               style: const TextStyle(fontSize: 14),
             ),
             Text(

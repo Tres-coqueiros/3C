@@ -43,22 +43,17 @@ class _LoadingPageState extends State<LoadingPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          Colors.black.withOpacity(0.5), // Fundo escuro semi-transparente
+      backgroundColor: Colors.black.withOpacity(0.5),
       body: Stack(
         children: [
-          // Fundo com desfoque dinâmico
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
             child: Container(color: Colors.black.withOpacity(0.3)),
           ),
-
-          // Conteúdo centralizado
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Animação do indicador de carregamento
                 AnimatedBuilder(
                   animation: _controller,
                   builder: (context, child) {
@@ -87,8 +82,6 @@ class _LoadingPageState extends State<LoadingPage>
                   },
                 ),
                 SizedBox(height: 20),
-
-                // Texto animado
                 AnimatedBuilder(
                   animation: _opacityAnimation,
                   builder: (context, child) {
