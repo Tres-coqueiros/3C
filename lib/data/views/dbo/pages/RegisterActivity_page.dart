@@ -5,6 +5,7 @@ import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/global_data.dart';
 import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
+import 'package:senior/data/views/horaextras/pages/loading_page.dart';
 import 'package:senior/data/views/widgets/base_layout.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 import 'package:senior/data/views/widgets/components/app_text_components.dart';
@@ -276,17 +277,32 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         'horimetroFinal': _horimetroFinalController.text,
       };
 
-      bool response = await postServices.postBDOperacao(data);
-      print(response);
-      if (response) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return LoadingPage(message: "Carregando...");
+        },
+      );
+
+      final response = await postServices.postBDOperacao(data);
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (response['success']) {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => BaseLayout(
-              body: DetailsregisterPage(
-                registros: [combinedData],
-              ),
+              body: DetailsregisterPage(registros: [combinedData]),
             ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Erro desconhecido'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
           ),
         );
       }
@@ -296,13 +312,6 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
           listaDeRegistros.add(combinedData);
         });
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cadastro realizado com sucesso!'),
-          duration: Duration(seconds: 1),
-        ),
-      );
     }
   }
 

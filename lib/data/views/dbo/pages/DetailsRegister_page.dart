@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:senior/data/global_data.dart';
 import 'package:senior/data/views/dbo/pages/LastRegister_page.dart';
 
 class DetailsregisterPage extends StatefulWidget {

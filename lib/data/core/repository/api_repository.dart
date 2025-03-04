@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:senior/data/core/repository/client_repository.dart';
 import 'package:senior/data/core/repository/exceptions_network.dart';
 
@@ -19,19 +17,24 @@ class PostServices {
     }
   }
 
-  Future<bool> postBDOperacao(data) async {
+  Future<Map<String, dynamic>> postBDOperacao(data) async {
     try {
       final response =
           await dioAgrimanager.post('postBDOperacao', data: {'data': data});
+      print(response);
       if (response.statusCode == 200) {
-        return true;
+        return {'success': true, 'status': response.data['status']};
       } else {
-        return false;
+        return {
+          'success': false,
+          'message': response.statusMessage,
+        };
       }
     } catch (error) {
-      ErrorNotifier.showError(
-          'Erro ao fazer a requisição na API: ${error.toString()}');
-      return false;
+      return {
+        'success': false,
+        'message': 'Falha na requisição',
+      };
     }
   }
 
