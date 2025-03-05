@@ -27,7 +27,7 @@ class PostServices {
       } else {
         return {
           'success': false,
-          'message': response.statusMessage,
+          'message': '${response.statusMessage}',
         };
       }
     } catch (error) {
@@ -38,10 +38,32 @@ class PostServices {
     }
   }
 
-  Future<bool> postBDOMotivo(novoMotivo) async {
+  Future<Map<String, dynamic>> postBDOMotivo(novoMotivo) async {
     try {
       final response = await dioAgrimanager
           .post('postBDOmotivo', data: {'data': novoMotivo});
+      if (response.statusCode == 200) {
+        return {'success': true, 'motivo': response.data['motivo']};
+      } else {
+        return {
+          'success': false,
+          'message': '${response.statusMessage}',
+        };
+      }
+    } catch (error) {
+      ErrorNotifier.showError(
+          'Erro ao fazer a requisição na API: ${error.toString()}');
+      return {
+        'success': false,
+        'message': 'Falha na requisição',
+      };
+    }
+  }
+
+  Future<bool> postBDOHorimetro(novoHorimetro) async {
+    try {
+      final response = await dioAgrimanager
+          .post('postBDOHorimetro', data: {'data': novoHorimetro});
       if (response.statusCode == 200) {
         return true;
       } else {
@@ -50,6 +72,8 @@ class PostServices {
     } catch (error) {
       ErrorNotifier.showError(
           'Erro ao fazer a requisição na API: ${error.toString()}');
+      print(error.toString());
+
       return false;
     }
   }

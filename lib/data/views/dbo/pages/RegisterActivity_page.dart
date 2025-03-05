@@ -204,9 +204,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
       }
     });
 
-    if (formKey.currentState!.validate() &&
-        !horaRangeError &&
-        !horimetroError) {
+    if (!horaRangeError && !horimetroError) {
       String tempoTrabalhado = '';
       if (horarioInicial != null && horarioFinal != null) {
         final inicio = dateTimeFormat.parse(horarioInicial!);
@@ -227,64 +225,65 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
         _tempoTrabalhado = tempoTrabalhado;
         _horimetroTotal = horimetroTotal;
       });
+    }
+    final combinedData = {
+      ...informacoesGerais,
+      'patrimonio': patrimonioController.text,
+      'patrimonioImplemento': patrimonioImplementoController.text.isNotEmpty
+          ? patrimonioImplementoController.text
+          : 'Não informado',
+      'descricaoPatrimonio': codigopatrimonioController.text.isNotEmpty
+          ? codigopatrimonioController.text
+          : 'Não informado',
+      'maquina': maquinaController.text,
+      'operacao': operacaoController.text,
+      'areaTrabalhada': areaTrabalhadaController.text,
+      'motivosParada': motivosParada.map((p) {
+        return {
+          'descricao': p.descricao,
+          'inicio': dateTimeFormat.format(p.inicio),
+          'fim': dateTimeFormat.format(p.fim),
+          'duracaoMin': p.duracao.inMinutes,
+        };
+      }).toList(),
+      'talhao': talhaoController.text,
+      'cultura': culturaController.text,
+      'horaInicial': horarioInicial ?? 'Não informado',
+      'horaFinal': horarioFinal ?? 'Não informado',
+      'horimetroInicial': horimetroInicialController.text,
+      'horimetroFinal': horimetroFinalController.text,
+      'tempoTrabalhado': _tempoTrabalhado,
+      'horimetroTotal': _horimetroTotal,
+    };
 
-      final combinedData = {
-        ...informacoesGerais,
-        'patrimonio': patrimonioController.text,
-        'patrimonioImplemento': patrimonioImplementoController.text.isNotEmpty
-            ? patrimonioImplementoController.text
-            : 'Não informado',
-        'descricaoPatrimonio': codigopatrimonioController.text.isNotEmpty
-            ? codigopatrimonioController.text
-            : 'Não informado',
-        'maquina': maquinaController.text,
-        'operacao': operacaoController.text,
-        'areaTrabalhada': areaTrabalhadaController.text,
-        'motivosParada': motivosParada.map((p) {
-          return {
-            'descricao': p.descricao,
-            'inicio': dateTimeFormat.format(p.inicio),
-            'fim': dateTimeFormat.format(p.fim),
-            'duracaoMin': p.duracao.inMinutes,
-          };
-        }).toList(),
-        'talhao': talhaoController.text,
-        'cultura': culturaController.text,
-        'horaInicial': horarioInicial ?? 'Não informado',
-        'horaFinal': horarioFinal ?? 'Não informado',
-        'horimetroInicial': horimetroInicialController.text,
-        'horimetroFinal': horimetroFinalController.text,
-        'tempoTrabalhado': tempoTrabalhado,
-        'horimetroTotal': horimetroTotal,
-      };
+    final data = {
+      'producaoId': informacoesGerais['generatedId'],
+      'servico': operacaoController.text.trim(),
+      'bens': patrimonioController.text.trim(),
+      'motivosParada': motivosParada.map((p) {
+        return {
+          'descricao': p.descricao,
+          'inicio': p.inicio.toIso8601String(),
+          'fim': p.fim.toIso8601String()
+        };
+      }).toList(),
+      'horimetroInicial': horimetroInicialController.text,
+      'horimetroFinal': horimetroFinalController.text,
+    };
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return LoadingPage(message: "Carregando...");
+      },
+    );
 
-      final data = {
-        'producaoId': informacoesGerais['generatedId'],
-        'servico': operacaoController.text.trim(),
-        'bens': patrimonioController.text.trim(),
-        'motivosParada': motivosParada.map((p) {
-          return {
-            'descricao': p.descricao,
-            'inicio': dateTimeFormat.format(p.inicio),
-            'fim': dateTimeFormat.format(p.fim)
-          };
-        }).toList(),
-        'horimetroInicial': horimetroInicialController.text,
-        'horimetroFinal': horimetroFinalController.text,
-      };
-
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return LoadingPage(message: "Carregando...");
-        },
-      );
-
+    try {
       final response = await postServices.postBDOperacao(data);
       await Future.delayed(const Duration(seconds: 2));
 
       if (response['success']) {
+        print(response);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -302,12 +301,18 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
           ),
         );
       }
-
-      if (!listaDeRegistros.contains(combinedData)) {
-        setState(() {
-          listaDeRegistros.add(combinedData);
-        });
-      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erro ao salvar registro"),
+        ),
+      );
+      print('Error: $error');
+    }
+    if (!listaDeRegistros.contains(combinedData)) {
+      setState(() {
+        listaDeRegistros.add(combinedData);
+      });
     }
   }
 

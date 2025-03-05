@@ -65,7 +65,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     final status = registro['Status']?.toString().toLowerCase() ?? '';
 
     if (status == 'concluido') return 'concluido';
-    if (status == 'Em Andamento') return 'emEspera';
+    if (status == 'em andamento') return 'Em Andamento';
     return 'incompleto';
   }
 
