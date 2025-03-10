@@ -18,6 +18,7 @@ class DetailsregisterPage extends StatefulWidget {
 
 class _DetailsregisterPageState extends State<DetailsregisterPage> {
   final GetServices getServices = GetServices();
+  final UpdateServices updateServices = UpdateServices();
   List<Map<String, dynamic>> concluidos = [];
   List<Map<String, dynamic>> emEspera = [];
   List<Map<String, dynamic>> incompletos = [];
@@ -32,11 +33,40 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     fetchBDO();
   }
 
+  void _salvarAlteracoes() async {
+    final data = {
+      'producao_id': int.tryParse(widget.registros[0]['id'].toString()),
+      "operador_id":
+          int.tryParse(widget.registros[0]['operador_id'].toString()),
+      "safra_id": int.tryParse(widget.registros[0]['safra_id'].toString()),
+      "talhao_id": int.tryParse(widget.registros[0]['talhao_id'].toString()),
+      "fazenda": widget.registros[0]['unidade'],
+      "cultura_id": int.tryParse(widget.registros[0]['cultura_id'].toString()),
+      "ciclo_id": int.tryParse(widget.registros[0]['ciclo_id'].toString()),
+      "unidade_id": int.tryParse(widget.registros[0]['unidade_id'].toString()),
+      "areaTalhao": widget.registros[0]['safra'],
+      "areaTrabalhada": widget.registros[0]['areaTrabalhada'],
+      "JornadaInicial": widget.registros[0]['jornadaInicial'],
+      "JornadaFinal": widget.registros[0]['jornadaFinal'],
+    };
+    final success = await updateServices.updateBDO(data);
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (_) => DetailsregisterPage(registros: widget.registros)),
+      );
+    }
+  }
+
   void fetchBDO() async {
     try {
       final result = await getServices.getBDO();
       setState(() {
-        widget.registros = result;
+        widget.registros = result.map((producao) {
+          final producaoSemRegistros = Map<String, dynamic>.from(producao);
+          return producaoSemRegistros;
+        }).toList();
         _classificarRegistros();
       });
     } catch (error) {
@@ -45,9 +75,14 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
   }
 
   void _classificarRegistros() {
+    concluidos.clear();
+    emEspera.clear();
+    incompletos.clear();
+
     for (final registro in widget.registros) {
+      registro['selected'] = false;
+
       final status = _determineStatus(registro);
-      print('status $status: ');
       switch (status) {
         case 'concluido':
           concluidos.add(registro);
@@ -57,6 +92,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
           break;
         case 'incompleto':
           incompletos.add(registro);
+          break;
       }
     }
   }
@@ -137,33 +173,51 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
   Widget _buildStatusSection() {
     return Column(
       children: [
-        _buildStatusCard('Concluídos', concluidos, Colors.green),
+        _buildStatusCard(
+          'Concluídos',
+          concluidos,
+          Colors.green,
+          showCheckboxes: false,
+        ),
         const SizedBox(height: 16),
-        _buildStatusCard('Em Espera', emEspera, Colors.orange),
+        _buildStatusCard(
+          'Em Espera',
+          emEspera,
+          Colors.orange,
+          showCheckboxes: true,
+        ),
         const SizedBox(height: 16),
-        _buildStatusCard('Incompletos', incompletos, Colors.red),
+        _buildStatusCard(
+          'Incompletos',
+          incompletos,
+          Colors.red,
+          showCheckboxes: false,
+        ),
       ],
     );
   }
 
   Widget _buildStatusCard(
-      String title, List<Map<String, dynamic>> registros, Color color) {
-    final Color softColor = Colors.white; // Card principal branco
-    final Color textColor = color.withOpacity(0.9);
-    final Color iconColor = color.withOpacity(0.8);
+    String title,
+    List<Map<String, dynamic>> registros,
+    Color color, {
+    required bool showCheckboxes,
+  }) {
+    final bool allSelected = showCheckboxes &&
+        registros.isNotEmpty &&
+        registros.every((r) => (r['selected'] as bool?) == true);
 
     return Card(
-      elevation: 2,
-      color: softColor, // Mantém o card branco
+      elevation: 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         side: BorderSide(
-          color: color.withOpacity(0.2),
+          color: color.withOpacity(0.3),
           width: 1,
         ),
       ),
       child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         iconColor: color,
         collapsedIconColor: color.withOpacity(0.6),
         title: Row(
@@ -187,10 +241,25 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: textColor,
-                letterSpacing: 0.5,
+                color: color.withOpacity(0.9),
               ),
             ),
+            const Spacer(),
+            if (showCheckboxes)
+              Checkbox(
+                value: allSelected,
+                onChanged: (bool? val) {
+                  setState(() {
+                    final newVal = val ?? false;
+                    for (var r in registros) {
+                      r['selected'] = newVal;
+                    }
+                  });
+                },
+                fillColor: MaterialStateProperty.resolveWith<Color>(
+                  (states) => color, // Cor do checkbox
+                ),
+              ),
           ],
         ),
         children: [
@@ -200,7 +269,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
               child: Text(
                 'Nenhum registro',
                 style: TextStyle(
-                  color: textColor.withOpacity(0.6),
+                  color: color.withOpacity(0.6),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -208,80 +277,74 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
           else
             Container(
               constraints: const BoxConstraints(maxHeight: 300),
-              color: Colors.white, // Fundo branco, sem gradiente
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: registros.length,
-                  itemBuilder: (context, index) {
-                    final registro = registros[index];
-                    final status = _determineStatus(registro);
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: registros.length,
+                itemBuilder: (context, index) {
+                  final registro = registros[index];
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 6.0),
-                      elevation: 0,
-                      color: Colors.white, // Card interno também branco
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(
-                          color: color.withOpacity(0.1),
-                          width: 1,
-                        ),
+                  return Card(
+                    margin:
+                        const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                    elevation: 0,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(
+                        color: color.withOpacity(0.1),
+                        width: 1,
                       ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap:
-                            _isNavigating ? null : () => _onCardTap(registro),
-                        child: ExpansionTile(
-                          leading: Icon(
-                            Icons.list_alt,
-                            color: iconColor,
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => _onCardTap(registro),
+                      child: ExpansionTile(
+                        leading: Icon(
+                          Icons.list_alt,
+                          color: color.withOpacity(0.8),
+                        ),
+                        trailing: showCheckboxes
+                            ? Checkbox(
+                                value: (registro['selected'] as bool?) ?? false,
+                                onChanged: (bool? val) {
+                                  setState(() {
+                                    registro['selected'] = val ?? false;
+                                  });
+                                },
+                                fillColor:
+                                    MaterialStateProperty.resolveWith<Color>(
+                                  (states) => color,
+                                ),
+                              )
+                            : null,
+                        title: Text(
+                          'Registro ${index + 1}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: color.withOpacity(0.9),
                           ),
-                          iconColor: iconColor,
-                          title: Text(
-                            'Registro ${index + 1}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: textColor.withOpacity(0.9),
+                        ),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ..._buildRegistroInfo(registro),
+                              ],
                             ),
                           ),
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ..._buildRegistroInfo(registro),
-                                  if (status == 'emEspera')
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: color,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          elevation: 2,
-                                        ),
-                                        onPressed: () =>
-                                            _concluirRegistro(registro),
-                                        child: const Text('Concluir'),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
             ),
         ],
@@ -311,16 +374,15 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
             Icons.timer, 'Horário Inicial', registro['jornadaInicial']),
         _buildInfoItem(
             Icons.timer_off, 'Horário Final', registro['jornadaFinal']),
+        _buildInfoItem(Icons.timer_off, 'Status', registro['Status']),
       ]),
       const Divider(height: 24, color: Colors.grey),
       _buildInfoSection('Detalhes Operacionais', [
         _buildInfoItem(
-            Icons.precision_manufacturing, 'Patrimônio', registro['bem']),
-        _buildInfoItem(Icons.construction, 'Operação', registro['servico']),
-        _buildInfoItem(
-            Icons.speed, 'Horímetro Inicial', registro['horimentro_inicial']),
-        _buildInfoItem(
-            Icons.speed, 'Horímetro Final', registro['horimentro_fim']),
+            Icons.precision_manufacturing, 'Safra', registro['safra']),
+        _buildInfoItem(Icons.construction, 'Cultura', registro['cultura']),
+        _buildInfoItem(Icons.speed, 'Talhão', registro['talhao']),
+        _buildInfoItem(Icons.speed, 'Unidade', registro['unidade']),
         if (registro.containsKey('tempoTrabalhado'))
           _buildInfoItem(Icons.access_time, 'Horas Trabalhadas',
               registro['tempoTrabalhado']),
@@ -332,7 +394,6 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
               Icons.terrain, 'Área Trabalhada', registro['areaTrabalhada']),
       ]),
       const Divider(height: 24, color: Colors.grey),
-      _buildMotivosParadaSection(registro),
     ];
   }
 
@@ -395,98 +456,6 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                   maxLines: 2,
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMotivosParadaSection(Map<String, dynamic> registro) {
-    if (!registro.containsKey('motivosParada')) return const SizedBox.shrink();
-
-    final motivos = registro['motivosParada'] as List;
-    if (motivos.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Motivos de Parada',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.blueGrey,
-          ),
-        ),
-        const SizedBox(height: 8),
-        ...motivos.map<Widget>((mp) => _buildMotivoItem(mp)).toList(),
-      ],
-    );
-  }
-
-  Widget _buildMotivoItem(Map<String, dynamic> motivo) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.info_outline, size: 16, color: Colors.orange[800]),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  motivo['descricao'] ?? 'Motivo não informado',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          _buildDetailRow('Início:', motivo['inicio']),
-          _buildDetailRow('Fim:', motivo['fim']),
-          if (motivo['duracaoMin'] != null)
-            _buildDetailRow('Duração:', '${motivo['duracaoMin']} min'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
-              ),
             ),
           ),
         ],

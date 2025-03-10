@@ -118,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _crachaController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Número do Crachá',
+                          labelText: 'Número Crachá',
                           labelStyle: TextStyle(
                               color: const Color.fromARGB(179, 0, 0, 0)),
                           hintText: 'Digite seu crachá',

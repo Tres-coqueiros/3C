@@ -21,39 +21,17 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
   final TextEditingController _horimetroFinalController =
       TextEditingController();
   final DateFormat _dateFormat = DateFormat('yy/dd/MMMM HH:mm');
+  final List<Map<String, dynamic>> _motivosParada = [];
 
-  List<dynamic> _motivosParada = [];
-  late bool _isConcluido;
   late bool _isHorimetroFinalPreenchido;
 
   @override
   void initState() {
     super.initState();
-    _loadMotivos();
-    _isConcluido = widget.registro['Status'] == 'concluido';
+    print(widget.registro['registros']);
     _horimetroFinalController.text =
         widget.registro['horimetroFinal']?.toString() ?? '';
     _isHorimetroFinalPreenchido = widget.registro['horimetroFinal'] != null;
-  }
-
-  Future<void> _loadMotivos() async {
-    final prefs = await SharedPreferences.getInstance();
-    final motivosString = prefs.getString('motivosParada');
-    if (motivosString != null) {
-      setState(() {
-        _motivosParada = List.from(motivosString.split(','));
-      });
-    } else {
-      setState(() {
-        _motivosParada = [];
-      });
-    }
-  }
-
-  // Save motivos to SharedPreferences
-  Future<void> _saveMotivos() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('motivosParada', _motivosParada.join(','));
   }
 
   Future<DateTime?> _pickDateTime() async {
@@ -76,23 +54,27 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
     final fim = await _pickDateTime();
     if (fim == null || fim.isBefore(inicio)) return;
 
+    final registros = widget.registro['registros'];
+    if (registros == null || registros.isEmpty) {
+      print('Erro: Nenhum registro encontrado.');
+      return;
+    }
+
+    final primeiroRegistro = registros[0];
+
     final novoMotivo = {
+      'servico': primeiroRegistro['servico_id'],
       'descricao': descricao,
       'inicio': _dateFormat.format(inicio),
       'fim': _dateFormat.format(fim),
-      'horimetroFinal': _horimetroFinalController.text,
-      'horimentroInicial': widget.registro['horimetro_inicial'],
-      'servico': widget.registro['servico'],
-      'bem': widget.registro['bem'],
-      'producao_id': widget.registro['producao_id'],
+      'horimetroInicial': primeiroRegistro['horimetro_inicial'],
+      'bem': primeiroRegistro['bem_id'],
+      'producao_id': primeiroRegistro['producao_id'],
     };
-
-    print('novoMotivo $novoMotivo');
 
     final response = await postServices.postBDOMotivo(novoMotivo);
     if (response['success']) {
       final addMotivo = response['motivo'];
-      print(addMotivo);
       setState(() {
         _motivosParada.add(addMotivo);
         _novoMotivoController.clear();
@@ -105,28 +87,22 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
   Future<void> _addHorimetroFinal() async {
     final statusHorimetro = "Horimetro";
 
+    final registros = widget.registro['registros'];
+    if (registros == null || registros.isEmpty) {
+      print('Erro: Nenhum registro encontrado.');
+      return;
+    }
+    final primeiroRegistro = registros[0];
+
     final novoHorimetro = {
       'horimetroFinal': _horimetroFinalController.text,
-      'producao_id': widget.registro['producao_id'],
+      'producao_id': primeiroRegistro['producao_id'],
       'statusHorimetro': statusHorimetro,
     };
 
     final success = await postServices.postBDOHorimetro(novoHorimetro);
     if (success) {
       _horimetroFinalController.clear();
-    }
-  }
-
-  void _salvarAlteracoes() async {
-    if (_isConcluido) return;
-    final success = await updateServices
-        .updateBDO({'producao_id': widget.registro['producao_id']});
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (_) => DetailsregisterPage(registros: [widget.registro])),
-      );
     }
   }
 
@@ -149,34 +125,47 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: widget.registro.entries.map((entry) {
-                    final keyMap = {
-                      'usuarioId': 'Matricula',
-                      'operador': 'Operador',
-                      'ciclo': 'Ciclo',
-                      'cultura': 'Cultura',
-                      'safra': 'Safra',
-                      'talhao': 'Talhão',
-                      'unidade': 'Unidade',
-                      'Status': 'Status',
-                      'created_at': 'Criado Em',
-                      'area': 'Área',
-                      'areaTrabalhada': 'Área Trabalhada',
-                      'jornadaInicial': 'Jornada Inicial',
-                      'jornadaFinal': 'Jornada Final',
-                      'producao_id': 'Código Operação',
-                      'motivo': 'Motivo',
-                      'servico': 'Serviço',
-                      'bem': 'Bem',
-                      'hora_inicial': 'Hora Inicial',
-                      'hora_final': 'Hora Final',
-                      'durationstop': 'Duração Parada',
-                      'horimetro_inicial': 'Horímetro Inicial',
-                      'horimetro_fim': 'Horímetro Final',
-                    };
-                    return _buildDetailRow(
-                        keyMap[entry.key] ?? entry.key, entry.value);
-                  }).toList(),
+                  children: [
+                    if (widget.registro['registros'] != null &&
+                        widget.registro['registros'] is List)
+                      ...List<Map<String, dynamic>>.from(
+                              widget.registro['registros'])
+                          .map((registro) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Registro de Deslocamento',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ...registro.entries.map((entry) {
+                              final keyMap = {
+                                'id': 'ID',
+                                'producao_id': 'Código Operação',
+                                'motivo': 'Motivo',
+                                'servico': 'Serviço',
+                                'bem': 'Bem',
+                                'hora_inicial': 'Hora Inicial',
+                                'hora_final': 'Hora Final',
+                                'durationstop': 'Duração Parada',
+                                'horimetro_inicial': 'Horímetro Inicial',
+                                'horimetro_fim': 'Horímetro Final',
+                                'created_at': 'Criado Em',
+                              };
+                              return _buildDetailRow(
+                                keyMap[entry.key] ?? entry.key,
+                                entry.value?.toString() ?? "Não informado",
+                              );
+                            }).toList(),
+                          ],
+                        );
+                      }).toList(),
+                  ],
                 ),
               ),
             ),
@@ -249,23 +238,23 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
               ),
             ),
             const SizedBox(height: 20),
-            const SizedBox(height: 20),
             _motivosParada.isNotEmpty
                 ? ListView.builder(
                     shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
+                    physics: const NeverScrollableScrollPhysics(),
                     itemCount: _motivosParada.length,
                     itemBuilder: (context, index) {
                       final motivo = _motivosParada[index];
                       final descricaoMotivo =
-                          motivo['descricao'] ?? 'Motivo Desconhecido';
+                          motivo['motivo'] ?? 'Motivo Desconhecido';
                       final horaInicial = motivo['hora_inicial'];
                       final horaFinal = motivo['hora_final'];
 
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 3,
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
@@ -298,11 +287,6 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
           ],
         ),
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: _salvarAlteracoes,
-      //   backgroundColor: Colors.green[800],
-      //   child: const Icon(Icons.save, color: Colors.white),
-      // ),
     );
   }
 
@@ -312,12 +296,19 @@ class _LastRegisterPageState extends State<LastRegisterPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("$label: ",
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(
+            "$label: ",
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
           Expanded(
-              child: Text(value?.toString() ?? 'Não informado',
-                  style: const TextStyle(fontSize: 16))),
+            child: Text(
+              value?.toString() ?? 'Não informado',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
         ],
       ),
     );

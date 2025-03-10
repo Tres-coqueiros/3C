@@ -38,8 +38,14 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
   String? _horarioInicial;
   String? _horarioFinal;
   String? operadorSelecionado;
+
   int? matricula;
   int? safraSelecionada;
+  int? talhaoSelecionado;
+  int? culturaSelecionada;
+  int? fazendaSelecionada;
+  int? ciclosSelecionada;
+  int? operadorIdSeleconado;
 
   bool _horarioError = false;
   bool _horimetroError = false;
@@ -191,10 +197,16 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
       "areaTrabalhada": areaTrabalhada,
       "JornadaInicial": _horarioInicial,
       "JornadaFinal": _horarioFinal,
-      "usuario_id": matricula
+      "usuario_id": matricula,
+      "safra_id": safraSelecionada,
+      "talhao_id": talhaoSelecionado,
+      "cultura_id": culturaSelecionada,
+      "unidade_id": fazendaSelecionada,
+      "ciclo_id": ciclosSelecionada,
+      "operador_id": operadorIdSeleconado,
     };
 
-    print('data $data');
+    print('data $operadorIdSeleconado');
 
     setState(() {
       _horarioError = _horarioInicial == null || _horarioFinal == null;
@@ -269,8 +281,10 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   onItemSelected: (operador) {
                     setState(() {
                       operadorSelecionado = operador.Nome;
+                      operadorIdSeleconado = operador.Codigo;
                     });
                     operadorSelecionado = operador.Nome;
+                    operadorIdSeleconado = operador.Codigo;
                   },
                   labelText: "Operador",
                   hintText: "Selecione o operador",
@@ -283,6 +297,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                     setState(() {
                       safraSelecionada = safra['safraId'];
                       safraController.text = safra['Safra'];
+                      fazendaSelecionada = safra['FazendaId'];
                       fazendaController.text = safra['Fazenda'];
                     });
                   },
@@ -295,6 +310,8 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   itemLabel: (ciclo) => ciclo['Cicloprod'] ?? '',
                   onItemSelected: (ciclo) {
                     setState(() {
+                      ciclosSelecionada = ciclo['cicloId'];
+                      culturaSelecionada = ciclo['culturaId'];
                       cicloController.text = ciclo['Cicloprod'];
                       culturaController.text = ciclo['cultura'];
                     });
@@ -319,6 +336,7 @@ class _RegisterPublicDBOState extends State<RegisterPublicDBO> {
                   itemLabel: (talhao) => talhao['Talhao'],
                   onItemSelected: (talhao) {
                     setState(() {
+                      talhaoSelecionado = talhao['talhaoId'];
                       talhaoController.text = talhao['Talhao'];
                       aretalhaoController.text = talhao['area'].toString();
                     });

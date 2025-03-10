@@ -4,6 +4,7 @@ import 'package:senior/data/views/auth/auth_services.dart';
 import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/views/horaextras/pages/navigation_page.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
+import 'package:senior/data/views/widgets/components/sidebar_components.dart';
 
 class BaseLayout extends StatelessWidget {
   final PostAuth postAuth = PostAuth();
@@ -11,7 +12,6 @@ class BaseLayout extends StatelessWidget {
 
   BaseLayout({super.key, required this.body});
 
-  /// **Navega para a tela de registros**
   void _mostrarRegistros(BuildContext context) {
     Navigator.push(
         context,
@@ -28,7 +28,7 @@ class BaseLayout extends StatelessWidget {
       await postAuth.authlogout();
       context.go('/');
     } catch (error) {
-      print('Error ao ecerrar app: $error');
+      print('Error ao encerrar app: $error');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Erro ao tentar sair do aplicativo'),
@@ -57,10 +57,15 @@ class BaseLayout extends StatelessWidget {
               onPressed: () => {Exit(context)}),
           IconButton(
             icon: const Icon(Icons.history, color: Colors.white),
-            onPressed: () => _mostrarRegistros(
-                context), // Agora leva para a tela de registros
+            onPressed: () => _mostrarRegistros(context),
           ),
         ],
+      ),
+      drawer: Drawer(
+        shadowColor: AppColorsComponents.hashours,
+        child: Column(
+          children: [Expanded(child: SidebarComponents())],
+        ),
       ),
       backgroundColor: const Color(0xFFF3F7FB),
       resizeToAvoidBottomInset: true,

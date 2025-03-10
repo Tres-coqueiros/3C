@@ -55,6 +55,9 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
   String? horarioInicial;
   String? horarioFinal;
 
+  int? servicoselecionado;
+  int? bemSelecionado;
+
   bool horaRangeError = false;
   bool horimetroError = false;
   String? horimetroErrorMessage;
@@ -269,6 +272,8 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
       }).toList(),
       'horimetroInicial': horimetroInicialController.text,
       'horimetroFinal': horimetroFinalController.text,
+      'servico_id': servicoselecionado,
+      'bem_id': bemSelecionado
     };
     showDialog(
       context: context,
@@ -336,6 +341,7 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                   itemLabel: (patrimonio) => patrimonio.bens,
                   onItemSelected: (patrimonio) {
                     setState(() {
+                      bemSelecionado = patrimonio.bensId;
                       patrimonioController.text = patrimonio.bens;
                       maquinaController.text = patrimonio.bensImple;
                       codigopatrimonioController.text =
@@ -357,13 +363,17 @@ class _RegisterActivityPageState extends State<RegisterActivityPage> {
                 ),
 
                 SearchableDropdown(
-                    items: getServicos,
-                    itemLabel: (servicos) => servicos.Servico,
-                    onItemSelected: (servicos) {
-                      setState(() {
-                        operacaoController.text = servicos.Servico;
-                      });
-                    }),
+                  items: getServicos,
+                  itemLabel: (servicos) => servicos.Servico,
+                  onItemSelected: (servicos) {
+                    setState(() {
+                      servicoselecionado = servicos.Codigo;
+                      operacaoController.text = servicos.Servico;
+                    });
+                  },
+                  hintText: "Digite a descrição da Operação",
+                  labelText: "Operação",
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [

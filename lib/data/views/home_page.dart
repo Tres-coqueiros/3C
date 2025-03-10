@@ -16,6 +16,7 @@ class _HomePageState extends State<HomePage> {
 
   List<Map<String, dynamic>> listColaborador = [];
   String useCargos = "";
+  bool isRhExpanded = false;
 
   @override
   void initState() {
@@ -46,26 +47,95 @@ class _HomePageState extends State<HomePage> {
       body: Scaffold(
         backgroundColor: AppColorsComponents.background,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: ListView(
+            padding: EdgeInsets.all(16.0),
             children: [
-              _buildButton(
+              _buildExpandableButton(
                 context,
-                title: "HORA EXTRAS",
+                title: "Recursos Humanos",
                 color: AppColorsComponents.primary,
-                visible: useCargos == 'S',
-                onPressed: () => context.go('/listcolaboradores'),
+                expanded: isRhExpanded,
+                onPressed: () {
+                  setState(() {
+                    isRhExpanded = !isRhExpanded;
+                  });
+                },
               ),
+              if (isRhExpanded)
+                Column(
+                  children: [
+                    _buildButton(
+                      context,
+                      title: "Horas Extras",
+                      color: AppColorsComponents.primary,
+                      visible: useCargos == 'S',
+                      onPressed: () => context.go('/listcolaboradores'),
+                    ),
+                  ],
+                ),
               const SizedBox(height: 20),
-              SizedBox(height: 20),
+              _buildSectionTitle("PCM"),
               _buildButton(
                 context,
-                title: "BDO",
+                title: "Projeto BDO",
                 color: AppColorsComponents.secondary,
                 onPressed: () => context.go('/registerpublic'),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpandableButton(
+    BuildContext context, {
+    required String title,
+    required Color color,
+    required bool expanded,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.8,
+      height: 60,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 4.0,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
+              ),
+            ),
+            Icon(expanded ? Icons.expand_less : Icons.expand_more,
+                color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
         ),
       ),
     );
