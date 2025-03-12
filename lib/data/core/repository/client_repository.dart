@@ -13,8 +13,8 @@ Dio createDio(String baseUrl) {
 
 final dioSenior = createDio('http://172.16.5.178:5175/senior/');
 final dioAgrimanager = createDio('http://172.16.5.178:5175/agrimanager/');
-// final dioSenior = createDio('http://192.168.103.251:3000/senior/');
-// final dioAgrimanager = createDio('http://192.168.103.251:3000/agrimanager/');
+// final dioSenior = createDio('http://192.168.103.250:3000/senior/');
+// final dioAgrimanager = createDio('http://192.168.103.250:3000/agrimanager/');
 
 void addInterceptors(Dio dio, CookieJar cookieJar) {
   dio.interceptors.add(CookieManager(cookieJar));

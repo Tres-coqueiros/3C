@@ -1,4 +1,3 @@
-// File: lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/provider/app_provider_departament.dart';
 import 'package:senior/data/core/repository/client_repository.dart';
@@ -29,10 +28,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       routerConfig: appRouter,
       debugShowCheckedModeBanner: true,
+      title: 'Senior',
       builder: (context, child) {
         return Stack(
           children: [
-            child!,
+            if (child != null) child,
             ErrorListener(),
           ],
         );
