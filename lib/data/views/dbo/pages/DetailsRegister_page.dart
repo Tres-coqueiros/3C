@@ -18,9 +18,12 @@ class DetailsregisterPage extends StatefulWidget {
 
 class _DetailsregisterPageState extends State<DetailsregisterPage> {
   final GetServices getServices = GetServices();
+
+  /// Listas separadas de registros
   List<Map<String, dynamic>> concluidos = [];
   List<Map<String, dynamic>> emEspera = [];
   List<Map<String, dynamic>> incompletos = [];
+
   bool _isNavigating = false;
 
   @override
@@ -44,10 +47,19 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     }
   }
 
+  /// Classifica os registros em três listas e
+  /// inicializa cada registro com `selected = false`.
   void _classificarRegistros() {
+    // Limpa as listas antes de popular
+    concluidos.clear();
+    emEspera.clear();
+    incompletos.clear();
+
     for (final registro in widget.registros) {
+      // Adiciona a chave de seleção para cada registro (inicialmente false)
+      registro['selected'] = false;
+
       final status = _determineStatus(registro);
-      print('status $status: ');
       switch (status) {
         case 'concluido':
           concluidos.add(registro);
@@ -57,18 +69,20 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
           break;
         case 'incompleto':
           incompletos.add(registro);
+          break;
       }
     }
   }
 
+  /// Determina o status textual de cada registro
   String _determineStatus(Map<String, dynamic> registro) {
     final status = registro['Status']?.toString().toLowerCase() ?? '';
-
     if (status == 'concluido') return 'concluido';
     if (status == 'em andamento') return 'Em Andamento';
     return 'incompleto';
   }
 
+  /// Verifica se todas as listas estão vazias
   bool get _isAllEmpty =>
       concluidos.isEmpty && emEspera.isEmpty && incompletos.isEmpty;
 
@@ -134,27 +148,45 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     );
   }
 
+  /// Monta as três seções: Concluídos, Em Espera, Incompletos
   Widget _buildStatusSection() {
     return Column(
       children: [
-        _buildStatusCard('Concluídos', concluidos, Colors.green),
+        // 1) Concluídos (SEM checkboxes)
+        _buildStatusCard('Concluídos', concluidos, Colors.green,
+            showCheckboxes: false),
         const SizedBox(height: 16),
-        _buildStatusCard('Em Espera', emEspera, Colors.orange),
+        // 2) Em Espera (COM checkboxes)
+        _buildStatusCard('Em Espera', emEspera, Colors.orange,
+            showCheckboxes: true),
         const SizedBox(height: 16),
-        _buildStatusCard('Incompletos', incompletos, Colors.red),
+        // 3) Incompletos (SEM checkboxes)
+        _buildStatusCard('Incompletos', incompletos, Colors.red,
+            showCheckboxes: false),
       ],
     );
   }
 
+  /// Constrói cada seção (Card + ExpansionTile)
+  /// Se `showCheckboxes` for true, exibe checkbox geral e individual
   Widget _buildStatusCard(
-      String title, List<Map<String, dynamic>> registros, Color color) {
+    String title,
+    List<Map<String, dynamic>> registros,
+    Color color, {
+    required bool showCheckboxes,
+  }) {
     final Color softColor = Colors.white; // Card principal branco
     final Color textColor = color.withOpacity(0.9);
     final Color iconColor = color.withOpacity(0.8);
 
+    // Se a seção permite checkboxes, verifica se todos estão selecionados
+    final bool allSelected = showCheckboxes &&
+        registros.isNotEmpty &&
+        registros.every((r) => (r['selected'] as bool?) == true);
+
     return Card(
       elevation: 2,
-      color: softColor, // Mantém o card branco
+      color: softColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -166,8 +198,11 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
         tilePadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
         iconColor: color,
         collapsedIconColor: color.withOpacity(0.6),
+
+        /// Cabeçalho da seção
         title: Row(
           children: [
+            // Ícone colorido circular
             Container(
               width: 24,
               height: 24,
@@ -182,6 +217,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
               ),
             ),
             const SizedBox(width: 12),
+            // Título + quantidade
             Text(
               '$title (${registros.length})',
               style: TextStyle(
@@ -191,8 +227,25 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                 letterSpacing: 0.5,
               ),
             ),
+            const Spacer(),
+
+            // Checkbox geral só se showCheckboxes = true
+            if (showCheckboxes)
+              Checkbox(
+                value: allSelected,
+                onChanged: (bool? val) {
+                  setState(() {
+                    final newVal = val ?? false;
+                    for (var r in registros) {
+                      r['selected'] = newVal;
+                    }
+                  });
+                },
+              ),
           ],
         ),
+
+        /// Conteúdo da seção (lista de registros)
         children: [
           if (registros.isEmpty)
             Padding(
@@ -208,7 +261,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
           else
             Container(
               constraints: const BoxConstraints(maxHeight: 300),
-              color: Colors.white, // Fundo branco, sem gradiente
+              color: Colors.white, // Fundo branco
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: ListView.builder(
@@ -222,7 +275,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 6.0),
                       elevation: 0,
-                      color: Colors.white, // Card interno também branco
+                      color: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                         side: BorderSide(
@@ -230,15 +283,33 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                           width: 1,
                         ),
                       ),
+
+                      /// Cada registro em si
                       child: InkWell(
                         borderRadius: BorderRadius.circular(10),
                         onTap:
                             _isNavigating ? null : () => _onCardTap(registro),
+
+                        /// O registro também é um ExpansionTile
                         child: ExpansionTile(
                           leading: Icon(
                             Icons.list_alt,
                             color: iconColor,
                           ),
+
+                          // Só mostra checkbox individual se showCheckboxes = true
+                          trailing: showCheckboxes
+                              ? Checkbox(
+                                  value:
+                                      (registro['selected'] as bool?) ?? false,
+                                  onChanged: (bool? val) {
+                                    setState(() {
+                                      registro['selected'] = val ?? false;
+                                    });
+                                  },
+                                )
+                              : null,
+
                           iconColor: iconColor,
                           title: Text(
                             'Registro ${index + 1}',
@@ -289,6 +360,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     );
   }
 
+  /// Define o ícone do cabeçalho da seção
   IconData _getStatusIcon(String title) {
     switch (title) {
       case 'Concluídos':
@@ -302,7 +374,9 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     }
   }
 
+  /// Monta as seções de informações de cada registro
   List<Widget> _buildRegistroInfo(Map<String, dynamic> registro) {
+    final status = _determineStatus(registro);
     return [
       _buildInfoSection('Informações Básicas', [
         _buildInfoItem(Icons.badge, 'Matricula', registro['usuarioId']),
@@ -389,7 +463,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black, // letras pretas
+                    color: Colors.black,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 2,
@@ -494,6 +568,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     );
   }
 
+  /// Botão "Concluir" de um registro em Em Espera
   void _concluirRegistro(Map<String, dynamic> registro) {
     showDialog(
       context: context,
@@ -522,6 +597,7 @@ class _DetailsregisterPageState extends State<DetailsregisterPage> {
     );
   }
 
+  /// Ao tocar num registro, abre a tela LastRegisterPage
   Future<void> _onCardTap(Map<String, dynamic> registro) async {
     if (_isNavigating) return;
     _isNavigating = true;

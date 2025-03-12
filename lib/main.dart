@@ -1,7 +1,6 @@
-// File: lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/repository/client_repository.dart';
-import 'package:senior/data/core/routers/app_router.dart';
+import 'package:senior/data/core/routers/app_router.dart'; // ✅ Certifique-se de que está importado corretamente
 import 'package:senior/data/core/repository/notification_services.dart';
 import 'package:senior/data/views/horaextras/pages/error_notifier_page.dart';
 
@@ -18,13 +17,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      routerConfig: appRouter,
-      debugShowCheckedModeBanner: true,
+      routerConfig: appRouter, // ✅ Usa `appRouter` corretamente
+      debugShowCheckedModeBanner: false,
       title: 'Senior',
       builder: (context, child) {
         return Stack(
           children: [
-            child!,
+            if (child != null) child,
             ErrorListener(),
           ],
         );

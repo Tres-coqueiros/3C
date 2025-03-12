@@ -57,12 +57,19 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () => context.go('/listcolaboradores'),
               ),
               const SizedBox(height: 20),
-              SizedBox(height: 20),
               _buildButton(
                 context,
                 title: "BDO",
                 color: AppColorsComponents.secondary,
                 onPressed: () => context.go('/registerpublic'),
+              ),
+              const SizedBox(height: 20),
+              // ✅ Novo Botão para Solicitação de Compra
+              _buildButton(
+                context,
+                title: "SOLICITAÇÃO DE COMPRA",
+                color: Colors.blueAccent, // Cor para diferenciar
+                onPressed: () => context.go('/solicitacao'),
               ),
             ],
           ),
@@ -78,7 +85,7 @@ class _HomePageState extends State<HomePage> {
     required VoidCallback onPressed,
     bool visible = true,
   }) {
-    if (!visible) return SizedBox();
+    if (!visible) return const SizedBox();
 
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.8,
@@ -95,7 +102,7 @@ class _HomePageState extends State<HomePage> {
         ),
         child: Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.2,
