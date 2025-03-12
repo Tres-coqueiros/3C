@@ -117,7 +117,7 @@ class GetServices {
         return [];
       }
     } catch (error) {
-      ErrorNotifier.showError('Erro ao carregar API: ${error.toString()}');
+      print('Erro ao carregar API: ${error.toString()}');
       return [];
     }
   }

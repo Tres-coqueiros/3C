@@ -12,23 +12,23 @@ class BaseLayout extends StatelessWidget {
 
   BaseLayout({super.key, required this.body});
 
-  void _mostrarRegistros(BuildContext context) {
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => BaseLayout(
-              body: DetailsregisterPage(
-            registros: [],
-          )),
-        ));
-  }
+  // void _mostrarRegistros(BuildContext context) {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => BaseLayout(
+  //         body: DetailsregisterPage(registros: []),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   void Exit(BuildContext context) async {
     try {
       await postAuth.authlogout();
       context.go('/');
     } catch (error) {
-      print('Error ao encerrar app: $error');
+      print('Erro ao encerrar app: $error');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Erro ao tentar sair do aplicativo'),
@@ -40,29 +40,55 @@ class BaseLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawerScrimColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Três Coqueiros'),
         backgroundColor: AppColorsComponents.primary,
         centerTitle: false,
         elevation: 0,
-        titleTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-        ),
+        // title: Row(
+        //   children: [
+        //     AnimatedContainer(
+        //       duration: Duration(seconds: 1),
+        //       curve: Curves.easeInOut,
+        //       child: ClipRRect(
+        //         child: Image.asset(
+        //           'assets/images/logoBranca.png',
+        //           height: 50,
+        //         ),
+        //       ),
+        //     ),
+        //   ],
+        // ),
         actions: [
           IconButton(
-              icon: const Icon(Icons.exit_to_app_outlined),
-              color: Colors.white,
-              onPressed: () => {Exit(context)}),
+            icon: const Icon(Icons.notifications),
+            color: Colors.white,
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Notificações ainda não implementadas')),
+              );
+            },
+          ),
           IconButton(
-            icon: const Icon(Icons.history, color: Colors.white),
-            onPressed: () => _mostrarRegistros(context),
+              color: Colors.white,
+              onPressed: () => print('object'),
+              icon: const Icon(Icons.av_timer_rounded)),
+          // IconButton(
+          //   icon: const Icon(Icons.history, color: Colors.white),
+          //   onPressed: () => _mostrarRegistros(context),
+          // ),
+          IconButton(
+            icon: const Icon(Icons.exit_to_app_outlined),
+            color: Colors.white,
+            onPressed: () => Exit(context),
           ),
         ],
       ),
       drawer: Drawer(
-        shadowColor: AppColorsComponents.hashours,
+        elevation: 4,
+        // shadowColor: AppColorsComponents.hashours,
+        backgroundColor: AppColorsComponents.hashours,
         child: Column(
           children: [Expanded(child: SidebarComponents())],
         ),

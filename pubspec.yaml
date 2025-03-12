@@ -22,6 +22,7 @@ dependencies:
   # android_alarm_manager_plus: ^4.0.6
   flutter_launcher_icons: ^0.14.3
   shared_preferences: ^2.5.2
+  provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:
@@ -36,4 +37,4 @@ flutter_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/logo.png
+    - assets/images/
