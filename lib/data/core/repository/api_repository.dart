@@ -157,6 +157,24 @@ class GetServices {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getMaterialSolicitacao() async {
+    try {
+      final response = await dioAgrimanager.get('getMaterialSolicitacao');
+      if (response.data != null &&
+          response.data['getMaterialSolicitacao'] != null) {
+        return List<Map<String, dynamic>>.from(
+            response.data['getMaterialSolicitacao']);
+      } else {
+        ErrorNotifier.showError(
+            'Erro ao fazer busca de Talhões: ${response.statusMessage}');
+        return [];
+      }
+    } catch (error) {
+      print('Erro ao fazer a consulta na API Talhões: $error');
+      return [];
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getOperador() async {
     try {
       final response = await dioAgrimanager.get('getOperador');

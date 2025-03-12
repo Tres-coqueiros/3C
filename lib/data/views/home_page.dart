@@ -148,7 +148,7 @@ class _HomePageState extends State<HomePage> {
                   title: "Solicitação de Compra",
                   color: AppColorsComponents.primary,
                   icon: Icons.shopping_cart,
-                  onPressed: () => context.go('/registerpublic'),
+                  onPressed: () => context.go('/solicitar'),
                 )
               else if (useCargos == 'N')
                 Column(
