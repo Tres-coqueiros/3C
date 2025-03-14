@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class ButtonComponents extends StatelessWidget {
   final VoidCallback? onPressed;
-  final String text;
+  final String? text;
   final Color textColor;
   final Color backgroundColor;
   final double fontSize;
@@ -15,7 +15,7 @@ class ButtonComponents extends StatelessWidget {
 
   ButtonComponents({
     required this.onPressed,
-    required this.text,
+    this.text = '',
     required this.textColor,
     required this.backgroundColor,
     required this.fontSize,
@@ -59,7 +59,7 @@ class ButtonComponents extends StatelessWidget {
                     SizedBox(width: 8),
                   ],
                   Text(
-                    text,
+                    text!,
                     style: TextStyle(fontSize: fontSize),
                   ),
                 ],

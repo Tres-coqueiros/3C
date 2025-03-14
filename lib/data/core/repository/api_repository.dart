@@ -170,7 +170,7 @@ class GetServices {
         return [];
       }
     } catch (error) {
-      print('Erro ao fazer a consulta na API Talhões: $error');
+      print('Erro ao fazer a consulta na API Materias: $error');
       return [];
     }
   }

@@ -3,7 +3,7 @@ import 'package:senior/data/views/widgets/components/app_colors_components.dart'
 
 class SearchableDropdown<T> extends StatefulWidget {
   final List<T> items;
-  final String Function(T) itemLabel;
+  final dynamic Function(T) itemLabel;
   final ValueChanged<T> onItemSelected;
   final String labelText;
   final String hintText;
@@ -34,12 +34,18 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
     _searchController.addListener(_filterItems);
   }
 
+  String _getItemLabel(T item) {
+    final label = widget.itemLabel(item);
+    return label.toString();
+  }
+
   void _filterItems() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      filteredItems = widget.items
-          .where((item) => widget.itemLabel(item).toLowerCase().contains(query))
-          .toList();
+      filteredItems = widget.items.where((item) {
+        final label = widget.itemLabel(item);
+        return label.toString().toLowerCase().contains(query);
+      }).toList();
     });
 
     if (query.isEmpty || filteredItems.isEmpty) {
@@ -50,24 +56,19 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
   }
 
   void _showOverlay() {
-    _removeOverlay(); // Remove qualquer overlay anterior
+    _removeOverlay();
 
     final overlayState = Overlay.of(context);
     _overlayEntry = OverlayEntry(
       builder: (context) {
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
-          onTap: () {
-            // Ao clicar em qualquer área fora do dropdown, fecha o overlay
-            _removeOverlay();
-          },
+          onTap: _removeOverlay,
           child: Stack(
             children: [
-              // Área toda da tela (já coberta pelo GestureDetector)
               Positioned.fill(
                 child: Container(color: Colors.transparent),
               ),
-              // O dropdown propriamente dito
               Positioned(
                 width: MediaQuery.of(context).size.width - 40,
                 child: CompositedTransformFollower(
@@ -78,7 +79,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                     elevation: 4,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      constraints: BoxConstraints(maxHeight: 200),
+                      constraints: const BoxConstraints(maxHeight: 200),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -86,7 +87,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                           BoxShadow(
                             color: Colors.black.withOpacity(0.1),
                             blurRadius: 6,
-                            offset: Offset(0, 4),
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -97,7 +98,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                           final item = filteredItems[index];
                           return ListTile(
                             title: Text(
-                              widget.itemLabel(item),
+                              _getItemLabel(item),
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -105,10 +106,8 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                               ),
                             ),
                             onTap: () {
-                              _searchController.text = widget.itemLabel(item);
+                              _searchController.text = _getItemLabel(item);
                               widget.onItemSelected(item);
-
-                              // Fecha o overlay após selecionar
                               _removeOverlay();
                             },
                           );
@@ -184,7 +183,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
               filled: true,
               fillColor: Colors.white,
               contentPadding:
-                  EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               prefixIcon: Icon(
                 Icons.search,
                 color: Colors.grey[600],
@@ -199,6 +198,9 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                     )
                   : null,
             ),
+            onTap: () {
+              _filterItems();
+            },
           ),
         ],
       ),
