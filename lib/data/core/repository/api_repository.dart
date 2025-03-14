@@ -102,6 +102,22 @@ class PostServices {
       };
     }
   }
+
+  Future<bool> postSolicitacao(data) async {
+    try {
+      final response =
+          await dioAgrimanager.post('postSolicitacao', data: {'data': data});
+      if (response.statusCode == 201) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      ErrorNotifier.showError(
+          'Erro ao fazer a requisição na API: ${error.toString()}');
+      return false;
+    }
+  }
 }
 
 class GetServices {

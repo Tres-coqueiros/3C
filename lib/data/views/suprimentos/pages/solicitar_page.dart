@@ -14,6 +14,8 @@ class SolicitarPage extends StatefulWidget {
 
 class _SolicitarPageState extends State<SolicitarPage> {
   final GetServices getServices = GetServices();
+  final PostServices postServices = PostServices();
+
   final _formKey = GlobalKey<FormState>();
   List<Map<String, dynamic>> products = [];
   TextEditingController materialController = TextEditingController();
@@ -25,32 +27,102 @@ class _SolicitarPageState extends State<SolicitarPage> {
       TextEditingController();
 
   List<Map<String, dynamic>> getMaterialSolicitacao = [];
+  List<Map<String, dynamic>> getMatricula = [];
   List<Map<String, dynamic>> selectedLocais = [];
 
   int? localSelecionado;
   int? materialSelecionado;
 
-  bool showCard = false;
+  String usuario = '';
+  int? matricula;
 
   @override
   void initState() {
     super.initState();
     fetchSolicitarMaterial();
+    fetchMatricula();
+  }
+
+  Map<String, dynamic> _createProductData() {
+    return {
+      'MATERIAL': materialController.text,
+      'GRUPO': groupController.text,
+      'QUANTIDADE': quantitativeController.text,
+      'LOCAL': locaisController.text,
+      'PCOMEDIO': pcoMedioController.text,
+      'QUANTIDADE_ASER_COMPRADA': quantidadeASerCompradaController.text
+    };
   }
 
   void _addProduct() {
     if (_formKey.currentState!.validate()) {
+      final Map<String, dynamic> data = _createProductData();
       setState(() {
-        products.add({
-          'category': materialController.text,
-          'material': materialController.text,
-          'group': groupController.text,
-          'quantitative': quantitativeController.text,
-        });
+        products.add(data);
         materialController.clear();
         groupController.clear();
         quantitativeController.clear();
+        quantidadeASerCompradaController.clear();
+        locaisController.clear();
+        pcoMedioController.clear();
+        localSelecionado = null;
+        materialSelecionado = null;
       });
+    }
+  }
+
+  void addSubmit() async {
+    if (products.isEmpty) {
+      ErrorNotifier.showError("Adicione pelo menos um item antes de enviar.");
+      return;
+    }
+
+    final Map<String, dynamic> data = {
+      "usuario": usuario,
+      "usuario_id": matricula,
+      "data_solicitacao": DateTime.now().toIso8601String(),
+      "itens": products
+          .map((material) => {
+                "produto": material['MATERIAL'],
+                "quantidade": material['QUANTIDADE_ASER_COMPRADA'],
+                "preco_unitario": material['PCOMEDIO'],
+                "subtotal": (double.tryParse(
+                            material['QUANTIDADE_ASER_COMPRADA'].toString()) ??
+                        0) *
+                    (double.tryParse(material['PCOMEDIO'].toString()) ?? 0),
+                "local": material['LOCAL'],
+                "grupo": material['GRUPO'],
+              })
+          .toList(),
+    };
+
+    try {
+      print('Enviando dados: $data');
+      bool success = await postServices.postSolicitacao(data);
+      if (success) {
+        context.go('/solicitacao');
+      } else {
+        ErrorNotifier.showError("Erro ao enviar pedido.");
+      }
+    } catch (error) {
+      ErrorNotifier.showError("Erro ao enviar pedido: $error");
+    }
+  }
+
+  void fetchMatricula() async {
+    try {
+      final result = await getServices.getLogin();
+
+      if (result.isNotEmpty) {
+        usuario = result[0]['nomfun'];
+        matricula = result[0]['numcad'];
+      }
+
+      setState(() {
+        getMatricula = result;
+      });
+    } catch (error) {
+      ErrorNotifier.showError("Erro ao buscar matricula: $error");
     }
   }
 
@@ -128,8 +200,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
           const SizedBox(height: 20),
           _buildProductList(),
           const SizedBox(height: 20),
-          _buildMaterialList(), // Lista de materiais do banco de dados
-          const SizedBox(height: 20),
           _buildSubmitButton(),
         ],
       ),
@@ -151,8 +221,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
             child: Column(
               children: [
                 _buildProductList(),
-                const SizedBox(height: 20),
-                _buildMaterialList(), // Lista de materiais do banco de dados
                 const SizedBox(height: 20),
                 Align(
                   alignment: Alignment.centerRight,
@@ -181,7 +249,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
 
                 groupController.text = material['GRUPO'].toString();
                 materialController.text = material['MATERIAL'].toString();
-                showCard = true;
               });
             },
             labelText: "Código Material",
@@ -208,6 +275,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
             onItemSelected: (local) {
               print('Local selecionado: ${local['LOCAIS']}');
               setState(() {
+                locaisController.text = local['LOCAIS'].toString();
                 quantitativeController.text = local['SALDO'].toString();
                 pcoMedioController.text = local['PCOMEDIO'].toString();
               });
@@ -287,148 +355,87 @@ class _SolicitarPageState extends State<SolicitarPage> {
               ],
             ),
           )
-        : ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: products.length,
-            separatorBuilder: (context, index) => const Divider(
-              height: 20,
-              thickness: 1,
-              color: Colors.grey,
-            ),
-            itemBuilder: (context, index) {
-              return Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                elevation: 5,
-                shadowColor: Colors.grey.withOpacity(0.3),
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            products[index]['material'],
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blueGrey,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              setState(() {
-                                products.removeAt(index);
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Categoria: ${products[index]['category']}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Grupo: ${products[index]['group']}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Quantidade: ${products[index]['quantitative']}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-  }
-
-  Widget _buildMaterialList() {
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: getMaterialSolicitacao.length,
-      separatorBuilder: (context, index) => const Divider(
-        height: 20,
-        thickness: 1,
-        color: Colors.grey,
-      ),
-      itemBuilder: (context, index) {
-        final material = getMaterialSolicitacao[index];
-        return Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          elevation: 5,
-          shadowColor: Colors.grey.withOpacity(0.3),
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  material['MATERIAL'],
-                  style: const TextStyle(
-                    fontSize: 20,
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                child: Text(
+                  'ITENS',
+                  style: TextStyle(
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.blueGrey,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Grupo: ${material['GRUPO']}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
+              ),
+              SizedBox(
+                height: 250,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: products.length,
+                  itemBuilder: (context, index) {
+                    final material = products[index];
+
+                    return SizedBox(
+                      width: 330,
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 5,
+                        shadowColor: Colors.grey.withOpacity(0.3),
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                material['MATERIAL']?.toString() ??
+                                    'Desconhecido',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blueGrey,
+                                ),
+                              ),
+                              const SizedBox(height: 35),
+                              _buildInfoText('Grupo', material['GRUPO']),
+                              _buildInfoText('Saldo', material['QUANTIDADE']),
+                              _buildInfoText(
+                                  'Preço Médio', material['PCOMEDIO']),
+                              _buildInfoText('Qtd. a comprar',
+                                  material['QUANTIDADE_ASER_COMPRADA']),
+                              _buildInfoText('Local', material['LOCAL']),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Saldo: ${material['SALDO']}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Preço Médio: ${material['PCOMEDIO']}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+              ),
+            ],
+          );
+  }
+
+  Widget _buildInfoText(String label, dynamic value) {
+    return Text(
+      '$label: ${value?.toString() ?? 'N/A'}',
+      style: TextStyle(
+        fontSize: 13,
+        color: Colors.grey[700],
+      ),
     );
   }
 
   Widget _buildSubmitButton() {
     return ButtonComponents(
-      onPressed: () => context.go('/solicitacao'),
+      onPressed: () => addSubmit(),
       text: 'Solicitar Compra',
       textColor: Colors.white,
       backgroundColor: AppColorsComponents.primary,
