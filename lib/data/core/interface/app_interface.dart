@@ -71,3 +71,18 @@ class Servicos {
 
   Servicos({required this.Codigo, required this.Servico, required this.Tipo});
 }
+
+class LogEntry {
+  final String usuario; // Ex.: "João da Silva"
+  final String
+      atividade; // Ex.: "Solicitação de Compra", "BDO", "Hora Extra", etc.
+  final DateTime dataHora; // Quando ocorreu a atividade
+  final String descricao; // Detalhes (ex.: "Solicitou 3 itens...")
+
+  LogEntry({
+    required this.usuario,
+    required this.atividade,
+    required this.dataHora,
+    required this.descricao,
+  });
+}

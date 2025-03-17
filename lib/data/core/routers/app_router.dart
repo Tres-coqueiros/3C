@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:senior/data/core/interface/app_interface.dart';
+
+// Imports das suas páginas
 import 'package:senior/data/views/auth/login_page.dart';
 import 'package:senior/data/views/home_page.dart';
 import 'package:senior/data/views/horaextras/pages/list_colaboradores_page.dart';
 import 'package:senior/data/views/horaextras/pages/profile_page.dart';
+import 'package:senior/data/views/pages/logsPage.dart';
 import 'package:senior/data/views/suprimentos/pages/solicitar_page.dart';
 import 'package:senior/data/views/widgets/base_layout.dart';
 import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
@@ -84,6 +88,22 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+
+    GoRoute(
+      path: '/logs',
+      builder: (context, state) {
+        final logs = state.extra as List<LogEntry>? ?? [];
+        return BaseLayout(body: LogsPage(logs: logs));
+      },
+    ),
+    // GoRoute(
+    //   path: '/logs',
+    //   builder: (context, state) {
+    //     // Se estiver passando logs via 'extra'
+    //     final logs = state.extra as List<LogEntry>? ?? [];
+    //     return LogsPage(logs: logs);
+    //   },
+    // ),
   ],
   errorBuilder: (context, state) => Scaffold(
     body: Center(
