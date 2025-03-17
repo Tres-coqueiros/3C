@@ -92,8 +92,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/logs',
       builder: (context, state) {
-        final logs = state.extra as List<LogEntry>? ?? [];
-        return BaseLayout(body: LogsPage(logs: logs));
+        return BaseLayout(body: Logspage());
       },
     ),
     // GoRoute(

@@ -26,7 +26,6 @@ class _SolicitacoesListPageState extends State<SolicitacoesListPage> {
         solicitacoes = result.map<Map<String, dynamic>>((solicitacao) {
           return {
             'id': solicitacao['id'] ?? 0,
-            // 'observacao': solicitacao['observacao'],
             'data_solicitacao': solicitacao['data_solicitacao'],
             'supervisor': solicitacao['supervisor'] ?? 'Não encontrado',
             'usuario': solicitacao['usuario'] ?? 'Não encontrado',
@@ -70,7 +69,6 @@ class _SolicitacoesListPageState extends State<SolicitacoesListPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    /// Lado esquerdo: Infos básicas
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

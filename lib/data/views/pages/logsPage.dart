@@ -1,18 +1,46 @@
-// lib/data/views/logs/logs_page.dart
 import 'package:flutter/material.dart';
-import 'package:senior/data/core/interface/app_interface.dart';
+import 'package:senior/data/core/repository/api_repository.dart';
 
-class LogsPage extends StatelessWidget {
-  final List<LogEntry> logs; // se você usa LogEntry
+class Logspage extends StatefulWidget {
+  @override
+  _LogsPageState createState() => _LogsPageState();
+}
 
-  const LogsPage({Key? key, required this.logs}) : super(key: key);
+class _LogsPageState extends State<Logspage> {
+  final GetServices getServices = GetServices();
+  List<LogEntry> getLogs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchLogs();
+  }
+
+  void fetchLogs() async {
+    try {
+      final result = await getServices.getLogs();
+      setState(() {
+        getLogs = result.map((logs) {
+          return LogEntry(
+            usuario: logs['usuario_id'].toString(),
+            atividade: logs['tipo'].toString(),
+            descricao: logs['mensagem'].toString(),
+            dataHora: DateTime.parse(logs['data'].toString()),
+          );
+        }).toList();
+      });
+    } catch (error) {
+      print('Erro ao carregar atividades: $error');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registro de Atividades'),
       ),
-      body: logs.isEmpty
+      body: getLogs.isEmpty
           ? const Center(
               child: Text(
                 'Nenhum registro de atividade encontrado.',
@@ -21,9 +49,9 @@ class LogsPage extends StatelessWidget {
             )
           : ListView.builder(
               padding: const EdgeInsets.all(12.0),
-              itemCount: logs.length,
+              itemCount: getLogs.length,
               itemBuilder: (context, index) {
-                final log = logs[index];
+                final log = getLogs[index];
                 return _buildLogItem(log);
               },
             ),
@@ -66,4 +94,18 @@ class LogsPage extends StatelessWidget {
     final minuto = dt.minute.toString().padLeft(2, '0');
     return '$dia/$mes/$ano $hora:$minuto';
   }
+}
+
+class LogEntry {
+  final String usuario;
+  final String atividade;
+  final String descricao;
+  final DateTime dataHora;
+
+  LogEntry({
+    required this.usuario,
+    required this.atividade,
+    required this.descricao,
+    required this.dataHora,
+  });
 }

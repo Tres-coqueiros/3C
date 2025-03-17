@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/views/auth/auth_services.dart';
-import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/views/horaextras/pages/navigation_page.dart';
-import 'package:senior/data/views/pages/logsPage.dart'; // Se precisar
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 import 'package:senior/data/views/widgets/components/sidebar_components.dart';
 
