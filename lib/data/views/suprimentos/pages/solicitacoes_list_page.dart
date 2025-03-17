@@ -1,87 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:senior/data/core/repository/api_repository.dart';
 
-class SolicitacoesListPage extends StatelessWidget {
-  const SolicitacoesListPage({super.key});
+class SolicitacoesListPage extends StatefulWidget {
+  @override
+  _SolicitacoesListPageState createState() => _SolicitacoesListPageState();
+}
 
-  // Exemplo de dados mock
-  final List<Map<String, dynamic>> solicitacoes = const [
-    {
-      "numeroSolicitacao": 1001,
-      "data": "12/03/2025",
-      "solicitante": "João da Silva",
-      "grupoMaterial": "Peças Elétricas",
-      "codigoMaterial": "EL-ABC-123",
-      "itens": [
-        {"nome": "Fio de Cobre", "quantidade": 10, "valorUnit": "R\$ 15,00"},
-        {"nome": "Bateria", "quantidade": 2, "valorUnit": "R\$ 120,00"},
-        {
-          "nome": "Extensão Elétrica 3m",
-          "quantidade": 2,
-          "valorUnit": "R\$ 45,00",
-        },
-        {
-          "nome": "Adaptador de Tomada",
-          "quantidade": 5,
-          "valorUnit": "R\$ 12,00",
-        },
-        {
-          "nome": "Pilha AA Recarregável",
-          "quantidade": 6,
-          "valorUnit": "R\$ 20,00",
-        },
-        {
-          "nome": "Sensor de Movimento",
-          "quantidade": 1,
-          "valorUnit": "R\$ 80,00",
-        },
-        {
-          "nome": "Relé Temporizador",
-          "quantidade": 3,
-          "valorUnit": "R\$ 35,00",
-        },
-        {
-          "nome": "Chave Phillips",
-          "quantidade": 2,
-          "valorUnit": "R\$ 18,50",
-        },
-        {
-          "nome": "Tomada USB",
-          "quantidade": 4,
-          "valorUnit": "R\$ 22,00",
-        },
-        {
-          "nome": "Multímetro Digital",
-          "quantidade": 1,
-          "valorUnit": "R\$ 150,00",
-        },
-      ],
-    },
-    {
-      "numeroSolicitacao": 1003,
-      "data": "13/03/2025",
-      "solicitante": "Maria Pereira",
-      "grupoMaterial": "Ferramentas",
-      "codigoMaterial": "FER-567",
-      "itens": [
-        {"nome": "Chave de Fenda", "quantidade": 4, "valorUnit": "R\$ 10,00"},
-        {"nome": "Martelo", "quantidade": 1, "valorUnit": "R\$ 35,50"},
-        {"nome": "Parafusos", "quantidade": 50, "valorUnit": "R\$ 0,50"},
-      ],
-    },
-    {
-      "numeroSolicitacao": 1004,
-      "data": "13/03/2025",
-      "solicitante": "Maria Pereira",
-      "grupoMaterial": "Ferramentas",
-      "codigoMaterial": "FER-567",
-      "itens": [
-        {"nome": "Chave de Fenda", "quantidade": 4, "valorUnit": "R\$ 10,00"},
-        {"nome": "Martelo", "quantidade": 1, "valorUnit": "R\$ 35,50"},
-        {"nome": "Parafusos", "quantidade": 50, "valorUnit": "R\$ 0,50"},
-      ],
-    },
-  ];
+class _SolicitacoesListPageState extends State<SolicitacoesListPage> {
+  final GetServices getServices = GetServices();
+
+  List<Map<String, dynamic>> solicitacoes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSolicitacoes();
+  }
+
+  void fetchSolicitacoes() async {
+    try {
+      await Future.delayed(Duration(seconds: 1));
+      final result = await getServices.getMaterialSolicitacao();
+      setState(() {
+        solicitacoes = result.map<Map<String, dynamic>>((solicitacao) {
+          return {
+            'id': solicitacao['id'] ?? 0,
+            // 'observacao': solicitacao['observacao'],
+            'data_solicitacao': solicitacao['data_solicitacao'],
+            'supervisor': solicitacao['supervisor'] ?? 'Não encontrado',
+            'usuario': solicitacao['usuario'] ?? 'Não encontrado',
+            'status': solicitacao['status'] ?? 'Não encontrado',
+            'total': solicitacao['total'] ?? 'Não encontrado',
+          };
+        }).toList();
+      });
+    } catch (error) {
+      print('Falha ao carregar as solicitações: $error');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +60,6 @@ class SolicitacoesListPage extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
               onTap: () {
-                /// 🔹 Ao clicar no Card, enviamos a solicitação para a rota de detalhes
                 context.push(
                   '/solicitacoes/detalhes',
                   extra: solicitacao,
@@ -119,7 +75,7 @@ class SolicitacoesListPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Nº ${solicitacao["numeroSolicitacao"]}',
+                          'Nº ${solicitacao["id"]}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -127,12 +83,17 @@ class SolicitacoesListPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Solicitante: ${solicitacao["solicitante"]}',
+                          'Solicitante: ${solicitacao["usuario"]}',
                           style:
                               const TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                         Text(
-                          'Data: ${solicitacao["data"]}',
+                          'Data: ${solicitacao["data_solicitacao"]}',
+                          style:
+                              const TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        Text(
+                          'Status: ${solicitacao["status"]}',
                           style:
                               const TextStyle(fontSize: 14, color: Colors.grey),
                         ),

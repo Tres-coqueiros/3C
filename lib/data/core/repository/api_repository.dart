@@ -256,6 +256,22 @@ class GetServices {
   }
 }
 
+Future<List<Map<String, dynamic>>> getSolicitacao() async {
+  try {
+    final response = await dioAgrimanager.get('getSolicitacao');
+    if (response.data != null && response.data['getSolicitacao'] != null) {
+      return List<Map<String, dynamic>>.from(response.data['getSolicitacao']);
+    } else {
+      ErrorNotifier.showError(
+          'Erro ao fazer busca de solicitção: ${response.statusMessage}');
+      return [];
+    }
+  } catch (error) {
+    print('Erro ao fazer a consulta na API solicitação: $error');
+    return [];
+  }
+}
+
 class UpdateServices {
   Future<bool> updateBDO(data) async {
     try {

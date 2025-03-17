@@ -57,7 +57,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/solicitacao',
       builder: (context, state) => BaseLayout(
-        body: const SolicitacoesListPage(),
+        body: SolicitacoesListPage(),
       ),
     ),
     GoRoute(
