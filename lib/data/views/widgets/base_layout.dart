@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/views/auth/auth_services.dart';
-import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/views/horaextras/pages/navigation_page.dart';
-import 'package:senior/data/views/pages/logsPage.dart'; // Se precisar
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
-import 'package:senior/data/views/widgets/components/sidebar_components.dart';
 
 class BaseLayout extends StatefulWidget {
   final PostAuth postAuth = PostAuth();
@@ -115,13 +112,17 @@ class _BaseLayoutState extends State<BaseLayout>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawerScrimColor: Colors.transparent,
       appBar: AppBar(
         title: Text(
           "3C CONNECT",
-          style: TextStyle(color: AppColorsComponents.hashours),
+          style: TextStyle(
+            color: AppColorsComponents.hashours,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
         ),
-        backgroundColor: const Color.fromARGB(255, 28, 78, 36),
+        backgroundColor: AppColorsComponents.primary,
         elevation: 0,
         actions: [
           IconButton(
