@@ -111,7 +111,8 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.all(16.0),
           child: ListView(
             children: [
-              if (selectedDepartment.isEmpty)
+              // 1) Se NENHUM departamento foi selecionado, mostra "Selecione..."
+              if (selectedDepartment.isEmpty) ...[
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -125,24 +126,32 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                ),
-              if (useCargos == 'S' && selectedDepartment == "Recursos Humanos")
+                )
+              ]
+              // 2) Se for RH e tiver cargo "S", mostra o botão
+              else if (useCargos == 'S' &&
+                  selectedDepartment == "Recursos Humanos") ...[
                 _buildButton(
                   context,
                   title: "Horas Extras",
                   color: AppColorsComponents.primary,
                   icon: Icons.access_time,
                   onPressed: () => context.go('/listcolaboradores'),
-                ),
-              if (selectedDepartment == "PCM")
+                )
+              ]
+              // 3) Se for PCM (sem checagem de cargo), mostra o botão
+              else if (selectedDepartment == "PCM") ...[
                 _buildButton(
                   context,
                   title: "BDO",
                   color: AppColorsComponents.secondary,
                   icon: Icons.build,
                   onPressed: () => context.go('/registerpublic'),
-                ),
-              if (selectedDepartment == "Suprimentos")
+                )
+              ]
+              // 4) Se for Suprimentos e tiver cargo "S", mostra o botão
+              else if (selectedDepartment == "Suprimentos" &&
+                  useCargos == 'N') ...[
                 _buildButton(
                   context,
                   title: "Solicitação de Compra",
@@ -150,7 +159,9 @@ class _HomePageState extends State<HomePage> {
                   icon: Icons.shopping_cart,
                   onPressed: () => context.go('/solicitar'),
                 )
-              else if (useCargos == 'N')
+              ]
+              // 5) Caso contrário (não bateu em nenhuma condição acima), mostra a mensagem
+              else ...[
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -192,6 +203,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
+              ],
             ],
           ),
         ),
