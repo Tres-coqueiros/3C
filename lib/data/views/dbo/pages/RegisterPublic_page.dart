@@ -6,7 +6,7 @@ import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/core/repository/exceptions_network.dart';
 import 'package:senior/data/global_data.dart';
 import 'package:senior/data/views/dbo/pages/RegisterActivity_page.dart';
-import 'package:senior/data/views/horaextras/pages/loading_page.dart';
+import 'package:senior/data/views/pages/loading_page.dart';
 import 'package:senior/data/views/widgets/base_layout.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 import 'package:senior/data/views/widgets/components/app_text_components.dart';

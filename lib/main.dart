@@ -4,7 +4,7 @@ import 'package:senior/data/core/repository/client_repository.dart';
 import 'package:senior/data/core/routers/app_router.dart';
 import 'package:provider/provider.dart';
 import 'package:senior/data/core/repository/notification_services.dart';
-import 'package:senior/data/views/horaextras/pages/error_notifier_page.dart';
+import 'package:senior/data/views/pages/error_notifier_page.dart';
 
 void main() async {
   configureDio();

@@ -85,3 +85,9 @@ class LogEntry {
     required this.descricao,
   });
 }
+
+class Gestor {
+  final String gestor;
+
+  Gestor({required this.gestor});
+}

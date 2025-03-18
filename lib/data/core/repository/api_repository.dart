@@ -286,6 +286,22 @@ class GetServices {
       return [];
     }
   }
+
+  Future<List<Map<String, dynamic>>> getGestor() async {
+    try {
+      final response = await dioAgrimanager.get('getGestor');
+      if (response.data != null && response.data['getGestor'] != null) {
+        return List<Map<String, dynamic>>.from(response.data['getGestor']);
+      } else {
+        ErrorNotifier.showError(
+            'Erro ao fazer busca de solicitção: ${response.statusMessage}');
+        return [];
+      }
+    } catch (error) {
+      print('Erro ao fazer a consulta na API solicitação: $error');
+      return [];
+    }
+  }
 }
 
 class UpdateServices {

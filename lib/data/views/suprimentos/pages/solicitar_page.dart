@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/core/repository/exceptions_network.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
@@ -29,18 +30,42 @@ class _SolicitarPageState extends State<SolicitarPage> {
   List<Map<String, dynamic>> getMaterialSolicitacao = [];
   List<Map<String, dynamic>> getMatricula = [];
   List<Map<String, dynamic>> selectedLocais = [];
+  List<Map<String, dynamic>> getGestor = [];
 
   int? localSelecionado;
   int? materialSelecionado;
+  int? grupoSelecionado;
 
   String usuario = '';
   int? matricula;
+
+  String gestor = '';
+  int gestorId = 0;
 
   @override
   void initState() {
     super.initState();
     fetchSolicitarMaterial();
     fetchMatricula();
+    fetchGestor();
+  }
+
+  void fetchGestor() async {
+    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final result = await getServices.getGestor();
+      if (result.isNotEmpty) {
+        gestor = result[0]['GESTOR'];
+        gestorId = result[0]['GESTOR_ID'];
+      }
+
+      print('gestor: $gestorId');
+      setState(() {
+        getGestor = result;
+      });
+    } catch (error) {
+      ErrorNotifier.showError('Erro ao buscar gestor: $error');
+    }
   }
 
   Map<String, dynamic> _createProductData() {
@@ -50,7 +75,9 @@ class _SolicitarPageState extends State<SolicitarPage> {
       'QUANTIDADE': quantitativeController.text,
       'LOCAL': locaisController.text,
       'PCOMEDIO': pcoMedioController.text,
-      'QUANTIDADE_ASER_COMPRADA': quantidadeASerCompradaController.text
+      'QUANTIDADE_ASER_COMPRADA': quantidadeASerCompradaController.text,
+      'gestor': gestor,
+      'gestor_id': gestorId
     };
   }
 
@@ -246,6 +273,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
               setState(() {
                 materialSelecionado = material['ID_MATERIAL'];
                 selectedLocais = getLocaisByMaterial(materialSelecionado!);
+                grupoSelecionado = material['GRUPO'];
 
                 groupController.text = material['GRUPO'].toString();
                 materialController.text = material['MATERIAL'].toString();
