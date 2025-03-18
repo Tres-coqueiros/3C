@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/views/auth/auth_services.dart';
+import 'package:senior/data/views/dbo/pages/DetailsRegister_page.dart';
 import 'package:senior/data/views/horaextras/pages/navigation_page.dart';
+import 'package:senior/data/views/pages/logsPage.dart'; // Se precisar
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 import 'package:senior/data/views/widgets/components/sidebar_components.dart';
 
@@ -115,7 +117,11 @@ class _BaseLayoutState extends State<BaseLayout>
     return Scaffold(
       drawerScrimColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppColorsComponents.primary,
+        title: Text(
+          "3C CONNECT",
+          style: TextStyle(color: AppColorsComponents.hashours),
+        ),
+        backgroundColor: const Color.fromARGB(255, 28, 78, 36),
         elevation: 0,
         actions: [
           IconButton(
@@ -132,11 +138,12 @@ class _BaseLayoutState extends State<BaseLayout>
               onPressed: () => Exit(context)),
         ],
       ),
-      drawer: Drawer(
-        elevation: 4,
-        backgroundColor: AppColorsComponents.hashours,
-        child: Column(children: [Expanded(child: SidebarComponents())]),
-      ),
+      // drawer: Drawer(
+      //   elevation: 4,
+      //   backgroundColor: AppColorsComponents.hashours,
+      //   child: Column(children: [Expanded(child: SidebarComponents())]),
+      // ),
+
       backgroundColor: const Color(0xFFF3F7FB),
       resizeToAvoidBottomInset: true,
       body: Column(
