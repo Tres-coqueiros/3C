@@ -341,7 +341,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                             itemCount: horasExtras.length,
                             itemBuilder: (context, index) {
                               final horaExtra = horasExtras[index];
-                              final isApproved =
+                              final isApzproved =
                                   approvedHours.contains(horaExtra);
 
                               return Row(
