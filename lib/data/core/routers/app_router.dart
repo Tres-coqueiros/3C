@@ -7,6 +7,7 @@ import 'package:senior/data/views/auth/login_page.dart';
 import 'package:senior/data/views/home_page.dart';
 import 'package:senior/data/views/horaextras/pages/list_colaboradores_page.dart';
 import 'package:senior/data/views/horaextras/pages/profile_page.dart';
+import 'package:senior/data/views/pages/dashboard_page.dart';
 import 'package:senior/data/views/pages/logsPage.dart';
 import 'package:senior/data/views/suprimentos/pages/solicitar_page.dart';
 import 'package:senior/data/views/widgets/base_layout.dart';
@@ -27,6 +28,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/homepage',
       builder: (context, state) => const HomePage(),
+    ),
+    GoRoute(
+      path: '/dashboard',
+      builder: (context, state) => BaseLayout(body: DashboardPage()),
     ),
     GoRoute(
       path: '/registerpublic',

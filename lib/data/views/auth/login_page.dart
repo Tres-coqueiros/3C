@@ -44,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (success) {
         Navigator.pop(context);
-        context.go('/homepage');
+        context.go('/dashboard');
       } else {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(

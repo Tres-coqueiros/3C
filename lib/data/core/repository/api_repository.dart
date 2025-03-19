@@ -278,11 +278,11 @@ class GetServices {
         return List<Map<String, dynamic>>.from(response.data['getLogs']);
       } else {
         ErrorNotifier.showError(
-            'Erro ao fazer busca de solicitção: ${response.statusMessage}');
+            'Erro ao fazer busca de logs: ${response.statusMessage}');
         return [];
       }
     } catch (error) {
-      print('Erro ao fazer a consulta na API solicitação: $error');
+      print('Erro ao fazer a consulta na API logs: $error');
       return [];
     }
   }
@@ -294,11 +294,27 @@ class GetServices {
         return List<Map<String, dynamic>>.from(response.data['getGestor']);
       } else {
         ErrorNotifier.showError(
-            'Erro ao fazer busca de solicitção: ${response.statusMessage}');
+            'Erro ao fazer busca de gestores: ${response.statusMessage}');
         return [];
       }
     } catch (error) {
-      print('Erro ao fazer a consulta na API solicitação: $error');
+      print('Erro ao fazer a consulta na API gestores: $error');
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCotacoes() async {
+    try {
+      final response = await dioAgrimanager.get('getCotacoes');
+      if (response.data != null && response.data['getCotacoes'] != null) {
+        return List<Map<String, dynamic>>.from(response.data['getCotacoes']);
+      } else {
+        ErrorNotifier.showError(
+            'Erro ao fazer busca de cotações: ${response.statusMessage}');
+        return [];
+      }
+    } catch (error) {
+      print('Erro ao fazer a consulta na API cotações: $error');
       return [];
     }
   }
