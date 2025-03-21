@@ -57,7 +57,6 @@ class _SidebarComponentsState extends State<SidebarComponents> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionTitle('Menu Principal'),
                     _buildDepartmentItemWithSubmenu(
                       context,
                       Icons.person_2,
