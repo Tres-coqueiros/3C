@@ -341,7 +341,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                             itemCount: horasExtras.length,
                             itemBuilder: (context, index) {
                               final horaExtra = horasExtras[index];
-                              final isApproved =
+                              final isApzproved =
                                   approvedHours.contains(horaExtra);
 
                               return Row(
@@ -383,11 +383,11 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ButtonComponents(
+                        textAlign: Alignment.centerRight,
                         onPressed: () {
                           setState(() => isAprovar = true);
                           showMotivo(context);
                         },
-                        textAlign: Alignment.centerRight,
                         text: 'Aprovar',
                         backgroundColor: AppColorsComponents.primary,
                         textColor: Colors.white,
