@@ -1,7 +1,7 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'dart:async';
+import 'package:table_calendar/table_calendar.dart';
 
 import 'package:senior/data/core/repository/externo_repository.dart';
 
@@ -16,20 +16,85 @@ class _DashboardPage extends State<DashboardPage> {
   final PageController _pageController = PageController(viewportFraction: 0.9);
 
   Map<String, dynamic> agroDolar = {};
+  List<Map<String, dynamic>> agroMatriculas = [];
   List<Map<String, dynamic>> agroCotacoes = [];
+
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  Map<DateTime, List<Map<String, dynamic>>> _feriados = {};
+  Map<DateTime, List<Map<String, dynamic>>> _lembretes = {};
+
   final Map<String, String> codigoParaCidade = {
     'SPZ': 'Sapezal',
     'GNT': 'Gaúcha do Norte',
     'BRN': 'Brasnorte',
   };
   Timer? _timer;
+  String usuarioLogado = "";
 
   @override
   void initState() {
     super.initState();
+    fetchMatricula();
     fetchDolar();
     fetchCotacoes();
-    _startCarousel();
+    fetchFeriados();
+    startCarousel();
+  }
+
+  void fetchFeriados() async {
+    try {
+      final List<dynamic> response = await externoRepository.getFeriados();
+
+      setState(() {
+        _feriados.clear();
+        for (var feriado in response) {
+          if (feriado is Map<String, dynamic>) {
+            DateTime data = DateTime.utc(
+              DateTime.parse(feriado['date']).year,
+              DateTime.parse(feriado['date']).month,
+              DateTime.parse(feriado['date']).day,
+            );
+            String nome = feriado['name'];
+
+            _feriados[data] = [
+              {'nome': nome, 'tipo': 'feriado'}
+            ];
+          }
+        }
+      });
+    } catch (error) {
+      print('Erro ao carregar feriados: $error');
+    }
+  }
+
+  void fetchDolar() async {
+    try {
+      final dolarResult = await externoRepository.getDolar();
+      setState(() {
+        agroDolar = dolarResult ?? {};
+      });
+    } catch (error) {
+      print('Erro ao buscar dolar: $error');
+      setState(() {
+        agroDolar = {};
+      });
+    }
+  }
+
+  void fetchMatricula() async {
+    try {
+      final matriculaResult = await getServices.getLogin();
+      if (matriculaResult.isNotEmpty) {
+        usuarioLogado = matriculaResult[0]['nomfun'];
+      }
+      setState(() {
+        agroMatriculas = matriculaResult;
+      });
+    } catch (error) {
+      print('Error fetching matricula: $error');
+    }
   }
 
   @override
@@ -39,17 +104,17 @@ class _DashboardPage extends State<DashboardPage> {
     super.dispose();
   }
 
-  void _startCarousel() {
-    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+  void startCarousel() {
+    _timer = Timer.periodic(Duration(seconds: 10), (timer) {
       if (_pageController.page == agroCotacoes.length - 1) {
         _pageController.animateToPage(
           0,
-          duration: Duration(milliseconds: 500),
+          duration: Duration(milliseconds: 1000),
           curve: Curves.easeInOut,
         );
       } else {
         _pageController.nextPage(
-          duration: Duration(milliseconds: 500),
+          duration: Duration(milliseconds: 1000),
           curve: Curves.easeInOut,
         );
       }
@@ -59,19 +124,37 @@ class _DashboardPage extends State<DashboardPage> {
   void fetchCotacoes() async {
     try {
       final cotacoesResult = await getServices.getCotacoes();
+
       setState(() {
-        final Map<String, List<Map<String, dynamic>>> cotacoesPorCidade = {};
+        final Map<String, Map<String, dynamic>> ultimasCotacoes = {};
+
         for (final cotacao in cotacoesResult) {
           final descricao = cotacao['DESCRICAO'].toString().trim();
           final codigo = descricao.split(' ').last;
           final cidade = codigoParaCidade[codigo] ?? 'Outra';
+          final produto = descricao.split(' ')[0];
+          final dataCotacao =
+              DateTime.tryParse(cotacao['DATA'] ?? '') ?? DateTime(2000);
+
+          if (!ultimasCotacoes.containsKey("$cidade-$produto") ||
+              dataCotacao.isAfter(DateTime.tryParse(
+                      ultimasCotacoes["$cidade-$produto"]?['DATA'] ?? '') ??
+                  DateTime(2000))) {
+            ultimasCotacoes["$cidade-$produto"] = cotacao;
+          }
+        }
+
+        final Map<String, List<Map<String, dynamic>>> cotacoesPorCidade = {};
+
+        for (var entry in ultimasCotacoes.entries) {
+          final cidadeProduto = entry.key.split('-');
+          final cidade = cidadeProduto[0];
 
           if (!cotacoesPorCidade.containsKey(cidade)) {
             cotacoesPorCidade[cidade] = [];
           }
-          cotacoesPorCidade[cidade]!.add(cotacao);
+          cotacoesPorCidade[cidade]!.add(entry.value);
         }
-
         agroCotacoes = cotacoesPorCidade.entries.map((entry) {
           return {
             'cidade': entry.key,
@@ -87,19 +170,41 @@ class _DashboardPage extends State<DashboardPage> {
     }
   }
 
-  Future<void> fetchDolar() async {
-    try {
-      final dolarResult = await externoRepository.getDolar();
-      setState(() {
-        agroDolar = dolarResult ?? {};
-      });
-      print('dolarResult $dolarResult');
-    } catch (error) {
-      print('Erro ao buscar cotações: $error');
-      setState(() {
-        agroDolar = {};
-      });
-    }
+  void _showAddReminderDialog(DateTime selectedDay) {
+    final TextEditingController _controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Adicionar Lembrete'),
+          content: TextField(
+            controller: _controller,
+            decoration: InputDecoration(hintText: 'Digite o lembrete'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _lembretes[selectedDay] = [
+                    ...?_lembretes[selectedDay],
+                    {'nome': _controller.text, 'tipo': 'lembrete'},
+                  ];
+                });
+                Navigator.pop(context);
+              },
+              child: Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -112,17 +217,13 @@ class _DashboardPage extends State<DashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
+              _buildHeader(usuarioLogado),
               const SizedBox(height: 24),
-              // _buildInfoRow(),
               const SizedBox(height: 24),
-              // Gráfico Mensal ao centro
-              _buildChartSection(),
+              _buildCalendarSection(),
               const SizedBox(height: 24),
-              // Carrossel de cotações agro
               _buildAgroCarousel(),
               const SizedBox(height: 24),
-              // Card do dólar em tempo real
               _buildDolarCard(),
             ],
           ),
@@ -131,12 +232,18 @@ class _DashboardPage extends State<DashboardPage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String usuarioLogado) {
+    final partesNome = usuarioLogado.split(' ');
+    final nomeFormatado = partesNome.map((parte) {
+      if (parte.isEmpty) return parte;
+      return parte[0].toUpperCase() + parte.substring(1).toLowerCase();
+    }).join(' ');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Bem-vindo, Usuário!',
+          'Bem-vindo, $nomeFormatado',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -145,7 +252,7 @@ class _DashboardPage extends State<DashboardPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Aqui está o resumo do seu dia.',
+          'Aqui temos algumas informações...',
           style: TextStyle(
             fontSize: 16,
             color: Colors.grey[600],
@@ -247,7 +354,7 @@ class _DashboardPage extends State<DashboardPage> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      margin: const EdgeInsets.symmetric(vertical: 4), // Ajuste de espaçamento
+      margin: const EdgeInsets.symmetric(vertical: 4),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
@@ -293,8 +400,7 @@ class _DashboardPage extends State<DashboardPage> {
     );
   }
 
-  /// Seção do gráfico mensal
-  Widget _buildChartSection() {
+  Widget _buildCalendarSection() {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -304,7 +410,7 @@ class _DashboardPage extends State<DashboardPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Desempenho Mensal',
+              'Calendário',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -312,50 +418,61 @@ class _DashboardPage extends State<DashboardPage> {
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              height: 300,
-              child: LineChartSample2(),
+            TableCalendar(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: _focusedDay,
+              calendarFormat: _calendarFormat,
+              selectedDayPredicate: (day) {
+                return isSameDay(_selectedDay, day);
+              },
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+                _showAddReminderDialog(selectedDay);
+              },
+              onFormatChanged: (format) {
+                setState(() {
+                  _calendarFormat = format;
+                });
+              },
+              onPageChanged: (focusedDay) {
+                setState(() {
+                  _focusedDay = focusedDay;
+                });
+              },
+              eventLoader: (day) {
+                final eventos = [
+                  ...?_feriados[day],
+                  ...?_lembretes[day],
+                ];
+                return eventos;
+              },
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+                markerDecoration: BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                markersAlignment: Alignment.bottomCenter,
+                markerSize: 8,
+              ),
+              headerStyle: HeaderStyle(
+                formatButtonVisible: true,
+                titleCentered: true,
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class LineChartSample2 extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return LineChart(
-      LineChartData(
-        borderData: FlBorderData(
-          show: true,
-          border: Border.all(
-            color: const Color(0xff37434d),
-            width: 1,
-          ),
-        ),
-        minX: 0,
-        maxX: 6,
-        minY: 0,
-        maxY: 6,
-        lineBarsData: [
-          LineChartBarData(
-            spots: const [
-              FlSpot(0, 3),
-              FlSpot(1, 1),
-              FlSpot(2, 4),
-              FlSpot(3, 2),
-              FlSpot(4, 5),
-              FlSpot(5, 3),
-              FlSpot(6, 4),
-            ],
-            isCurved: true,
-            color: Colors.blue,
-            dotData: FlDotData(show: false),
-            belowBarData: BarAreaData(show: false),
-          ),
-        ],
       ),
     );
   }

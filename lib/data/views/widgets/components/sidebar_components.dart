@@ -13,20 +13,26 @@ class _SidebarComponentsState extends State<SidebarComponents> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColorsComponents.hashours,
         elevation: 0,
         title: Text(
           'Selecione o Departamento',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
         ),
-        iconTheme: IconThemeData(color: Colors.black),
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColorsComponents.primary, AppColorsComponents.primary],
+            colors: [
+              AppColorsComponents.primary,
+              AppColorsComponents.primary,
+            ],
           ),
         ),
         child: Row(
@@ -38,16 +44,29 @@ class _SidebarComponentsState extends State<SidebarComponents> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildSectionTitle('Menu Principal'),
                   _buildDepartmentItem(
-                      context, Icons.people, 'Recursos Humanos'),
-                  _buildDepartmentItem(context, Icons.build, 'PCM'),
-                  _buildDepartmentItem(
-                      context, Icons.shopping_cart, 'Suprimentos'),
-                  Divider(color: Colors.white70, thickness: 1),
+                      context, Icons.download, 'Recursos Humanos'),
+                  _buildDepartmentItem(context, Icons.visibility, 'PCM'),
+                  _buildDepartmentItem(context, Icons.analytics, 'Suprimentos'),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10, top: 10),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.8),
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -61,34 +80,22 @@ class _SidebarComponentsState extends State<SidebarComponents> {
             .setSelectedDepartament(title);
         Navigator.pop(context);
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12.0),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 24),
-            SizedBox(width: 15),
-            Text(
-              title,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        margin: EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+          // boxShadow: [
+          //   BoxShadow(
+          //     color: Colors.black.withOpacity(0.1),
+          //     blurRadius: 5,
+          //     spreadRadius: 1,
+          //     offset: Offset(2, 2),
+          //   ),
+          // ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavigationItem(IconData icon, String title, Widget page) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => page));
-        },
         child: Row(
           children: [
             Icon(icon, color: Colors.white, size: 24),
@@ -96,7 +103,7 @@ class _SidebarComponentsState extends State<SidebarComponents> {
             Text(
               title,
               style: TextStyle(
-                color: Colors.white,
+                color: AppColorsComponents.hashours,
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
               ),

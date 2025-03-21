@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:senior/data/views/auth/auth_services.dart';
 import 'package:senior/data/views/horaextras/pages/navigation_page.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
+import 'package:senior/data/views/widgets/components/sidebar_components.dart';
 
 class BaseLayout extends StatefulWidget {
   final PostAuth postAuth = PostAuth();
@@ -44,34 +45,6 @@ class _BaseLayoutState extends State<BaseLayout>
     }
   }
 
-  int _unreadCount() => 2;
-
-  Widget _buildNotificationIcon() {
-    final n = _unreadCount();
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        const Icon(Icons.notifications),
-        if (n > 0)
-          Positioned(
-            right: -2,
-            top: -2,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                  color: Colors.red, borderRadius: BorderRadius.circular(10)),
-              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-              child: Text('$n',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold)),
-            ),
-          ),
-      ],
-    );
-  }
-
   void _showNotificationsOverlay() {
     if (_overlayEntry != null) return;
     final overlay = Overlay.of(context);
@@ -98,6 +71,34 @@ class _BaseLayoutState extends State<BaseLayout>
     );
     overlay.insert(_overlayEntry!);
     _controller.forward();
+  }
+
+  int _unreadCount() => 2;
+
+  Widget _buildNotificationIcon() {
+    final n = _unreadCount();
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        const Icon(Icons.notifications),
+        if (n > 0)
+          Positioned(
+            right: -2,
+            top: -2,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                  color: Colors.red, borderRadius: BorderRadius.circular(10)),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text('$n',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold)),
+            ),
+          ),
+      ],
+    );
   }
 
   void _closeOverlay() {
@@ -139,12 +140,11 @@ class _BaseLayoutState extends State<BaseLayout>
               onPressed: () => Exit(context)),
         ],
       ),
-      // drawer: Drawer(
-      //   elevation: 4,
-      //   backgroundColor: AppColorsComponents.hashours,
-      //   child: Column(children: [Expanded(child: SidebarComponents())]),
-      // ),
-
+      drawer: Drawer(
+        elevation: 4,
+        backgroundColor: AppColorsComponents.hashours,
+        child: Column(children: [Expanded(child: SidebarComponents())]),
+      ),
       backgroundColor: const Color(0xFFF3F7FB),
       resizeToAvoidBottomInset: true,
       body: Column(

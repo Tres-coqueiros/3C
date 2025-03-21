@@ -35,7 +35,7 @@ class _ModernNavigationBarState extends State<ModernNavigationBar> {
         });
         switch (index) {
           case 0:
-            context.go('/homepage');
+            context.go('/dashboard');
             break;
           case 1:
             context.go('/profile');

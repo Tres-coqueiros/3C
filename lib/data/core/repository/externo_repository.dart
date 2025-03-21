@@ -1,23 +1,38 @@
-import 'package:dio/dio.dart';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
 
 class ExternoRepository {
-  final Dio _dio = Dio();
-
   Future<Map<String, dynamic>> getDolar() async {
     try {
-      final response = await _dio.get(
-        'https://economia.awesomeapi.com.br/json/last/USD-BRL',
+      final response = await http.get(
+        Uri.parse('https://economia.awesomeapi.com.br/json/last/USD-BRL'),
       );
 
+      print('Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
       if (response.statusCode == 200) {
-        return response.data['USDBRL'];
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        return responseData['USDBRL'];
       } else {
-        throw Exception('Failed to load dolar rate');
+        throw Exception(
+            'Failed to load dolar rate: Status code ${response.statusCode}');
       }
-    } on DioException catch (error) {
-      throw Exception('Dio error: $error');
     } catch (error) {
-      throw Exception('Unexpected error: $error');
+      print('Error fetching dolar rate: $error');
+      throw Exception('Error: $error');
+    }
+  }
+
+  Future<List<dynamic>> getFeriados() async {
+    final response = await http
+        .get(Uri.parse('https://brasilapi.com.br/api/feriados/v1/2025'));
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+          'Falha ao carregar feriados: Status code ${response.statusCode}');
     }
   }
 }
