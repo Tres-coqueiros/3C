@@ -56,16 +56,13 @@ class _SolicitarPageState extends State<SolicitarPage> {
         gestor = result[0]['GESTOR'];
         gestorId = result[0]['GESTOR_ID'];
       }
-
-      print('gestor: $gestorId');
-      setState(() {
-        getGestor = result;
-      });
+      setState(() => getGestor = result);
     } catch (error) {
       ErrorNotifier.showError('Erro ao buscar gestor: $error');
     }
   }
 
+  /// Calcula o nível de espera de acordo com a data limite
   String _calculateWaitLevel(DateTime deadline) {
     final now = DateTime.now();
     final diffDays = deadline.difference(now).inDays;
@@ -75,6 +72,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
     return 'NORMAL'; // Mais de 3 dias
   }
 
+  /// Formata data no padrão dd/MM/yyyy
   String _formatDateTime(DateTime dt) {
     final dia = dt.day.toString().padLeft(2, '0');
     final mes = dt.month.toString().padLeft(2, '0');
@@ -82,12 +80,13 @@ class _SolicitarPageState extends State<SolicitarPage> {
     return '$dia/$mes/$ano';
   }
 
+  /// Abre o DatePicker para escolher a data limite
   void _pickDeadlineDate() async {
     final now = DateTime.now();
     final selected = await showDatePicker(
       context: context,
       initialDate: _deadlineDate ?? now,
-      firstDate: now, // Não permite data anterior a hoje
+      firstDate: now, // não permite data anterior a hoje
       lastDate: DateTime(2100),
     );
     if (selected != null) {
@@ -98,6 +97,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
+  /// Cria um map com os dados do produto a ser adicionado
   Map<String, dynamic> _createProductData() => {
         'MATERIAL': materialCtrl.text,
         'GRUPO': groupCtrl.text,
@@ -106,33 +106,59 @@ class _SolicitarPageState extends State<SolicitarPage> {
         'PCOMEDIO': pcoCtrl.text,
         'QUANTIDADE_ASER_COMPRADA': qtdCompradaCtrl.text,
         'IS_OUTRA_UNIDADE': false,
+        'DATA_LIMITE': _deadlineDate?.toIso8601String(),
+        'NIVEL_ESPERA': _nivelEspera.isEmpty ? null : _nivelEspera,
       };
 
+  /// Adiciona o produto, evitando duplicados (mesmo MATERIAL + LOCAL)
   void _addProduct() {
     if (_formKey.currentState!.validate()) {
       final data = _createProductData();
-      final currentMat = materialSelecionado, currentLoc = data['LOCAL'] ?? '';
+      // Cria uma "chave" para verificar duplicados (material+local)
+      final itemKey = '${data['MATERIAL']}_${data['LOCAL']}';
+
+      final alreadyExists = products.any((p) {
+        final key = '${p['MATERIAL']}_${p['LOCAL']}';
+        return key == itemKey;
+      });
+
+      if (alreadyExists) {
+        // Já existe esse material+local na lista
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Esse item já foi adicionado.')),
+        );
+        return;
+      }
+
+      // Caso não exista, adiciona
       setState(() {
         products.add(data);
-        // Limpa campos
-        materialCtrl.clear();
-        groupCtrl.clear();
-        quantCtrl.clear();
-        qtdCompradaCtrl.clear();
-        localCtrl.clear();
-        pcoCtrl.clear();
-        localSelecionado = null;
-        materialSelecionado = null;
       });
+
+      // Limpa campos
+      materialCtrl.clear();
+      groupCtrl.clear();
+      quantCtrl.clear();
+      qtdCompradaCtrl.clear();
+      localCtrl.clear();
+      pcoCtrl.clear();
+      localSelecionado = null;
+      materialSelecionado = null;
+
+      // Verifica unidades alternativas
+      final currentMat = materialSelecionado;
+      final currentLoc = data['LOCAL'] ?? '';
       if (currentMat != null && currentMat > 0) {
         _checarLocaisAlternativos(currentMat, currentLoc.toString());
       }
     }
   }
 
+  /// Verifica se há outras unidades disponíveis para esse material
   void _checarLocaisAlternativos(int materialId, String localAtual) {
     final locaisAlt = getLocaisByMaterial(materialId).where((loc) {
       final saldo = loc['SALDO'] ?? 0;
+      // Exibe somente se for diferente do local atual e tiver saldo > 0
       return loc['LOCAIS'] != localAtual && saldo > 0;
     }).toList();
 
@@ -165,6 +191,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
+  /// Card de cada local alternativo
   Widget _buildLocalAlternativoTile(Map<String, dynamic> local) {
     final qtdController = TextEditingController();
     return Container(
@@ -178,24 +205,30 @@ class _SolicitarPageState extends State<SolicitarPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Título
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     local['LOCAIS']?.toString().toUpperCase() ?? 'UNIDADE',
                     style: const TextStyle(
-                        color: Colors.green, fontWeight: FontWeight.w600),
+                      color: Colors.green,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Icon(Icons.location_on_outlined,
                       color: Colors.green.shade300),
                 ],
               ),
               const Divider(thickness: 1.2),
+
+              // Infos
               _buildInfo('Material', local['MATERIAL']),
               _buildInfo('Grupo', local['GRUPO']),
               _buildInfo('Saldo disponível', local['SALDO']),
               if (local['PCOMEDIO'] != null)
                 _buildInfo('Preço Médio', local['PCOMEDIO']),
+
               const SizedBox(height: 12),
               TextFormField(
                 controller: qtdController,
@@ -206,6 +239,8 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 ),
               ),
               const SizedBox(height: 12),
+
+              // Botão "Adicionar deste local"
               Align(
                 alignment: Alignment.centerRight,
                 child: ButtonComponents(
@@ -219,6 +254,21 @@ class _SolicitarPageState extends State<SolicitarPage> {
                       );
                       return;
                     }
+
+                    // Cria chave para evitar duplicado
+                    final itemKey = '${local['MATERIAL']}_${local['LOCAIS']}';
+                    final alreadyExists = products.any((p) {
+                      final key = '${p['MATERIAL']}_${p['LOCAL']}';
+                      return key == itemKey;
+                    });
+                    if (alreadyExists) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Esse item já foi adicionado.')),
+                      );
+                      return;
+                    }
+
                     setState(() {
                       products.add({
                         'MATERIAL': local['MATERIAL'],
@@ -228,6 +278,10 @@ class _SolicitarPageState extends State<SolicitarPage> {
                         'PCOMEDIO': local['PCOMEDIO']?.toString() ?? '0',
                         'QUANTIDADE_ASER_COMPRADA': qtd.toString(),
                         'IS_OUTRA_UNIDADE': true,
+                        // Reaproveita data limite e nível de espera
+                        'DATA_LIMITE': _deadlineDate?.toIso8601String(),
+                        'NIVEL_ESPERA':
+                            _nivelEspera.isEmpty ? null : _nivelEspera,
                       });
                     });
                     Navigator.of(context).pop();
@@ -258,6 +312,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
         ),
       );
 
+  /// Envia a solicitação
   void addSubmit() async {
     if (products.isEmpty) {
       ErrorNotifier.showError("Adicione pelo menos um item antes de enviar.");
@@ -279,6 +334,8 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 "local": mat['LOCAL'],
                 "grupo": mat['GRUPO'],
                 "is_outra_unidade": mat['IS_OUTRA_UNIDADE'] ?? false,
+                "data_limite": mat['DATA_LIMITE'],
+                "nivel_espera": mat['NIVEL_ESPERA'],
               })
           .toList(),
     };
@@ -295,6 +352,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
+  /// Busca informações do usuário logado
   void fetchMatricula() async {
     try {
       final res = await getServices.getLogin();
@@ -308,6 +366,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
+  /// Busca materiais disponíveis
   void fetchSolicitarMaterial() async {
     try {
       final res = await getServices.getMaterialSolicitacao();
@@ -317,6 +376,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
+  /// Retorna todos os locais de um determinado material
   List<Map<String, dynamic>> getLocaisByMaterial(int id) =>
       getMaterialSolicitacao
           .where((mat) => mat['ID_MATERIAL'] == id)
@@ -330,6 +390,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
               })
           .toList();
 
+  /// Retorna materiais únicos (sem duplicar ID_MATERIAL)
   List<Map<String, dynamic>> getUniqueMaterials() {
     final seen = <int>{};
     return getMaterialSolicitacao
@@ -359,37 +420,39 @@ class _SolicitarPageState extends State<SolicitarPage> {
       body: LayoutBuilder(builder: (ctx, ct) {
         final isMobile = ct.maxWidth < 800;
         return Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12), // Menor espaçamento
           child: isMobile ? _buildMobileLayout() : _buildWebLayout(),
         );
       }),
     );
   }
 
+  /// Layout Mobile
   Widget _buildMobileLayout() => SingleChildScrollView(
         child: Column(
           children: [
             _buildForm(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16), // Menor espaçamento
             _buildProductList(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _buildSubmitButton(),
           ],
         ),
       );
 
+  /// Layout Web
   Widget _buildWebLayout() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(flex: 2, child: _buildForm()),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           Expanded(
             flex: 3,
             child: SingleChildScrollView(
               child: Column(
                 children: [
                   _buildProductList(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   Align(
                     alignment: Alignment.centerRight,
                     child: _buildSubmitButton(),
@@ -401,12 +464,19 @@ class _SolicitarPageState extends State<SolicitarPage> {
         ],
       );
 
+  /// Form principal, com espaçamentos reduzidos
   Widget _buildForm() {
     return Form(
       key: _formKey,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1) Dropdown para Código Material
+          // Código do Material
+          const Text(
+            "Código do Material",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
           SearchableDropdown(
             items: getUniqueMaterials(),
             itemLabel: (m) => m['ID_MATERIAL'].toString(),
@@ -418,33 +488,45 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 materialCtrl.text = m['MATERIAL'].toString();
               });
             },
-            labelText: "Código Material",
+            labelText: "Selecione o Código do Material",
             hintText: "Selecione o Código do Material",
           ),
+          const SizedBox(height: 12),
 
-          const SizedBox(height: 10),
-
-          // 2) Campo Material
+          // Material
+          const Text(
+            "Material",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
           AppTextComponents(
-            label: 'Material',
+            label: '',
             controller: materialCtrl,
             hint: 'Material',
             readOnly: true,
           ),
+          const SizedBox(height: 12),
 
-          const SizedBox(height: 10),
-
-          // 3) Campo Grupo de Material
+          // Grupo
+          const Text(
+            "Grupo de Material",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
           AppTextComponents(
-            label: 'Grupo de Material',
+            label: '',
             controller: groupCtrl,
             hint: 'Grupo de Material',
             readOnly: true,
           ),
+          const SizedBox(height: 12),
 
-          const SizedBox(height: 10),
-
-          // 4) Dropdown para Local
+          // Local
+          const Text(
+            "Local",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
           SearchableDropdown(
             items: selectedLocais,
             itemLabel: (l) => l['LOCAIS'],
@@ -455,112 +537,149 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 pcoCtrl.text = l['PCOMEDIO'].toString();
               });
             },
-            labelText: "Local",
+            labelText: "Selecione o Local",
             hintText: "Selecione o Local",
           ),
+          const SizedBox(height: 12),
 
-          const SizedBox(height: 10),
-
-          // 5) Quantidade + Preço Médio
+          // Linha Quantidade e Preço Médio
           Row(
             children: [
               Expanded(
-                child: AppTextComponents(
-                  label: 'Quantidade',
-                  controller: quantCtrl,
-                  hint: 'Quantidade',
-                  readOnly: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Quantidade",
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    AppTextComponents(
+                      label: '',
+                      controller: quantCtrl,
+                      hint: 'Quantidade',
+                      readOnly: true,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
-                child: AppTextComponents(
-                  label: 'Preço Médio',
-                  controller: pcoCtrl,
-                  hint: 'Preço Médio',
-                  readOnly: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Preço Médio",
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    AppTextComponents(
+                      label: '',
+                      controller: pcoCtrl,
+                      hint: 'Preço Médio',
+                      readOnly: true,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
 
-          const SizedBox(height: 10),
-
-          // 6) Quantidade a ser comprada + Botão "+"
+          // Linha Qtd a comprar, Data Limite e Botão
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              // Qtd a comprar
               Expanded(
-                child: AppTextComponents(
-                  label: 'Quantidade a ser comprada',
-                  hint: 'Digite a quantidade',
-                  controller: qtdCompradaCtrl,
-                  isRequired: true,
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Qtd a comprar",
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    AppTextComponents(
+                      label: '',
+                      hint: 'Digite',
+                      controller: qtdCompradaCtrl,
+                      isRequired: true,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 5),
-              // Aqui, se o param do ButtonComponents for "alignment",
-              // usamos alignment: Alignment.center
-              // e removemos textAlign se ele não existir no construtor
-              ButtonComponents(
-                textAlign: Alignment.center,
-                onPressed: _addProduct,
-                textColor: Colors.white,
-                backgroundColor: AppColorsComponents.primary,
-                fontSize: 14,
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                icon: Icons.add,
-              ),
-            ],
-          ),
+              const SizedBox(width: 12),
 
-          const SizedBox(height: 15),
-
-          // 7) Label + Campo "Data Limite"
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Label
-              const Text(
-                'Data Limite:',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 5),
-
-              // Campo de Data (InkWell + Container)
-              InkWell(
-                onTap: _pickDeadlineDate,
-                child: Container(
-                  height: 50,
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.date_range, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      Text(
-                        _deadlineDate == null
-                            ? 'Data Limite'
-                            : _formatDateTime(_deadlineDate!),
-                        style: const TextStyle(fontSize: 14),
+              // Data Limite
+              Expanded(
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Data Limite',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    InkWell(
+                      onTap: _pickDeadlineDate,
+                      child: Container(
+                        height: 50,
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.date_range, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Text(
+                              _deadlineDate == null
+                                  ? 'Data Limite'
+                                  : _formatDateTime(_deadlineDate!),
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Botão "+"
+              SizedBox(
+                height: 50,
+                child: ButtonComponents(
+                  textAlign: Alignment.center,
+                  onPressed: _addProduct,
+                  textColor: Colors.white,
+                  backgroundColor: AppColorsComponents.primary,
+                  fontSize: 16,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  icon: Icons.add,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
 
-          // 8) Exibe nível de espera, se calculado
-          const SizedBox(height: 10),
+          // Exibe nível de espera, se calculado
           if (_nivelEspera.isNotEmpty)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
                 borderRadius: BorderRadius.circular(8),
@@ -583,9 +702,12 @@ class _SolicitarPageState extends State<SolicitarPage> {
     );
   }
 
+  /// Lista de produtos adicionados
   Widget _buildProductList() {
     if (products.isEmpty) {
-      return Center(
+      return Container(
+        height: 180,
+        alignment: Alignment.center,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -603,7 +725,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           child: Text(
             'ITENS',
             style: TextStyle(
@@ -622,8 +744,11 @@ class _SolicitarPageState extends State<SolicitarPage> {
             itemBuilder: (ctx, i) {
               final mat = products[i];
               final isOutraUn = mat['IS_OUTRA_UNIDADE'] == true;
+              final dataLimite = mat['DATA_LIMITE'];
+              final nivelEsp = mat['NIVEL_ESPERA'];
+
               return SizedBox(
-                width: 330,
+                width: 320,
                 child: Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15),
@@ -683,6 +808,13 @@ class _SolicitarPageState extends State<SolicitarPage> {
                         _buildInfoText(
                             'Qtd. a comprar', mat['QUANTIDADE_ASER_COMPRADA']),
                         _buildInfoText('Local', mat['LOCAL']),
+                        if (dataLimite != null)
+                          _buildInfoText(
+                            'Data Limite',
+                            _formatDateTime(DateTime.parse(dataLimite)),
+                          ),
+                        if (nivelEsp != null)
+                          _buildInfoText('Nível Espera', nivelEsp),
                       ],
                     ),
                   ),
