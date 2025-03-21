@@ -144,142 +144,160 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
     // Verifica se é de outra unidade
     final bool isOutraUnidade = (item["is_outra_unidade"] == true);
 
+    // Pega data limite, se houver
+    final String? dataLimite = item["data_limite"] as String?;
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Stack(
-        children: [
-          // Ícone "X" para remover o card
-          Positioned(
-            right: 4,
-            top: 4,
-            child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.grey),
-              onPressed: () => setState(() {
-                _localItens.remove(item); // Remove do estado local
-              }),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Linha com título do material + botão de remover
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Se for de outra unidade, exibe essa informação
-                if (isOutraUnidade)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.location_on_outlined,
-                            color: Colors.deepPurple, size: 16),
-                        const SizedBox(width: 4),
-                        // Exibe a "unidade" real do item
-                        Text(
-                          "Outra Unidade: ${item["local"]}",
-                          style: const TextStyle(
-                            color: Colors.deepPurple,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                Expanded(
+                  child: Text(
+                    item["material"] ?? 'Material não informado',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
-                  ),
-
-                // Nome do material
-                Text(
-                  item["material"],
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Divider(),
-
-                // Linha com local e grupo
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    _buildInfoColumn("Local", item["local"], 16),
-                    _buildInfoColumn("Grupo", item["grupo"], 16),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Linha com QUANTIDADE (editável) e PREÇO UNITÁRIO
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Quantidade - agora editável
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Quantidade",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 80,
-                          child: TextFormField(
-                            controller: qtdCtrl,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 4,
-                              ),
-                            ),
-                            onEditingComplete: _atualizarQuantidade,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // Preço Unitário
-                    _buildInfoColumn(
-                      "Preço Unitário",
-                      "R\$ ${item["preco_unitario"].toStringAsFixed(2)}",
-                      18,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Subtotal destacado
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: AppColorsComponents.primary,
-                  ),
-                  child: Center(
-                    child: Text(
-                      "Subtotal: R\$ ${item["subtotal"].toStringAsFixed(2)}",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColorsComponents.hashours,
-                      ),
-                    ),
-                  ),
+                // Ícone "X" para remover o card
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                  onPressed: () {
+                    setState(() {
+                      _localItens.remove(item); // Remove do estado local
+                    });
+                  },
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+
+            // Se for de outra unidade, exibe informação de transferência
+            if (isOutraUnidade)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.swap_horiz, color: Colors.deepPurple),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        "Transferência de Unidade: ${item["local"]}",
+                        style: const TextStyle(
+                          color: Colors.deepPurple,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            const Divider(),
+
+            // Linha com local, grupo e data limite (se houver)
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildInfoColumn("Local", item["local"] ?? '-', 16),
+                _buildInfoColumn("Grupo", item["grupo"] ?? '-', 16),
+
+                // Se tiver data limite, exibe
+                if (dataLimite != null)
+                  _buildInfoColumn(
+                    "Data Limite",
+                    converterDataEHoras(dataLimite),
+                    16,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Linha com QUANTIDADE (editável) e PREÇO UNITÁRIO
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Quantidade - agora editável
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Quantidade",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 80,
+                      child: TextFormField(
+                        controller: qtdCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 4,
+                          ),
+                        ),
+                        onEditingComplete: _atualizarQuantidade,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Preço Unitário
+                _buildInfoColumn(
+                  "Preço Unitário",
+                  "R\$ ${item["preco_unitario"]?.toStringAsFixed(2) ?? '0.00'}",
+                  18,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Subtotal destacado
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: AppColorsComponents.primary,
+              ),
+              child: Center(
+                child: Text(
+                  "Subtotal: R\$ ${item["subtotal"]?.toStringAsFixed(2) ?? '0.00'}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColorsComponents.hashours,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -316,6 +334,7 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
       children: [
         // Botão Aprovar
         ButtonComponents(
+          textAlign: Alignment.center,
           onPressed: () {
             // Lógica de aprovar
           },
@@ -324,11 +343,11 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
           backgroundColor: AppColorsComponents.primary,
           fontSize: 12,
           padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12),
-          textAlign: Alignment.center,
         ),
 
         // Botão Reprovar
         ButtonComponents(
+          textAlign: Alignment.center,
           onPressed: () {
             // Lógica de reprovar
           },
@@ -337,7 +356,6 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
           backgroundColor: AppColorsComponents.error,
           fontSize: 12,
           padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12),
-          textAlign: Alignment.center,
         ),
       ],
     );

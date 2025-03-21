@@ -19,6 +19,9 @@ class _SolicitarPageState extends State<SolicitarPage> {
   final _formKey = GlobalKey<FormState>();
   List<Map<String, dynamic>> products = [];
 
+  DateTime? _deadlineDate; // Armazena a data limite escolhida
+  String _nivelEspera = ''; // Pode ser "EMERGENCIAL", "URGENTE" ou "NORMAL"
+
   TextEditingController materialCtrl = TextEditingController(),
       groupCtrl = TextEditingController(),
       quantCtrl = TextEditingController(),
@@ -38,6 +41,38 @@ class _SolicitarPageState extends State<SolicitarPage> {
     super.initState();
     fetchSolicitarMaterial();
     fetchMatricula();
+  }
+
+  String _calculateWaitLevel(DateTime deadline) {
+    final now = DateTime.now();
+    final diffDays = deadline.difference(now).inDays;
+
+    if (diffDays <= 0) return 'EMERGENCIAL'; // Mesmo dia ou já passou
+    if (diffDays <= 3) return 'URGENTE'; // Até 3 dias
+    return 'NORMAL'; // Mais de 3 dias
+  }
+
+  String _formatDateTime(DateTime dt) {
+    final dia = dt.day.toString().padLeft(2, '0');
+    final mes = dt.month.toString().padLeft(2, '0');
+    final ano = dt.year;
+    return '$dia/$mes/$ano';
+  }
+
+  void _pickDeadlineDate() async {
+    final now = DateTime.now();
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _deadlineDate ?? now,
+      firstDate: now, // Não permite data anterior a hoje
+      lastDate: DateTime(2100),
+    );
+    if (selected != null) {
+      setState(() {
+        _deadlineDate = selected;
+        _nivelEspera = _calculateWaitLevel(selected);
+      });
+    }
   }
 
   Map<String, dynamic> _createProductData() => {
@@ -107,7 +142,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
-  // Substituímos ElevatedButton.icon pelo mesmo componente do botão "Solicitar Compra"
   Widget _buildLocalAlternativoTile(Map<String, dynamic> local) {
     final qtdController = TextEditingController();
     return Container(
@@ -118,76 +152,76 @@ class _SolicitarPageState extends State<SolicitarPage> {
         elevation: 3,
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  local['LOCAIS']?.toString().toUpperCase() ?? 'UNIDADE',
-                  style: const TextStyle(
-                      color: Colors.green, fontWeight: FontWeight.w600),
-                ),
-                Icon(Icons.location_on_outlined, color: Colors.green.shade300),
-              ],
-            ),
-            const Divider(thickness: 1.2),
-            _buildInfo('Material', local['MATERIAL']),
-            _buildInfo('Grupo', local['GRUPO']),
-            _buildInfo('Saldo disponível', local['SALDO']),
-            if (local['PCOMEDIO'] != null)
-              _buildInfo('Preço Médio', local['PCOMEDIO']),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: qtdController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Quantidade a pedir',
-                border: OutlineInputBorder(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    local['LOCAIS']?.toString().toUpperCase() ?? 'UNIDADE',
+                    style: const TextStyle(
+                        color: Colors.green, fontWeight: FontWeight.w600),
+                  ),
+                  Icon(Icons.location_on_outlined,
+                      color: Colors.green.shade300),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-
-            // AQUI: Usamos ButtonComponents no lugar de ElevatedButton.icon
-            Align(
-              alignment: Alignment.centerRight,
-              child: ButtonComponents(
-                onPressed: () {
-                  final qtd = double.tryParse(qtdController.text) ?? 0;
-                  if (qtd <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Digite uma quantidade válida')),
-                    );
-                    return;
-                  }
-                  setState(() {
-                    products.add({
-                      'MATERIAL': local['MATERIAL'],
-                      'GRUPO': local['GRUPO'],
-                      'LOCAL': local['LOCAIS'],
-                      'QUANTIDADE': local['SALDO'].toString(),
-                      'PCOMEDIO': local['PCOMEDIO']?.toString() ?? '0',
-                      'QUANTIDADE_ASER_COMPRADA': qtd.toString(),
-                      'IS_OUTRA_UNIDADE': true,
+              const Divider(thickness: 1.2),
+              _buildInfo('Material', local['MATERIAL']),
+              _buildInfo('Grupo', local['GRUPO']),
+              _buildInfo('Saldo disponível', local['SALDO']),
+              if (local['PCOMEDIO'] != null)
+                _buildInfo('Preço Médio', local['PCOMEDIO']),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: qtdController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Quantidade a pedir',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ButtonComponents(
+                  textAlign: Alignment.center,
+                  onPressed: () {
+                    final qtd = double.tryParse(qtdController.text) ?? 0;
+                    if (qtd <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Digite uma quantidade válida')),
+                      );
+                      return;
+                    }
+                    setState(() {
+                      products.add({
+                        'MATERIAL': local['MATERIAL'],
+                        'GRUPO': local['GRUPO'],
+                        'LOCAL': local['LOCAIS'],
+                        'QUANTIDADE': local['SALDO'].toString(),
+                        'PCOMEDIO': local['PCOMEDIO']?.toString() ?? '0',
+                        'QUANTIDADE_ASER_COMPRADA': qtd.toString(),
+                        'IS_OUTRA_UNIDADE': true,
+                      });
                     });
-                  });
-                  Navigator.of(context).pop();
-                },
-                text: 'Adicionar deste local',
-                textColor: Colors.white,
-                backgroundColor: AppColorsComponents.primary,
-                // Se quiser a mesma cor verde, use Colors.green
-                fontSize: 16,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                    Navigator.of(context).pop();
+                  },
+                  text: 'Adicionar deste local',
+                  textColor: Colors.white,
+                  backgroundColor: AppColorsComponents.primary,
+                  fontSize: 16,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  icon: Icons.add,
                 ),
-                textAlign: Alignment.center,
-                icon: Icons.add,
               ),
-            ),
-          ]),
+            ],
+          ),
         ),
       ),
     );
@@ -310,13 +344,15 @@ class _SolicitarPageState extends State<SolicitarPage> {
   }
 
   Widget _buildMobileLayout() => SingleChildScrollView(
-        child: Column(children: [
-          _buildForm(),
-          const SizedBox(height: 20),
-          _buildProductList(),
-          const SizedBox(height: 20),
-          _buildSubmitButton(),
-        ]),
+        child: Column(
+          children: [
+            _buildForm(),
+            const SizedBox(height: 20),
+            _buildProductList(),
+            const SizedBox(height: 20),
+            _buildSubmitButton(),
+          ],
+        ),
       );
 
   Widget _buildWebLayout() => Row(
@@ -327,14 +363,16 @@ class _SolicitarPageState extends State<SolicitarPage> {
           Expanded(
             flex: 3,
             child: SingleChildScrollView(
-              child: Column(children: [
-                _buildProductList(),
-                const SizedBox(height: 20),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: _buildSubmitButton(),
-                ),
-              ]),
+              child: Column(
+                children: [
+                  _buildProductList(),
+                  const SizedBox(height: 20),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _buildSubmitButton(),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -343,91 +381,182 @@ class _SolicitarPageState extends State<SolicitarPage> {
   Widget _buildForm() {
     return Form(
       key: _formKey,
-      child: Column(children: [
-        SearchableDropdown(
-          items: getUniqueMaterials(),
-          itemLabel: (m) => m['ID_MATERIAL'].toString(),
-          onItemSelected: (m) {
-            setState(() {
-              materialSelecionado = m['ID_MATERIAL'];
-              selectedLocais = getLocaisByMaterial(materialSelecionado!);
-              groupCtrl.text = m['GRUPO'].toString();
-              materialCtrl.text = m['MATERIAL'].toString();
-            });
-          },
-          labelText: "Código Material",
-          hintText: "Selecione o Código do Material",
-        ),
-        const SizedBox(height: 10),
-        AppTextComponents(
-          label: 'Material',
-          controller: materialCtrl,
-          hint: 'Material',
-          readOnly: true,
-        ),
-        const SizedBox(height: 10),
-        AppTextComponents(
-          label: 'Grupo de Material',
-          controller: groupCtrl,
-          hint: 'Grupo de Material',
-          readOnly: true,
-        ),
-        const SizedBox(height: 10),
-        SearchableDropdown(
-          items: selectedLocais,
-          itemLabel: (l) => l['LOCAIS'],
-          onItemSelected: (l) {
-            setState(() {
-              localCtrl.text = l['LOCAIS'].toString();
-              quantCtrl.text = l['SALDO'].toString();
-              pcoCtrl.text = l['PCOMEDIO'].toString();
-            });
-          },
-          labelText: "Local",
-          hintText: "Selecione o Local",
-        ),
-        const SizedBox(height: 10),
-        Row(children: [
-          Expanded(
-            child: AppTextComponents(
-              label: 'Quantidade',
-              controller: quantCtrl,
-              hint: 'Quantidade',
-              readOnly: true,
+      child: Column(
+        children: [
+          // 1) Dropdown para Código Material
+          SearchableDropdown(
+            items: getUniqueMaterials(),
+            itemLabel: (m) => m['ID_MATERIAL'].toString(),
+            onItemSelected: (m) {
+              setState(() {
+                materialSelecionado = m['ID_MATERIAL'];
+                selectedLocais = getLocaisByMaterial(materialSelecionado!);
+                groupCtrl.text = m['GRUPO'].toString();
+                materialCtrl.text = m['MATERIAL'].toString();
+              });
+            },
+            labelText: "Código Material",
+            hintText: "Selecione o Código do Material",
+          ),
+
+          const SizedBox(height: 10),
+
+          // 2) Campo Material
+          AppTextComponents(
+            label: 'Material',
+            controller: materialCtrl,
+            hint: 'Material',
+            readOnly: true,
+          ),
+
+          const SizedBox(height: 10),
+
+          // 3) Campo Grupo de Material
+          AppTextComponents(
+            label: 'Grupo de Material',
+            controller: groupCtrl,
+            hint: 'Grupo de Material',
+            readOnly: true,
+          ),
+
+          const SizedBox(height: 10),
+
+          // 4) Dropdown para Local
+          SearchableDropdown(
+            items: selectedLocais,
+            itemLabel: (l) => l['LOCAIS'],
+            onItemSelected: (l) {
+              setState(() {
+                localCtrl.text = l['LOCAIS'].toString();
+                quantCtrl.text = l['SALDO'].toString();
+                pcoCtrl.text = l['PCOMEDIO'].toString();
+              });
+            },
+            labelText: "Local",
+            hintText: "Selecione o Local",
+          ),
+
+          const SizedBox(height: 10),
+
+          // 5) Quantidade + Preço Médio
+          Row(
+            children: [
+              Expanded(
+                child: AppTextComponents(
+                  label: 'Quantidade',
+                  controller: quantCtrl,
+                  hint: 'Quantidade',
+                  readOnly: true,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: AppTextComponents(
+                  label: 'Preço Médio',
+                  controller: pcoCtrl,
+                  hint: 'Preço Médio',
+                  readOnly: true,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // 6) Quantidade a ser comprada + Botão "+"
+          Row(
+            children: [
+              Expanded(
+                child: AppTextComponents(
+                  label: 'Quantidade a ser comprada',
+                  hint: 'Digite a quantidade',
+                  controller: qtdCompradaCtrl,
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 5),
+              // Aqui, se o param do ButtonComponents for "alignment",
+              // usamos alignment: Alignment.center
+              // e removemos textAlign se ele não existir no construtor
+              ButtonComponents(
+                textAlign: Alignment.center,
+                onPressed: _addProduct,
+                textColor: Colors.white,
+                backgroundColor: AppColorsComponents.primary,
+                fontSize: 14,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                icon: Icons.add,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 15),
+
+          // 7) Label + Campo "Data Limite"
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Label
+              const Text(
+                'Data Limite:',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 5),
+
+              // Campo de Data (InkWell + Container)
+              InkWell(
+                onTap: _pickDeadlineDate,
+                child: Container(
+                  height: 50,
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.date_range, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Text(
+                        _deadlineDate == null
+                            ? 'Data Limite'
+                            : _formatDateTime(_deadlineDate!),
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // 8) Exibe nível de espera, se calculado
+          const SizedBox(height: 10),
+          if (_nivelEspera.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Nível de Espera: $_nivelEspera',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: _nivelEspera == 'EMERGENCIAL'
+                      ? Colors.red
+                      : (_nivelEspera == 'URGENTE'
+                          ? Colors.orange
+                          : Colors.green),
+                ),
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: AppTextComponents(
-              label: 'Preço Médio',
-              controller: pcoCtrl,
-              hint: 'Preço Médio',
-              readOnly: true,
-            ),
-          ),
-        ]),
-        const SizedBox(height: 10),
-        Row(children: [
-          Expanded(
-            child: AppTextComponents(
-              label: 'Quantidade a ser comprada',
-              hint: 'Digite a quantidade',
-              controller: qtdCompradaCtrl,
-              isRequired: true,
-            ),
-          ),
-          const SizedBox(width: 5),
-          ButtonComponents(
-            onPressed: _addProduct,
-            textColor: Colors.white,
-            backgroundColor: AppColorsComponents.primary,
-            fontSize: 14,
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            textAlign: Alignment.center,
-            icon: Icons.add,
-          ),
-        ])
-      ]),
+        ],
+      ),
     );
   }
 
@@ -447,96 +576,100 @@ class _SolicitarPageState extends State<SolicitarPage> {
         ),
       );
     }
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Padding(
-        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-        child: Text(
-          'ITENS',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.blueGrey,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+          child: Text(
+            'ITENS',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueGrey,
+            ),
           ),
         ),
-      ),
-      SizedBox(
-        height: 250,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          itemCount: products.length,
-          itemBuilder: (ctx, i) {
-            final mat = products[i];
-            final isOutraUn = mat['IS_OUTRA_UNIDADE'] == true;
-            return SizedBox(
-              width: 330,
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                elevation: 5,
-                shadowColor: Colors.grey.withOpacity(0.3),
-                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (isOutraUn)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 6),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.deepPurple.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.location_on_outlined,
-                                color: Colors.deepPurple.shade300,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                mat['LOCAL']?.toString().toUpperCase() ??
-                                    'LOCAL',
-                                style: const TextStyle(
-                                  color: Colors.deepPurple,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+        SizedBox(
+          height: 250,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: products.length,
+            itemBuilder: (ctx, i) {
+              final mat = products[i];
+              final isOutraUn = mat['IS_OUTRA_UNIDADE'] == true;
+              return SizedBox(
+                width: 330,
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  elevation: 5,
+                  shadowColor: Colors.grey.withOpacity(0.3),
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (isOutraUn)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurple.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.location_on_outlined,
+                                  color: Colors.deepPurple.shade300,
+                                  size: 16,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                Text(
+                                  mat['LOCAL']?.toString().toUpperCase() ??
+                                      'LOCAL',
+                                  style: const TextStyle(
+                                    color: Colors.deepPurple,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        Text(
+                          mat['MATERIAL']?.toString() ?? 'Desconhecido',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueGrey,
                           ),
                         ),
-                      Text(
-                        mat['MATERIAL']?.toString() ?? 'Desconhecido',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildInfoText('Grupo', mat['GRUPO']),
-                      _buildInfoText('Saldo', mat['QUANTIDADE']),
-                      _buildInfoText('Preço Médio', mat['PCOMEDIO']),
-                      _buildInfoText(
-                          'Qtd. a comprar', mat['QUANTIDADE_ASER_COMPRADA']),
-                      _buildInfoText('Local', mat['LOCAL']),
-                    ],
+                        const SizedBox(height: 8),
+                        _buildInfoText('Grupo', mat['GRUPO']),
+                        _buildInfoText('Saldo', mat['QUANTIDADE']),
+                        _buildInfoText('Preço Médio', mat['PCOMEDIO']),
+                        _buildInfoText(
+                            'Qtd. a comprar', mat['QUANTIDADE_ASER_COMPRADA']),
+                        _buildInfoText('Local', mat['LOCAL']),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
   Widget _buildInfoText(String label, dynamic value) => Text(
@@ -546,13 +679,13 @@ class _SolicitarPageState extends State<SolicitarPage> {
 
   Widget _buildSubmitButton() {
     return ButtonComponents(
+      textAlign: Alignment.center,
       onPressed: addSubmit,
       text: 'Solicitar Compra',
       textColor: Colors.white,
       backgroundColor: AppColorsComponents.primary,
       fontSize: 18,
       padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12),
-      textAlign: Alignment.center,
     );
   }
 }
