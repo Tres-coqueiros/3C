@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/core/repository/exceptions_network.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
@@ -19,6 +18,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
 
   final _formKey = GlobalKey<FormState>();
   List<Map<String, dynamic>> products = [];
+  List<Map<String, dynamic>> getGestor = [];
 
   DateTime? _deadlineDate; // Armazena a data limite escolhida
   String _nivelEspera = ''; // Pode ser "EMERGENCIAL", "URGENTE" ou "NORMAL"
