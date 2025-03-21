@@ -34,6 +34,28 @@ class _BaseLayoutState extends State<BaseLayout>
     super.dispose();
   }
 
+  void openSidebar() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.6,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColorsComponents.hashours,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: SidebarComponents(),
+          );
+        },
+      ),
+    );
+  }
+
   void Exit(BuildContext context) async {
     try {
       await widget.postAuth.authlogout();
@@ -42,6 +64,15 @@ class _BaseLayoutState extends State<BaseLayout>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Erro ao tentar sair do aplicativo')),
       );
+    }
+  }
+
+  void _closeOverlay() {
+    if (_overlayEntry != null) {
+      _controller.reverse().then((_) {
+        _overlayEntry?.remove();
+        _overlayEntry = null;
+      });
     }
   }
 
@@ -101,15 +132,6 @@ class _BaseLayoutState extends State<BaseLayout>
     );
   }
 
-  void _closeOverlay() {
-    if (_overlayEntry != null) {
-      _controller.reverse().then((_) {
-        _overlayEntry?.remove();
-        _overlayEntry = null;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,6 +149,11 @@ class _BaseLayoutState extends State<BaseLayout>
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.menu),
+            color: Colors.white,
+            onPressed: openSidebar,
+          ),
+          IconButton(
               icon: _buildNotificationIcon(),
               color: Colors.white,
               onPressed: _showNotificationsOverlay),
@@ -139,11 +166,6 @@ class _BaseLayoutState extends State<BaseLayout>
               color: Colors.white,
               onPressed: () => Exit(context)),
         ],
-      ),
-      drawer: Drawer(
-        elevation: 4,
-        backgroundColor: AppColorsComponents.hashours,
-        child: Column(children: [Expanded(child: SidebarComponents())]),
       ),
       backgroundColor: const Color(0xFFF3F7FB),
       resizeToAvoidBottomInset: true,

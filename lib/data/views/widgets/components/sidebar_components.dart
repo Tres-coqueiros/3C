@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:senior/data/core/provider/app_provider_departament.dart';
+import 'package:senior/data/views/dbo/pages/RegisterPublic_page.dart';
+import 'package:senior/data/views/horaextras/pages/list_colaboradores_page.dart';
+import 'package:senior/data/views/suprimentos/pages/solicitar_page.dart';
+import 'package:senior/data/views/widgets/base_layout.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 
 class SidebarComponents extends StatefulWidget {
@@ -9,75 +13,82 @@ class SidebarComponents extends StatefulWidget {
 }
 
 class _SidebarComponentsState extends State<SidebarComponents> {
-  // Variável para controlar a expansão do submenu
-  bool _isSubmenuExpanded = false;
+  Map<String, bool> _submenuExpanded = {};
+  final Map<String, Widget> navigationMap = {
+    "Horas Extras": ListColaboradores(),
+    "BDO": RegisterPublicDBO(),
+    "Solicitações de Compras": SolicitarPage(),
+  };
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColorsComponents.hashours,
-        elevation: 0,
-        title: Text(
-          'Selecione o Departamento',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.85, // Ocupa 85% da tela
+      height: MediaQuery.of(context).size.height * 0.9, // Usa 90% da altura
+      decoration: BoxDecoration(
+        color: AppColorsComponents.primary,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColorsComponents.primary,
-              AppColorsComponents.primary,
-            ],
-          ),
-        ),
-        child: Row(
-          children: [
-            // Sidebar container
-            Container(
-              width: 290,
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionTitle('Menu Principal'),
-                  _buildDepartmentItemWithSubmenu(
-                    context,
-                    Icons.person_2,
-                    'Recursos Humanos',
-                    ['Item 1', 'Item 2', 'Item 3'],
-                  ),
-                  _buildDepartmentItemWithSubmenu(
-                    context,
-                    Icons.analytics,
-                    'PCM',
-                    ['Item 1', 'Item 2', 'Item 3'],
-                  ),
-                  _buildDepartmentItemWithSubmenu(
-                    context,
-                    Icons.analytics,
-                    'Suprimentos',
-                    ['Item 1', 'Item 2', 'Item 3'],
-                  ),
-                ],
+      child: Column(
+        children: [
+          // Cabeçalho do menu
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColorsComponents.hashours,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Center(
+              child: Text(
+                'Selecione o Departamento',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          // Expandindo corretamente o conteúdo
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionTitle('Menu Principal'),
+                    _buildDepartmentItemWithSubmenu(
+                      context,
+                      Icons.person_2,
+                      'Recursos Humanos',
+                      ['Horas Extras'],
+                    ),
+                    _buildDepartmentItemWithSubmenu(
+                      context,
+                      Icons.ac_unit,
+                      'PCM',
+                      ['BDO'],
+                    ),
+                    _buildDepartmentItemWithSubmenu(
+                      context,
+                      Icons.abc,
+                      'Suprimentos',
+                      ['Solicitações de Compras'],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10, top: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Text(
         title,
         style: TextStyle(
@@ -89,91 +100,79 @@ class _SidebarComponentsState extends State<SidebarComponents> {
     );
   }
 
-  Widget _buildDepartmentItem(
-      BuildContext context, IconData icon, String title) {
-    return InkWell(
-      onTap: () {
-        Provider.of<AppProviderDepartament>(context, listen: false)
-            .setSelectedDepartament(title);
-        Navigator.pop(context);
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-        margin: EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 24),
-            SizedBox(width: 15),
-            Text(
-              title,
-              style: TextStyle(
-                color: AppColorsComponents.hashours,
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildDepartmentItemWithSubmenu(BuildContext context, IconData icon,
       String title, List<String> submenuItems) {
+    bool isExpanded = _submenuExpanded[title] ?? false;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
           onTap: () {
             setState(() {
-              _isSubmenuExpanded =
-                  !_isSubmenuExpanded; // Alterna a expansão do submenu
+              _submenuExpanded[title] = !isExpanded;
             });
           },
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-            margin: EdgeInsets.only(bottom: 8),
+          borderRadius: BorderRadius.circular(12),
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            padding: EdgeInsets.all(16),
+            margin: EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              gradient: LinearGradient(
+                colors: [
+                  AppColorsComponents.primary,
+                  AppColorsComponents.primary2
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Row(
               children: [
-                Icon(icon, color: Colors.white, size: 24),
-                SizedBox(width: 15),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: AppColorsComponents.hashours,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
+                Icon(icon, color: Colors.white, size: 28),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                Spacer(),
                 Icon(
-                  _isSubmenuExpanded ? Icons.expand_less : Icons.expand_more,
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
                   color: Colors.white,
+                  size: 28,
                 ),
               ],
             ),
           ),
         ),
-        if (_isSubmenuExpanded) // Exibe o submenu se estiver expandido
-          Padding(
-            padding: const EdgeInsets.only(left: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: submenuItems.map((item) {
-                return _buildSubmenuItem(context, item);
-              }).toList(),
-            ),
-          ),
+        AnimatedSize(
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          child: isExpanded
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: submenuItems.map((item) {
+                      return _buildSubmenuItem(context, item);
+                    }).toList(),
+                  ),
+                )
+              : SizedBox.shrink(),
+        ),
       ],
     );
   }
@@ -183,23 +182,31 @@ class _SidebarComponentsState extends State<SidebarComponents> {
       onTap: () {
         Provider.of<AppProviderDepartament>(context, listen: false)
             .setSelectedDepartament(title);
-        Navigator.pop(context);
+        if (navigationMap.containsKey(title)) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BaseLayout(body: navigationMap[title]!),
+            ),
+          );
+        }
       },
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 15),
         margin: EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withOpacity(0.08),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           children: [
-            SizedBox(width: 15),
+            Icon(Icons.arrow_upward, color: Colors.white, size: 20),
+            SizedBox(width: 10),
             Text(
               title,
               style: TextStyle(
-                color: AppColorsComponents.hashours,
+                color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
