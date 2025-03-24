@@ -70,7 +70,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
-  /// Calcula o nível de espera de acordo com a data limite
   String _calculateWaitLevel(DateTime deadline) {
     final now = DateTime.now();
     final diffDays = deadline.difference(now).inDays;
@@ -80,7 +79,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     return 'NORMAL'; // Mais de 3 dias
   }
 
-  /// Formata data no padrão dd/MM/yyyy
   String _formatDateTime(DateTime dt) {
     final dia = dt.day.toString().padLeft(2, '0');
     final mes = dt.month.toString().padLeft(2, '0');
@@ -88,7 +86,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     return '$dia/$mes/$ano';
   }
 
-  /// Abre o DatePicker para escolher a data limite
   void _pickDeadlineDate() async {
     final now = DateTime.now();
     final selected = await showDatePicker(
@@ -105,7 +102,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
-  /// Cria um map com os dados do produto a ser adicionado
   Map<String, dynamic> _createProductData() => {
         'MATERIAL': materialCtrl.text,
         'GRUPO': groupCtrl.text,
@@ -114,11 +110,11 @@ class _SolicitarPageState extends State<SolicitarPage> {
         'PCOMEDIO': pcoCtrl.text,
         'QUANTIDADE_ASER_COMPRADA': qtdCompradaCtrl.text,
         'IS_OUTRA_UNIDADE': false,
+        'UNIDADE': unidadeCtrl.text,
         'DATA_LIMITE': _deadlineDate?.toIso8601String(),
         'NIVEL_ESPERA': _nivelEspera.isEmpty ? null : _nivelEspera,
       };
 
-  /// Adiciona o produto, evitando duplicados (mesmo MATERIAL + LOCAL)
   void _addProduct() {
     if (!_formKey.currentState!.validate()) return;
     final data = _createProductData();
@@ -131,7 +127,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     });
 
     if (alreadyExists) {
-      // Já existe esse material+local na lista
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Esse item já foi adicionado.')),
       );
@@ -199,17 +194,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     if (products.isEmpty) {
       ErrorNotifier.showError("Adicione pelo menos um item antes de enviar.");
       return;
-    }
-    if (unidadeCtrl.text.isEmpty) {
-      ErrorNotifier.showError("Preencha o campo Unidade.");
-      return;
-    }
-    for (var item in products) {
-      if (item['LOCAL'] != unidadeCtrl.text) {
-        ErrorNotifier.showError(
-            "Você só pode solicitar para sua própria unidade.");
-        return;
-      }
     }
 
     final data = {
@@ -786,6 +770,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
                         ),
                         const SizedBox(height: 8),
                         _buildInfoText('Grupo', mat['GRUPO']),
+                        _buildInfoText('Unidade', mat['UNIDADE']),
                         _buildInfoText('Saldo', mat['QUANTIDADE']),
                         _buildInfoText('Preço Médio', mat['PCOMEDIO']),
                         _buildInfoText(
