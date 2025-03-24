@@ -23,12 +23,16 @@ class _SolicitarPageState extends State<SolicitarPage> {
   DateTime? _deadlineDate; // Armazena a data limite escolhida
   String _nivelEspera = ''; // Pode ser "EMERGENCIAL", "URGENTE" ou "NORMAL"
 
+  // Controllers existentes
   TextEditingController materialCtrl = TextEditingController(),
       groupCtrl = TextEditingController(),
       quantCtrl = TextEditingController(),
       localCtrl = TextEditingController(),
       pcoCtrl = TextEditingController(),
       qtdCompradaCtrl = TextEditingController();
+
+  // Novo controller para Unidade
+  TextEditingController unidadeCtrl = TextEditingController();
 
   List<Map<String, dynamic>> getMaterialSolicitacao = [],
       getMatricula = [],
@@ -112,45 +116,54 @@ class _SolicitarPageState extends State<SolicitarPage> {
 
   /// Adiciona o produto, evitando duplicados (mesmo MATERIAL + LOCAL)
   void _addProduct() {
-    if (_formKey.currentState!.validate()) {
-      final data = _createProductData();
-      // Cria uma "chave" para verificar duplicados (material+local)
-      final itemKey = '${data['MATERIAL']}_${data['LOCAL']}';
+    if (!_formKey.currentState!.validate()) return;
+    final data = _createProductData();
 
-      final alreadyExists = products.any((p) {
-        final key = '${p['MATERIAL']}_${p['LOCAL']}';
-        return key == itemKey;
-      });
+    // Validação: verifica se o usuário está solicitando para sua própria unidade
+    if (unidadeCtrl.text.isNotEmpty && data['LOCAL'] != unidadeCtrl.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Você só pode solicitar para sua própria unidade.'),
+        ),
+      );
+      return;
+    }
 
-      if (alreadyExists) {
-        // Já existe esse material+local na lista
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Esse item já foi adicionado.')),
-        );
-        return;
-      }
+    // Cria uma "chave" para verificar duplicados (material+local)
+    final itemKey = '${data['MATERIAL']}_${data['LOCAL']}';
+    final alreadyExists = products.any((p) {
+      final key = '${p['MATERIAL']}_${p['LOCAL']}';
+      return key == itemKey;
+    });
 
-      // Caso não exista, adiciona
-      setState(() {
-        products.add(data);
-      });
+    if (alreadyExists) {
+      // Já existe esse material+local na lista
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Esse item já foi adicionado.')),
+      );
+      return;
+    }
 
-      // Limpa campos
-      materialCtrl.clear();
-      groupCtrl.clear();
-      quantCtrl.clear();
-      qtdCompradaCtrl.clear();
-      localCtrl.clear();
-      pcoCtrl.clear();
-      localSelecionado = null;
-      materialSelecionado = null;
+    // Caso não exista, adiciona
+    setState(() {
+      products.add(data);
+    });
 
-      // Verifica unidades alternativas
-      final currentMat = materialSelecionado;
-      final currentLoc = data['LOCAL'] ?? '';
-      if (currentMat != null && currentMat > 0) {
-        _checarLocaisAlternativos(currentMat, currentLoc.toString());
-      }
+    // Limpa campos
+    materialCtrl.clear();
+    groupCtrl.clear();
+    quantCtrl.clear();
+    qtdCompradaCtrl.clear();
+    localCtrl.clear();
+    pcoCtrl.clear();
+    localSelecionado = null;
+    materialSelecionado = null;
+
+    // Verifica unidades alternativas
+    final currentMat = materialSelecionado;
+    final currentLoc = data['LOCAL'] ?? '';
+    if (currentMat != null && currentMat > 0) {
+      _checarLocaisAlternativos(currentMat, currentLoc.toString());
     }
   }
 
@@ -221,14 +234,12 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 ],
               ),
               const Divider(thickness: 1.2),
-
               // Infos
               _buildInfo('Material', local['MATERIAL']),
               _buildInfo('Grupo', local['GRUPO']),
               _buildInfo('Saldo disponível', local['SALDO']),
               if (local['PCOMEDIO'] != null)
                 _buildInfo('Preço Médio', local['PCOMEDIO']),
-
               const SizedBox(height: 12),
               TextFormField(
                 controller: qtdController,
@@ -239,7 +250,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 ),
               ),
               const SizedBox(height: 12),
-
               // Botão "Adicionar deste local"
               Align(
                 alignment: Alignment.centerRight,
@@ -254,7 +264,16 @@ class _SolicitarPageState extends State<SolicitarPage> {
                       );
                       return;
                     }
-
+                    // Validação: verifica se o usuário pertence a esta unidade
+                    if (unidadeCtrl.text.isNotEmpty &&
+                        local['LOCAIS'] != unidadeCtrl.text) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Você não pertence a essa unidade.'),
+                        ),
+                      );
+                      return;
+                    }
                     // Cria chave para evitar duplicado
                     final itemKey = '${local['MATERIAL']}_${local['LOCAIS']}';
                     final alreadyExists = products.any((p) {
@@ -268,7 +287,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
                       );
                       return;
                     }
-
                     setState(() {
                       products.add({
                         'MATERIAL': local['MATERIAL'],
@@ -318,9 +336,24 @@ class _SolicitarPageState extends State<SolicitarPage> {
       ErrorNotifier.showError("Adicione pelo menos um item antes de enviar.");
       return;
     }
+    // Validação: verifica se o campo Unidade foi preenchido
+    if (unidadeCtrl.text.isEmpty) {
+      ErrorNotifier.showError("Preencha o campo Unidade.");
+      return;
+    }
+    // Se houver algum item cuja unidade seja diferente da do usuário, não permite
+    for (var item in products) {
+      if (item['LOCAL'] != unidadeCtrl.text) {
+        ErrorNotifier.showError(
+            "Você só pode solicitar para sua própria unidade.");
+        return;
+      }
+    }
+
     final data = {
       "usuario": usuario,
       "usuario_id": matricula,
+      "unidade": unidadeCtrl.text, // adiciona a unidade no corpo da solicitação
       "data_solicitacao": DateTime.now().toIso8601String(),
       "itens": products
           .map((mat) => {
@@ -359,10 +392,12 @@ class _SolicitarPageState extends State<SolicitarPage> {
       if (res.isNotEmpty) {
         usuario = res[0]['nomfun'];
         matricula = res[0]['numcad'];
+        // Se houver informação da unidade, pode ser atribuída aqui.
+        // Exemplo: unidadeCtrl.text = res[0]['unidade'];
       }
       setState(() => getMatricula = res);
     } catch (err) {
-      ErrorNotifier.showError("Erro ao buscar matricula: $err");
+      ErrorNotifier.showError("Erro ao buscar matrícula: $err");
     }
   }
 
@@ -372,7 +407,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
       final res = await getServices.getMaterialSolicitacao();
       setState(() => getMaterialSolicitacao = res);
     } catch (err) {
-      ErrorNotifier.showError("Erro ao buscar gestor: $err");
+      ErrorNotifier.showError("Erro ao buscar materiais: $err");
     }
   }
 
@@ -488,7 +523,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 materialCtrl.text = m['MATERIAL'].toString();
               });
             },
-            labelText: "Selecione o Código do Material",
             hintText: "Selecione o Código do Material",
           ),
           const SizedBox(height: 12),
@@ -537,8 +571,21 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 pcoCtrl.text = l['PCOMEDIO'].toString();
               });
             },
-            labelText: "Selecione o Local",
             hintText: "Selecione o Local",
+          ),
+          const SizedBox(height: 12),
+
+          // Novo campo: Unidade do usuário
+          const Text(
+            "Unidade",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
+          AppTextComponents(
+            label: '',
+            controller: unidadeCtrl,
+            hint: 'Digite sua Unidade',
+            isRequired: true,
           ),
           const SizedBox(height: 12),
 
