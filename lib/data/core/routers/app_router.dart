@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:senior/data/core/interface/app_interface.dart';
-
-// Imports das suas páginas
 import 'package:senior/data/views/auth/login_page.dart';
 import 'package:senior/data/views/home_page.dart';
 import 'package:senior/data/views/horaextras/pages/list_colaboradores_page.dart';

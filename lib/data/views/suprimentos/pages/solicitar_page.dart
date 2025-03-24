@@ -204,7 +204,144 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
-  /// Card de cada local alternativo
+  /// Envia a solicitação
+  void addSubmit() async {
+    if (products.isEmpty) {
+      ErrorNotifier.showError("Adicione pelo menos um item antes de enviar.");
+      return;
+    }
+    if (unidadeCtrl.text.isEmpty) {
+      ErrorNotifier.showError("Preencha o campo Unidade.");
+      return;
+    }
+    for (var item in products) {
+      if (item['LOCAL'] != unidadeCtrl.text) {
+        ErrorNotifier.showError(
+            "Você só pode solicitar para sua própria unidade.");
+        return;
+      }
+    }
+
+    final data = {
+      "usuario": usuario,
+      "usuario_id": matricula,
+      "unidade": unidadeCtrl.text,
+      "data_solicitacao": DateTime.now().toIso8601String(),
+      "itens": products
+          .map((mat) => {
+                "produto": mat['MATERIAL'],
+                "quantidade": mat['QUANTIDADE_ASER_COMPRADA'],
+                "preco_unitario": mat['PCOMEDIO'],
+                "subtotal": (double.tryParse(
+                            mat['QUANTIDADE_ASER_COMPRADA'].toString()) ??
+                        0) *
+                    (double.tryParse(mat['PCOMEDIO'].toString()) ?? 0),
+                "local": mat['LOCAL'],
+                "grupo": mat['GRUPO'],
+                "is_outra_unidade": mat['IS_OUTRA_UNIDADE'] ?? false,
+                "data_limite": mat['DATA_LIMITE'],
+                "nivel_espera": mat['NIVEL_ESPERA'],
+              })
+          .toList(),
+    };
+    try {
+      print('Enviando dados: $data');
+      final success = await postServices.postSolicitacao(data);
+      if (success) {
+        context.go('/solicitacao');
+      } else {
+        ErrorNotifier.showError("Erro ao enviar pedido.");
+      }
+    } catch (e) {
+      ErrorNotifier.showError("Erro ao enviar pedido: $e");
+    }
+  }
+
+  /// Busca informações do usuário logado
+  void fetchMatricula() async {
+    try {
+      final res = await getServices.getLogin();
+      if (res.isNotEmpty) {
+        usuario = res[0]['nomfun'];
+        matricula = res[0]['numcad'];
+        // Se houver informação da unidade, pode ser atribuída aqui.
+        // Exemplo: unidadeCtrl.text = res[0]['unidade'];
+      }
+      setState(() => getMatricula = res);
+    } catch (err) {
+      ErrorNotifier.showError("Erro ao buscar matrícula: $err");
+    }
+  }
+
+  /// Busca materiais disponíveis
+  void fetchSolicitarMaterial() async {
+    try {
+      final res = await getServices.getMaterialSolicitacao();
+      setState(() => getMaterialSolicitacao = res);
+    } catch (err) {
+      ErrorNotifier.showError("Erro ao buscar materiais: $err");
+    }
+  }
+
+  /// Retorna todos os locais de um determinado material
+  List<Map<String, dynamic>> getLocaisByMaterial(int id) =>
+      getMaterialSolicitacao
+          .where((mat) => mat['ID_MATERIAL'] == id)
+          .map((m) => {
+                'ID_MATERIAL': m['ID_MATERIAL'],
+                'MATERIAL': m['MATERIAL'],
+                'GRUPO': m['GRUPO'],
+                'UNIDADE': m['UNIDADE'],
+                'SALDO': m['SALDO'],
+                'PCOMEDIO': m['PCOMEDIO'],
+              })
+          .toList();
+
+  /// Retorna materiais únicos (sem duplicar ID_MATERIAL)
+  List<Map<String, dynamic>> getUniqueMaterials() {
+    final seen = <int>{};
+    return getMaterialSolicitacao
+        .where((mat) {
+          final id = mat['ID_MATERIAL'];
+          if (id is int) return seen.add(id);
+          if (id is String) {
+            final parsed = int.tryParse(id);
+            if (parsed != null) return seen.add(parsed);
+          }
+          return false;
+        })
+        .map((m) => {
+              'ID_MATERIAL': m['ID_MATERIAL'],
+              'MATERIAL': m['MATERIAL'],
+              'GRUPO': m['GRUPO'],
+              'SUBGRUPO': m['SUBGRUPO'],
+              'SALDO': m['SALDO'],
+              'PCOMEDIO': m['PCOMEDIO'],
+            })
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: LayoutBuilder(builder: (ctx, ct) {
+        final isMobile = ct.maxWidth < 800;
+        return Padding(
+          padding: const EdgeInsets.all(12), // Menor espaçamento
+          child: isMobile ? _buildMobileLayout() : _buildWebLayout(),
+        );
+      }),
+    );
+  }
+
+  Widget _buildInfo(String label, dynamic value) => Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text(
+          '$label: ${value ?? 'N/A'}',
+          style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+        ),
+      );
+
   Widget _buildLocalAlternativoTile(Map<String, dynamic> local) {
     final qtdController = TextEditingController();
     return Container(
@@ -322,147 +459,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     );
   }
 
-  Widget _buildInfo(String label, dynamic value) => Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Text(
-          '$label: ${value ?? 'N/A'}',
-          style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-        ),
-      );
-
-  /// Envia a solicitação
-  void addSubmit() async {
-    if (products.isEmpty) {
-      ErrorNotifier.showError("Adicione pelo menos um item antes de enviar.");
-      return;
-    }
-    // Validação: verifica se o campo Unidade foi preenchido
-    if (unidadeCtrl.text.isEmpty) {
-      ErrorNotifier.showError("Preencha o campo Unidade.");
-      return;
-    }
-    // Se houver algum item cuja unidade seja diferente da do usuário, não permite
-    for (var item in products) {
-      if (item['LOCAL'] != unidadeCtrl.text) {
-        ErrorNotifier.showError(
-            "Você só pode solicitar para sua própria unidade.");
-        return;
-      }
-    }
-
-    final data = {
-      "usuario": usuario,
-      "usuario_id": matricula,
-      "unidade": unidadeCtrl.text, // adiciona a unidade no corpo da solicitação
-      "data_solicitacao": DateTime.now().toIso8601String(),
-      "itens": products
-          .map((mat) => {
-                "produto": mat['MATERIAL'],
-                "quantidade": mat['QUANTIDADE_ASER_COMPRADA'],
-                "preco_unitario": mat['PCOMEDIO'],
-                "subtotal": (double.tryParse(
-                            mat['QUANTIDADE_ASER_COMPRADA'].toString()) ??
-                        0) *
-                    (double.tryParse(mat['PCOMEDIO'].toString()) ?? 0),
-                "local": mat['LOCAL'],
-                "grupo": mat['GRUPO'],
-                "is_outra_unidade": mat['IS_OUTRA_UNIDADE'] ?? false,
-                "data_limite": mat['DATA_LIMITE'],
-                "nivel_espera": mat['NIVEL_ESPERA'],
-              })
-          .toList(),
-    };
-    try {
-      print('Enviando dados: $data');
-      final success = await postServices.postSolicitacao(data);
-      if (success) {
-        context.go('/solicitacao');
-      } else {
-        ErrorNotifier.showError("Erro ao enviar pedido.");
-      }
-    } catch (e) {
-      ErrorNotifier.showError("Erro ao enviar pedido: $e");
-    }
-  }
-
-  /// Busca informações do usuário logado
-  void fetchMatricula() async {
-    try {
-      final res = await getServices.getLogin();
-      if (res.isNotEmpty) {
-        usuario = res[0]['nomfun'];
-        matricula = res[0]['numcad'];
-        // Se houver informação da unidade, pode ser atribuída aqui.
-        // Exemplo: unidadeCtrl.text = res[0]['unidade'];
-      }
-      setState(() => getMatricula = res);
-    } catch (err) {
-      ErrorNotifier.showError("Erro ao buscar matrícula: $err");
-    }
-  }
-
-  /// Busca materiais disponíveis
-  void fetchSolicitarMaterial() async {
-    try {
-      final res = await getServices.getMaterialSolicitacao();
-      setState(() => getMaterialSolicitacao = res);
-    } catch (err) {
-      ErrorNotifier.showError("Erro ao buscar materiais: $err");
-    }
-  }
-
-  /// Retorna todos os locais de um determinado material
-  List<Map<String, dynamic>> getLocaisByMaterial(int id) =>
-      getMaterialSolicitacao
-          .where((mat) => mat['ID_MATERIAL'] == id)
-          .map((m) => {
-                'ID_MATERIAL': m['ID_MATERIAL'],
-                'MATERIAL': m['MATERIAL'],
-                'GRUPO': m['GRUPO'],
-                'LOCAIS': m['LOCAIS'],
-                'SALDO': m['SALDO'],
-                'PCOMEDIO': m['PCOMEDIO'],
-              })
-          .toList();
-
-  /// Retorna materiais únicos (sem duplicar ID_MATERIAL)
-  List<Map<String, dynamic>> getUniqueMaterials() {
-    final seen = <int>{};
-    return getMaterialSolicitacao
-        .where((mat) {
-          final id = mat['ID_MATERIAL'];
-          if (id is int) return seen.add(id);
-          if (id is String) {
-            final parsed = int.tryParse(id);
-            if (parsed != null) return seen.add(parsed);
-          }
-          return false;
-        })
-        .map((m) => {
-              'ID_MATERIAL': m['ID_MATERIAL'],
-              'MATERIAL': m['MATERIAL'],
-              'GRUPO': m['GRUPO'],
-              'SUBGRUPO': m['SUBGRUPO'],
-              'SALDO': m['SALDO'],
-              'PCOMEDIO': m['PCOMEDIO'],
-            })
-        .toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: LayoutBuilder(builder: (ctx, ct) {
-        final isMobile = ct.maxWidth < 800;
-        return Padding(
-          padding: const EdgeInsets.all(12), // Menor espaçamento
-          child: isMobile ? _buildMobileLayout() : _buildWebLayout(),
-        );
-      }),
-    );
-  }
-
-  /// Layout Mobile
   Widget _buildMobileLayout() => SingleChildScrollView(
         child: Column(
           children: [
@@ -475,7 +471,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
         ),
       );
 
-  /// Layout Web
   Widget _buildWebLayout() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -499,7 +494,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
         ],
       );
 
-  /// Form principal, com espaçamentos reduzidos
   Widget _buildForm() {
     return Form(
       key: _formKey,
@@ -555,6 +549,20 @@ class _SolicitarPageState extends State<SolicitarPage> {
           ),
           const SizedBox(height: 12),
 
+          // Novo campo: Unidade do usuário
+          const Text(
+            "Unidade",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
+          AppTextComponents(
+            label: '',
+            controller: unidadeCtrl,
+            hint: 'Digite sua Unidade',
+            isRequired: true,
+          ),
+          const SizedBox(height: 12),
+
           // Local
           const Text(
             "Local",
@@ -573,20 +581,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
             },
             hintText: "Selecione o Local",
           ),
-          const SizedBox(height: 12),
 
-          // Novo campo: Unidade do usuário
-          const Text(
-            "Unidade",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 4),
-          AppTextComponents(
-            label: '',
-            controller: unidadeCtrl,
-            hint: 'Digite sua Unidade',
-            isRequired: true,
-          ),
           const SizedBox(height: 12),
 
           // Linha Quantidade e Preço Médio
@@ -749,7 +744,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     );
   }
 
-  /// Lista de produtos adicionados
   Widget _buildProductList() {
     if (products.isEmpty) {
       return Container(

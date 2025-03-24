@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:senior/data/core/provider/app_provider_departament.dart';
 import 'package:senior/data/views/dbo/pages/RegisterPublic_page.dart';
 import 'package:senior/data/views/horaextras/pages/list_colaboradores_page.dart';
-import 'package:senior/data/views/suprimentos/pages/solicitar_page.dart';
+import 'package:senior/data/views/suprimentos/pages/solicitacoes_list_page.dart';
 import 'package:senior/data/views/widgets/base_layout.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 
@@ -17,14 +17,14 @@ class _SidebarComponentsState extends State<SidebarComponents> {
   final Map<String, Widget> navigationMap = {
     "Horas Extras": ListColaboradores(),
     "BDO": RegisterPublicDBO(),
-    "Solicitações de Compras": SolicitarPage(),
+    "Solicitações de Compras": SolicitacoesListPage(),
   };
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.85, // Ocupa 85% da tela
-      height: MediaQuery.of(context).size.height * 0.9, // Usa 90% da altura
+      width: MediaQuery.of(context).size.width * 0.85,
+      height: MediaQuery.of(context).size.height * 0.9,
       decoration: BoxDecoration(
         color: AppColorsComponents.primary,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

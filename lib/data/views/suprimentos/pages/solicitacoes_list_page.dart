@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
+import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 
 class SolicitacoesListPage extends StatefulWidget {
   @override
@@ -55,11 +56,24 @@ class _SolicitacoesListPageState extends State<SolicitacoesListPage> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(12.0),
-            child: Text(
-              'Solicitações a serem Aprovadas/Reprovadas',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Solicitações',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  onPressed: () {
+                    context.go('/solicitar');
+                  },
+                  color: AppColorsComponents.primary,
+                  icon: const Icon(Icons.add,
+                      size: 28, color: AppColorsComponents.primary),
+                ),
+              ],
             ),
           ),
           isLoading

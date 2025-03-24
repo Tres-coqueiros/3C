@@ -229,7 +229,6 @@ class _ListViewComponentsState extends State<ListViewComponents> {
           int horas = int.tryParse(partes[0]) ?? 0;
           int minutos = int.tryParse(partes[1]) ?? 0;
 
-          // Converte minutos para horas e soma ao total
           totalHorasExtras += horas + (minutos / 60);
 
           String registro =
@@ -256,6 +255,12 @@ class _ListViewComponentsState extends State<ListViewComponents> {
     });
 
     return horasExtrasAcumuladas;
+  }
+
+  String _formatarHoras(double totalHoras) {
+    int horas = totalHoras.toInt();
+    int minutos = ((totalHoras - horas) * 60).toInt();
+    return '${horas.toString().padLeft(2, '0')}:${minutos.toString().padLeft(2, '0')} h';
   }
 
   @override
@@ -295,7 +300,7 @@ class _ListViewComponentsState extends State<ListViewComponents> {
                           ),
                           SizedBox(width: 8.0),
                           Text(
-                            'Total de Horas Extras: ${totalHours.toStringAsFixed(2)} h',
+                            'Total de Horas Extras: ${_formatarHoras(totalHours)}',
                             style: TextStyle(
                                 fontSize: 14.0, color: Colors.grey[600]),
                           ),
