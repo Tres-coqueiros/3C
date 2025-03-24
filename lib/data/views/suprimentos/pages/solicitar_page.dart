@@ -15,6 +15,11 @@ class SolicitarPage extends StatefulWidget {
 class _SolicitarPageState extends State<SolicitarPage> {
   final GetServices getServices = GetServices();
   final PostServices postServices = PostServices();
+  final Map<String, List<String>> unidadesPrefixo = {
+    '1': ['SPZ'],
+    '16': ['GNT'],
+    '14': ['BRN'],
+  };
 
   final _formKey = GlobalKey<FormState>();
   List<Map<String, dynamic>> products = [];
@@ -23,7 +28,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
   DateTime? _deadlineDate; // Armazena a data limite escolhida
   String _nivelEspera = ''; // Pode ser "EMERGENCIAL", "URGENTE" ou "NORMAL"
 
-  // Controllers existentes
   TextEditingController materialCtrl = TextEditingController(),
       groupCtrl = TextEditingController(),
       quantCtrl = TextEditingController(),
@@ -31,7 +35,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
       pcoCtrl = TextEditingController(),
       qtdCompradaCtrl = TextEditingController();
 
-  // Novo controller para Unidade
   TextEditingController unidadeCtrl = TextEditingController();
 
   List<Map<String, dynamic>> getMaterialSolicitacao = [],
@@ -39,6 +42,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
       selectedLocais = [];
   int? localSelecionado, materialSelecionado;
   String usuario = '';
+
   int? matricula;
 
   String gestor = '';
@@ -119,16 +123,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     if (!_formKey.currentState!.validate()) return;
     final data = _createProductData();
 
-    // Validação: verifica se o usuário está solicitando para sua própria unidade
-    if (unidadeCtrl.text.isNotEmpty && data['LOCAL'] != unidadeCtrl.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Você só pode solicitar para sua própria unidade.'),
-        ),
-      );
-      return;
-    }
-
     // Cria uma "chave" para verificar duplicados (material+local)
     final itemKey = '${data['MATERIAL']}_${data['LOCAL']}';
     final alreadyExists = products.any((p) {
@@ -144,12 +138,10 @@ class _SolicitarPageState extends State<SolicitarPage> {
       return;
     }
 
-    // Caso não exista, adiciona
     setState(() {
       products.add(data);
     });
 
-    // Limpa campos
     materialCtrl.clear();
     groupCtrl.clear();
     quantCtrl.clear();
@@ -158,8 +150,8 @@ class _SolicitarPageState extends State<SolicitarPage> {
     pcoCtrl.clear();
     localSelecionado = null;
     materialSelecionado = null;
+    unidadeCtrl.clear();
 
-    // Verifica unidades alternativas
     final currentMat = materialSelecionado;
     final currentLoc = data['LOCAL'] ?? '';
     if (currentMat != null && currentMat > 0) {
@@ -167,7 +159,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
-  /// Verifica se há outras unidades disponíveis para esse material
   void _checarLocaisAlternativos(int materialId, String localAtual) {
     final locaisAlt = getLocaisByMaterial(materialId).where((loc) {
       final saldo = loc['SALDO'] ?? 0;
@@ -204,7 +195,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
-  /// Envia a solicitação
   void addSubmit() async {
     if (products.isEmpty) {
       ErrorNotifier.showError("Adicione pelo menos um item antes de enviar.");
@@ -257,7 +247,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
-  /// Busca informações do usuário logado
   void fetchMatricula() async {
     try {
       final res = await getServices.getLogin();
@@ -273,7 +262,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
-  /// Busca materiais disponíveis
   void fetchSolicitarMaterial() async {
     try {
       final res = await getServices.getMaterialSolicitacao();
@@ -283,21 +271,31 @@ class _SolicitarPageState extends State<SolicitarPage> {
     }
   }
 
-  /// Retorna todos os locais de um determinado material
-  List<Map<String, dynamic>> getLocaisByMaterial(int id) =>
-      getMaterialSolicitacao
-          .where((mat) => mat['ID_MATERIAL'] == id)
-          .map((m) => {
-                'ID_MATERIAL': m['ID_MATERIAL'],
-                'MATERIAL': m['MATERIAL'],
-                'GRUPO': m['GRUPO'],
-                'UNIDADE': m['UNIDADE'],
-                'SALDO': m['SALDO'],
-                'PCOMEDIO': m['PCOMEDIO'],
-              })
-          .toList();
+  List<Map<String, dynamic>> getLocaisByMaterial(int id) {
+    final locais = getMaterialSolicitacao
+        .where((mat) => mat['ID_MATERIAL'] == id)
+        .map((m) => {
+              'ID_MATERIAL': m['ID_MATERIAL'],
+              'MATERIAL': m['MATERIAL'],
+              'GRUPO': m['GRUPO'],
+              'LOCAIS': m['LOCAIS'],
+              'UNIDADE': m['UNIDADE'],
+              'SALDO': m['SALDO'],
+              'PCOMEDIO': m['PCOMEDIO'],
+            })
+        .toList();
 
-  /// Retorna materiais únicos (sem duplicar ID_MATERIAL)
+    if (unidadesPrefixo.containsKey(unidadeCtrl.text)) {
+      final prefixosPermitidos = unidadesPrefixo[unidadeCtrl.text]!;
+      return locais.where((local) {
+        final localStr = local['LOCAIS']?.toString() ?? '';
+        return prefixosPermitidos.any((prefix) => localStr.startsWith(prefix));
+      }).toList();
+    }
+
+    return locais;
+  }
+
   List<Map<String, dynamic>> getUniqueMaterials() {
     final seen = <int>{};
     return getMaterialSolicitacao
@@ -312,6 +310,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
         })
         .map((m) => {
               'ID_MATERIAL': m['ID_MATERIAL'],
+              'UNIDADE': m['UNIDADE'],
               'MATERIAL': m['MATERIAL'],
               'GRUPO': m['GRUPO'],
               'SUBGRUPO': m['SUBGRUPO'],
@@ -327,7 +326,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
       body: LayoutBuilder(builder: (ctx, ct) {
         final isMobile = ct.maxWidth < 800;
         return Padding(
-          padding: const EdgeInsets.all(12), // Menor espaçamento
+          padding: const EdgeInsets.all(12),
           child: isMobile ? _buildMobileLayout() : _buildWebLayout(),
         );
       }),
@@ -500,12 +499,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Código do Material
-          const Text(
-            "Código do Material",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 4),
           SearchableDropdown(
             items: getUniqueMaterials(),
             itemLabel: (m) => m['ID_MATERIAL'].toString(),
@@ -513,62 +506,38 @@ class _SolicitarPageState extends State<SolicitarPage> {
               setState(() {
                 materialSelecionado = m['ID_MATERIAL'];
                 selectedLocais = getLocaisByMaterial(materialSelecionado!);
+                unidadeCtrl.text = m['UNIDADE'].toString();
+                final teste = m['UNIDADE'].toString();
+                print('unidade $teste');
                 groupCtrl.text = m['GRUPO'].toString();
                 materialCtrl.text = m['MATERIAL'].toString();
               });
             },
             hintText: "Selecione o Código do Material",
+            labelText: 'Código do Material',
           ),
-          const SizedBox(height: 12),
-
-          // Material
-          const Text(
-            "Material",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 18),
           AppTextComponents(
-            label: '',
+            label: 'Material',
             controller: materialCtrl,
             hint: 'Material',
             readOnly: true,
           ),
-          const SizedBox(height: 12),
-
-          // Grupo
-          const Text(
-            "Grupo de Material",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 18),
           AppTextComponents(
-            label: '',
+            label: 'Grupo de Material',
             controller: groupCtrl,
             hint: 'Grupo de Material',
             readOnly: true,
           ),
-          const SizedBox(height: 12),
-
-          // Novo campo: Unidade do usuário
-          const Text(
-            "Unidade",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 18),
           AppTextComponents(
-            label: '',
+            label: 'Unidade',
             controller: unidadeCtrl,
-            hint: 'Digite sua Unidade',
+            hint: 'Unidade',
             isRequired: true,
           ),
           const SizedBox(height: 12),
-
-          // Local
-          const Text(
-            "Local",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 4),
           SearchableDropdown(
             items: selectedLocais,
             itemLabel: (l) => l['LOCAIS'],
@@ -580,25 +549,17 @@ class _SolicitarPageState extends State<SolicitarPage> {
               });
             },
             hintText: "Selecione o Local",
+            labelText: 'Local',
           ),
-
-          const SizedBox(height: 12),
-
-          // Linha Quantidade e Preço Médio
+          const SizedBox(height: 18),
           Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Quantidade",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    const SizedBox(height: 4),
                     AppTextComponents(
-                      label: '',
+                      label: 'Quantidade',
                       controller: quantCtrl,
                       hint: 'Quantidade',
                       readOnly: true,
@@ -611,14 +572,8 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Preço Médio",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    const SizedBox(height: 4),
                     AppTextComponents(
-                      label: '',
+                      label: 'Preço Médio',
                       controller: pcoCtrl,
                       hint: 'Preço Médio',
                       readOnly: true,
@@ -628,9 +583,8 @@ class _SolicitarPageState extends State<SolicitarPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 18),
 
-          // Linha Qtd a comprar, Data Limite e Botão
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -640,14 +594,8 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Qtd a comprar",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    const SizedBox(height: 4),
                     AppTextComponents(
-                      label: '',
+                      label: 'Qtd a comprar',
                       hint: 'Digite',
                       controller: qtdCompradaCtrl,
                       isRequired: true,
@@ -655,7 +603,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
 
               // Data Limite
               Expanded(
@@ -663,12 +611,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Data Limite',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    const SizedBox(height: 4),
                     InkWell(
                       onTap: _pickDeadlineDate,
                       child: Container(
