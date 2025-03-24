@@ -5,11 +5,8 @@ import 'package:senior/data/views/widgets/components/button_components.dart';
 
 class DetalhesSolicitacaoPage extends StatefulWidget {
   final Map<String, dynamic> solicitacao;
-
-  const DetalhesSolicitacaoPage({
-    Key? key,
-    required this.solicitacao,
-  }) : super(key: key);
+  const DetalhesSolicitacaoPage({Key? key, required this.solicitacao})
+      : super(key: key);
 
   @override
   State<DetalhesSolicitacaoPage> createState() =>
@@ -17,13 +14,14 @@ class DetalhesSolicitacaoPage extends StatefulWidget {
 }
 
 class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
-  /// Inicia como lista vazia para evitar 'LateInitializationError'
   List<Map<String, dynamic>> _localItens = [];
+  late DateTime requestDate;
 
   @override
   void initState() {
     super.initState();
-    // Copiamos a lista de itens da solicitação para _localItens
+    requestDate = DateTime.tryParse(widget.solicitacao["data_solicitacao"]) ??
+        DateTime.now();
     if (widget.solicitacao["itens"] != null) {
       _localItens = (widget.solicitacao["itens"] as List<dynamic>)
           .map((item) => Map<String, dynamic>.from(item))
@@ -37,264 +35,214 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Informações principais da solicitação
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _buildInfoSolicitacao(),
-          ),
+              padding: const EdgeInsets.all(16.0),
+              child: _buildInfoSolicitacao()),
           const Divider(),
-
-          // Lista de itens
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildListaItens(),
-            ),
-          ),
-
-          // Botões de ação (Aprovar/Reprovar)
+              child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildListaItens())),
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _buildBotoesAcao(),
-          ),
+              padding: const EdgeInsets.all(16.0), child: _buildBotoesAcao()),
         ],
       ),
     );
   }
 
-  /// CABEÇALHO DA SOLICITAÇÃO
   Widget _buildInfoSolicitacao() {
-    final solicitacao = widget.solicitacao;
+    final s = widget.solicitacao;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildInfoRow("Nº Solicitação", solicitacao["id"].toString()),
-        _buildInfoRow("Usuário", solicitacao["usuario"]),
+        _buildInfoRow("Nº Solicitação", s["id"].toString()),
+        _buildInfoRow("Usuário", s["usuario"]),
         _buildInfoRow(
-          "Data da Solicitação",
-          converterDataEHoras(solicitacao["data_solicitacao"]),
-        ),
-        _buildInfoRow("Status", solicitacao["status"]),
-        _buildInfoRow(
-          "Total",
-          "R\$ ${solicitacao["total"].toStringAsFixed(2)}",
-        ),
-        if (solicitacao["observacao"] != null)
-          _buildInfoRow("Observação", solicitacao["observacao"]),
+            "Data da Solicitação", converterDataEHoras(s["data_solicitacao"])),
+        _buildInfoRow("Status", s["status"]),
+        _buildInfoRow("Total", "R\$ ${s["total"].toStringAsFixed(2)}"),
+        if (s["observacao"] != null)
+          _buildInfoRow("Observação", s["observacao"]),
       ],
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
+  Widget _buildInfoRow(String label, String value) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value),
-        ],
-      ),
-    );
-  }
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(value),
+      ]));
 
-  /// LISTA DE ITENS
   Widget _buildListaItens() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Itens da Solicitação",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+        const Text("Itens da Solicitação",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: _localItens.length,
-          itemBuilder: (context, index) {
-            final item = _localItens[index];
-            return _buildItemCard(item);
-          },
+          itemBuilder: (context, index) => _buildItemCard(_localItens[index]),
         ),
       ],
     );
   }
 
-  /// CONSTRUÇÃO DE CADA CARD DE ITEM
   Widget _buildItemCard(Map<String, dynamic> item) {
-    // Controlador para a quantidade (permite edição)
-    final TextEditingController qtdCtrl = TextEditingController(
-      text: item["quantidade"].toString(),
-    );
-
-    // Função para atualizar a quantidade do item e recalcular subtotal
+    final TextEditingController qtdCtrl =
+        TextEditingController(text: item["quantidade"].toString());
     void _atualizarQuantidade() {
       final newQtd = double.tryParse(qtdCtrl.text) ?? 0;
       setState(() {
         item["quantidade"] = newQtd;
-        // Recalcula o subtotal (se preco_unitario não for nulo)
-        final precoUnitario = item["preco_unitario"] as double?;
-        if (precoUnitario != null) {
-          item["subtotal"] = newQtd * precoUnitario;
-        }
+        final preco = item["preco_unitario"] as double?;
+        if (preco != null) item["subtotal"] = newQtd * preco;
       });
     }
 
-    // Verifica se é de outra unidade
-    final bool isOutraUnidade = (item["is_outra_unidade"] == true);
-
-    // Pega data limite, se houver
-    final String? dataLimite = item["data_limite"] as String?;
-
+    final bool isOutraUn = item["is_outra_unidade"] == true;
+    final String? dataLimiteStr = item["data_limite"] as String?;
+    // Puxa o nível de espera já calculado no cadastro
+    final String? nivelEspera = item["nivel_espera"];
+    Color dotColor = Colors.grey;
+    String urgencia = "Indefinido";
+    if (nivelEspera != null && nivelEspera.isNotEmpty) {
+      if (nivelEspera.toUpperCase() == "EMERGENCIAL") {
+        dotColor = Colors.red;
+        urgencia = "Emergente";
+      } else if (nivelEspera.toUpperCase() == "URGENTE") {
+        dotColor = Colors.yellow;
+        urgencia = "Urgente";
+      } else if (nivelEspera.toUpperCase() == "NORMAL") {
+        dotColor = Colors.green;
+        urgencia = "Normal";
+      }
+    } else if (dataLimiteStr != null) {
+      // Caso não haja o campo, calcular com base na data
+      final deadline = DateTime.tryParse(dataLimiteStr) ?? DateTime.now();
+      final diffDays = deadline.difference(requestDate).inDays;
+      if (diffDays <= 0) {
+        dotColor = Colors.red;
+        urgencia = "Emergente";
+      } else if (diffDays >= 1 && diffDays <= 3) {
+        dotColor = Colors.yellow;
+        urgencia = "Urgente";
+      } else if (diffDays > 3) {
+        dotColor = Colors.green;
+        urgencia = "Normal";
+      }
+    }
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Linha com título do material + botão de remover
+            // Linha com bolinha e rótulo de urgência
+            Row(children: [
+              Container(
+                  width: 12,
+                  height: 12,
+                  decoration:
+                      BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+              const SizedBox(width: 6),
+              Text(urgencia,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+            ]),
+            const SizedBox(height: 8),
+            // Linha com nome do produto e botão remover
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Text(
-                    item["material"] ?? 'Material não informado',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
+                  child: Text(item["material"] ?? 'Material não informado',
+                      style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87)),
                 ),
-                // Ícone "X" para remover o card
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
-                  onPressed: () {
-                    setState(() {
-                      _localItens.remove(item); // Remove do estado local
-                    });
-                  },
-                ),
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () => setState(() => _localItens.remove(item))),
               ],
             ),
-            const SizedBox(height: 6),
-
-            // Se for de outra unidade, exibe informação de transferência
-            if (isOutraUnidade)
+            const SizedBox(height: 8),
+            if (isOutraUn)
               Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.deepPurple.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.swap_horiz, color: Colors.deepPurple),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        "Transferência de Unidade: ${item["local"]}",
-                        style: const TextStyle(
-                          color: Colors.deepPurple,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                    color: Colors.deepPurple.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.swap_horiz, color: Colors.deepPurple),
+                  const SizedBox(width: 6),
+                  Flexible(
+                      child: Text("Transferência de Unidade: ${item["local"]}",
+                          style: const TextStyle(
+                              color: Colors.deepPurple,
+                              fontWeight: FontWeight.w600))),
+                ]),
               ),
-
             const Divider(),
-
-            // Linha com local, grupo e data limite (se houver)
             Wrap(
               spacing: 12,
               runSpacing: 8,
               children: [
                 _buildInfoColumn("Local", item["local"] ?? '-', 16),
                 _buildInfoColumn("Grupo", item["grupo"] ?? '-', 16),
-
-                // Se tiver data limite, exibe
-                if (dataLimite != null)
+                if (dataLimiteStr != null)
                   _buildInfoColumn(
-                    "Data Limite",
-                    converterDataEHoras(dataLimite),
-                    16,
-                  ),
+                      "Data Limite", converterDataEHoras(dataLimiteStr), 16),
               ],
             ),
             const SizedBox(height: 10),
-
-            // Linha com QUANTIDADE (editável) e PREÇO UNITÁRIO
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Quantidade - agora editável
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Quantidade",
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text("Quantidade",
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    SizedBox(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey)),
+                  SizedBox(
                       width: 80,
                       child: TextFormField(
-                        controller: qtdCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 4,
-                          ),
-                        ),
-                        onEditingComplete: _atualizarQuantidade,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Preço Unitário
+                          controller: qtdCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 4)),
+                          onEditingComplete: _atualizarQuantidade)),
+                ]),
                 _buildInfoColumn(
-                  "Preço Unitário",
-                  "R\$ ${item["preco_unitario"]?.toStringAsFixed(2) ?? '0.00'}",
-                  18,
-                ),
+                    "Preço Unitário",
+                    "R\$ ${item["preco_unitario"]?.toStringAsFixed(2) ?? '0.00'}",
+                    18),
               ],
             ),
             const SizedBox(height: 12),
-
-            // Subtotal destacado
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: AppColorsComponents.primary,
-              ),
+                  borderRadius: BorderRadius.circular(8),
+                  color: AppColorsComponents.primary),
               child: Center(
-                child: Text(
-                  "Subtotal: R\$ ${item["subtotal"]?.toStringAsFixed(2) ?? '0.00'}",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColorsComponents.hashours,
-                  ),
-                ),
-              ),
+                  child: Text(
+                      "Subtotal: R\$ ${item["subtotal"]?.toStringAsFixed(2) ?? '0.00'}",
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColorsComponents.hashours))),
             ),
           ],
         ),
@@ -302,61 +250,38 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
     );
   }
 
-  /// Coluna com label (cinza) + valor (em destaque)
-  Widget _buildInfoColumn(String label, String value, double fontSize) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: fontSize,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _buildInfoColumn(String label, String value, double fontSize) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label,
+            style: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey)),
+        Text(value,
+            style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87)),
+      ]);
 
-  /// BOTÕES APROVAR/REPROVAR
   Widget _buildBotoesAcao() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Botão Aprovar
         ButtonComponents(
-          textAlign: Alignment.center,
-          onPressed: () {
-            // Lógica de aprovar
-          },
-          text: 'Aprovar',
-          textColor: AppColorsComponents.background,
-          backgroundColor: AppColorsComponents.primary,
-          fontSize: 12,
-          padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12),
-        ),
-
-        // Botão Reprovar
+            textAlign: Alignment.center,
+            onPressed: () {},
+            text: 'Aprovar',
+            textColor: AppColorsComponents.background,
+            backgroundColor: AppColorsComponents.primary,
+            fontSize: 12,
+            padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12)),
         ButtonComponents(
-          textAlign: Alignment.center,
-          onPressed: () {
-            // Lógica de reprovar
-          },
-          text: 'Reprovar',
-          textColor: AppColorsComponents.background,
-          backgroundColor: AppColorsComponents.error,
-          fontSize: 12,
-          padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12),
-        ),
+            textAlign: Alignment.center,
+            onPressed: () {},
+            text: 'Reprovar',
+            textColor: AppColorsComponents.background,
+            backgroundColor: AppColorsComponents.error,
+            fontSize: 12,
+            padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12)),
       ],
     );
   }
