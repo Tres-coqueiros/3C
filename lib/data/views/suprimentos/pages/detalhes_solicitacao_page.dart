@@ -29,6 +29,62 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
     }
   }
 
+  void _showReprovarDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            "Reprovar Solicitação",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            "Você deseja devolver a solicitação para o solicitante ou excluir a solicitação?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Lógica para devolver a solicitação
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Solicitação devolvida.")),
+                );
+              },
+              child: const Text(
+                "Devolver",
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                // Lógica para excluir a solicitação
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Solicitação excluída.")),
+                );
+              },
+              child: const Text(
+                "Excluir",
+                style: TextStyle(fontSize: 16, color: Colors.red),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 8,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,7 +177,6 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
         urgencia = "Normal";
       }
     } else if (dataLimiteStr != null) {
-      // Caso não haja o campo, calcular com base na data
       final deadline = DateTime.tryParse(dataLimiteStr) ?? DateTime.now();
       final diffDays = deadline.difference(requestDate).inDays;
       if (diffDays <= 0) {
@@ -276,7 +331,7 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
             padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12)),
         ButtonComponents(
             textAlign: Alignment.center,
-            onPressed: () {},
+            onPressed: _showReprovarDialog,
             text: 'Reprovar',
             textColor: AppColorsComponents.background,
             backgroundColor: AppColorsComponents.error,
