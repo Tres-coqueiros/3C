@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:senior/data/core/repository/client_repository.dart';
 import 'package:senior/data/core/repository/exceptions_network.dart';
 
@@ -73,7 +74,6 @@ class PostServices {
       ErrorNotifier.showError(
           'Erro ao fazer a requisição na API: ${error.toString()}');
       print(error.toString());
-
       return false;
     }
   }
@@ -120,6 +120,73 @@ class PostServices {
   }
 }
 
+// --------------------------------------------------------
+// StatefulWidget
+// --------------------------------------------------------
+class MyWidget extends StatefulWidget {
+  const MyWidget({Key? key}) : super(key: key);
+
+  @override
+  State<MyWidget> createState() => _MyWidgetState();
+}
+
+class _MyWidgetState extends State<MyWidget> {
+  final GetServices getServices = GetServices();
+
+  List<Map<String, dynamic>> listColaborador = [];
+  String useCargos = "";
+  bool isRhExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchMatricula();
+  }
+
+  void fetchMatricula() async {
+    try {
+      final result = await getServices.getLogin();
+
+      if (result.isNotEmpty) {
+        useCargos = result[0]['usu_tbcarges'] ?? 'Desconhecido';
+      } else {
+        useCargos = 'Desconhecido';
+      }
+
+      print('Cargo do usuário: $useCargos');
+
+      setState(() {
+        listColaborador = result;
+      });
+    } catch (error) {
+      print('Erro ao buscar matrícula: $error');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Exemplo de build simples
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Exemplo MyWidget'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text('Cargo do usuário: $useCargos'),
+            const SizedBox(height: 16),
+            Text('Total de colaboradores: ${listColaborador.length}'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --------------------------------------------------------
+// GetServices e UpdateServices
+// --------------------------------------------------------
 class GetServices {
   Future<List<Map<String, dynamic>>> getCollaborators() async {
     try {
@@ -141,9 +208,7 @@ class GetServices {
   Future<List<Map<String, dynamic>>> getLogin() async {
     try {
       final response = await dioSenior.get('getLogin');
-
       print(response.data['getLogin']);
-
       if (response.statusCode == 200) {
         return List<Map<String, dynamic>>.from(response.data['getLogin']);
       } else {

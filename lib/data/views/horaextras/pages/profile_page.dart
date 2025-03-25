@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 
 class ProfilePage extends StatefulWidget {
+  const ProfilePage({Key? key}) : super(key: key);
+
   @override
   _ProfilePage createState() => _ProfilePage();
 }
 
 class _ProfilePage extends State<ProfilePage> {
-  GetServices getServices = GetServices();
+  final GetServices getServices = GetServices();
 
   List<Map<String, dynamic>> getLogin = [];
   String nameFun = "";
   String positionsFun = "";
-  int numFun = 0;
+  int numFun = 0; // Ajustado para ser int
+  String gestor = "";
+  int numGestor = 0;
 
+  @override
   void initState() {
-    super.initState();
+    super.initState(); // Correto: chama super.initState()
     fetchLogin();
   }
 
@@ -25,9 +31,19 @@ class _ProfilePage extends State<ProfilePage> {
       final result = await getServices.getLogin();
 
       if (result.isNotEmpty) {
-        nameFun = result[0]['nomfun'] ?? 'Desconhecido';
-        positionsFun = result[0]['titred'] ?? 'Desconhecido';
-        numFun = result[0]['numcad'] ?? 'Desconhecido';
+        // Se tiver dados, pega o que existir ou usa default
+        nameFun = result[0]['COLABORADOR']?.toString() ?? 'Desconhecido';
+        positionsFun = result[0]['COL_CARGO']?.toString() ?? 'Desconhecido';
+
+        // Para int, se vier nulo ou string, tentamos converter.
+        // Se não conseguir, fica 0 (ou outro valor que você prefira)
+        numFun = result[0]['COLID'] is int
+            ? (result[0]['COLID'] as int)
+            : int.tryParse(result[0]['COLID']?.toString() ?? '') ?? 0;
+        gestor = result[0]['GESTOR']?.toString() ?? 'Desconhecido';
+        numGestor = result[0]['GESTORID'] is int
+            ? (result[0]['GESTORID'] as int)
+            : int.tryParse(result[0]['GESTORID']?.toString() ?? '') ?? 0;
       }
 
       setState(() {
@@ -42,9 +58,7 @@ class _ProfilePage extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          // title: Text('Profile'),
-          // backgroundColor: Colors.white,
-          // elevation: 0,
+          // Se quiser título ou customizar, faça aqui
           ),
       body: SingleChildScrollView(
         child: Column(
@@ -59,10 +73,10 @@ class _ProfilePage extends State<ProfilePage> {
 
   Widget _buildProfileHeader() {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColorsComponents.primary,
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(10),
           bottomRight: Radius.circular(13),
         ),
@@ -78,10 +92,10 @@ class _ProfilePage extends State<ProfilePage> {
               color: AppColorsComponents.primary,
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
             nameFun,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -94,33 +108,62 @@ class _ProfilePage extends State<ProfilePage> {
 
   Widget _buildProfileDetails() {
     return Padding(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Informações Pessoais',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           ListTile(
-            leading: Icon(Icons.margin_outlined,
-                color: AppColorsComponents.secondary),
-            title: Text('Numero Matricula'),
+            leading: Icon(
+              Icons.margin_outlined,
+              color: AppColorsComponents.secondary,
+            ),
+            title: const Text('Numero Matricula'),
             subtitle: Text(numFun.toString()),
           ),
           ListTile(
-              leading:
-                  Icon(Icons.near_me, color: AppColorsComponents.secondary),
-              title: Text('Nome'),
-              subtitle: Text(nameFun)),
+            leading: Icon(
+              Icons.near_me,
+              color: AppColorsComponents.secondary,
+            ),
+            title: const Text('Nome'),
+            subtitle: Text(nameFun),
+          ),
           ListTile(
-            leading: Icon(Icons.work, color: AppColorsComponents.secondary),
-            title: Text('Cargo'),
+            leading: Icon(
+              Icons.work,
+              color: AppColorsComponents.secondary,
+            ),
+            title: const Text('Cargo'),
             subtitle: Text(positionsFun),
+          ),
+          const SizedBox(height: 10),
+          const Text('Gestão',
+              style: TextStyle(
+                fontSize: 20,
+              )),
+          ListTile(
+            leading: Icon(
+              Icons.person_pin,
+              color: AppColorsComponents.secondary,
+            ),
+            title: const Text('Nome do Gestor'),
+            subtitle: Text(gestor),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.margin_outlined,
+              color: AppColorsComponents.secondary,
+            ),
+            title: const Text('Numero Matricula'),
+            subtitle: Text(numGestor.toString()),
           ),
         ],
       ),
