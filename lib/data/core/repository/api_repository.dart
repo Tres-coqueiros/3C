@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:senior/data/core/repository/client_repository.dart';
 import 'package:senior/data/core/repository/exceptions_network.dart';
 
@@ -73,7 +74,6 @@ class PostServices {
       ErrorNotifier.showError(
           'Erro ao fazer a requisição na API: ${error.toString()}');
       print(error.toString());
-
       return false;
     }
   }
@@ -141,9 +141,7 @@ class GetServices {
   Future<List<Map<String, dynamic>>> getLogin() async {
     try {
       final response = await dioSenior.get('getLogin');
-
       print(response.data['getLogin']);
-
       if (response.statusCode == 200) {
         return List<Map<String, dynamic>>.from(response.data['getLogin']);
       } else {

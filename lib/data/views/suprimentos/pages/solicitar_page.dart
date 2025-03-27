@@ -26,8 +26,8 @@ class _SolicitarPageState extends State<SolicitarPage> {
   List<Map<String, dynamic>> products = [];
   List<Map<String, dynamic>> getGestor = [];
 
-  DateTime? _deadlineDate; // Armazena a data limite escolhida
-  String _nivelEspera = ''; // Pode ser "EMERGENCIAL", "URGENTE" ou "NORMAL"
+  DateTime? _deadlineDate;
+  String _nivelEspera = '';
 
   TextEditingController materialCtrl = TextEditingController(),
       groupCtrl = TextEditingController(),
@@ -35,6 +35,8 @@ class _SolicitarPageState extends State<SolicitarPage> {
       localCtrl = TextEditingController(),
       pcoCtrl = TextEditingController(),
       qtdCompradaCtrl = TextEditingController();
+
+  TextEditingController observacaoProdCtrl = TextEditingController();
 
   TextEditingController unidadeCtrl = TextEditingController();
 
@@ -53,7 +55,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
   void initState() {
     super.initState();
     fetchSolicitarMaterial();
-    fetchMatricula();
     fetchGestor();
   }
 
@@ -66,10 +67,14 @@ class _SolicitarPageState extends State<SolicitarPage> {
   void fetchGestor() async {
     await Future.delayed(const Duration(seconds: 1));
     try {
-      final result = await getServices.getGestor();
+      final result = await getServices.getLogin();
       if (result.isNotEmpty) {
-        gestor = result[0]['GESTOR'];
-        gestorId = result[0]['GESTOR_ID'];
+        usuario = result[0]['COLABORADOR'];
+        matricula = result[0]['COLID'];
+        gestor = result[0]['GESTOR'].toString();
+        gestorId = result[0]['GESTORID'] is int
+            ? (result[0]['GESTORID'] as int)
+            : int.tryParse(result[0]['GESTORID']?.toString() ?? '') ?? 0;
       }
       setState(() => getGestor = result);
     } catch (error) {
@@ -81,9 +86,9 @@ class _SolicitarPageState extends State<SolicitarPage> {
     final now = DateTime.now();
     final diffDays = deadline.difference(now).inDays;
 
-    if (diffDays <= 0) return 'EMERGENCIAL'; // Mesmo dia ou já passou
-    if (diffDays <= 3) return 'URGENTE'; // Até 3 dias
-    return 'NORMAL'; // Mais de 3 dias
+    if (diffDays <= 0) return 'EMERGENCIAL';
+    if (diffDays <= 2) return 'URGENTE';
+    return 'NORMAL';
   }
 
   String _formatDateTime(DateTime dt) {
@@ -207,6 +212,8 @@ class _SolicitarPageState extends State<SolicitarPage> {
       "usuario": usuario,
       "usuario_id": matricula,
       "unidade": unidadeCtrl.text,
+      "gestor": gestor,
+      "gestor_id": gestorId,
       "data_solicitacao": DateTime.now().toIso8601String(),
       "itens": products
           .map((mat) => {
@@ -235,21 +242,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
       }
     } catch (e) {
       ErrorNotifier.showError("Erro ao enviar pedido: $e");
-    }
-  }
-
-  void fetchMatricula() async {
-    try {
-      final res = await getServices.getLogin();
-      if (res.isNotEmpty) {
-        usuario = res[0]['nomfun'];
-        matricula = res[0]['numcad'];
-        // Se houver informação da unidade, pode ser atribuída aqui.
-        // Exemplo: unidadeCtrl.text = res[0]['unidade'];
-      }
-      setState(() => getMatricula = res);
-    } catch (err) {
-      ErrorNotifier.showError("Erro ao buscar matrícula: $err");
     }
   }
 
@@ -453,14 +445,24 @@ class _SolicitarPageState extends State<SolicitarPage> {
         child: Column(
           children: [
             _buildForm(),
-            const SizedBox(height: 16), // Menor espaçamento
+            const SizedBox(height: 16),
             _buildProductList(),
+            const SizedBox(height: 16),
+            // Campo Observação para o pedido (após os produtos)
+            TextFormField(
+              controller: observacaoProdCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Observação',
+                border: OutlineInputBorder(),
+                hintText: 'Observação da solicitação',
+              ),
+              maxLines: null,
+            ),
             const SizedBox(height: 16),
             _buildSubmitButton(),
           ],
         ),
       );
-
   Widget _buildWebLayout() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

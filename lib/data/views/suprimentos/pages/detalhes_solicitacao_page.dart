@@ -1,12 +1,20 @@
+// detalhes_solicitacao_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/utils/app_utils.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
-import 'package:senior/data/views/widgets/components/button_components.dart';
 
 class DetalhesSolicitacaoPage extends StatefulWidget {
   final Map<String, dynamic> solicitacao;
-  const DetalhesSolicitacaoPage({Key? key, required this.solicitacao})
-      : super(key: key);
+  final String gestorName;
+  final int gestorMatricula;
+
+  const DetalhesSolicitacaoPage({
+    Key? key,
+    required this.solicitacao,
+    this.gestorName = '',
+    this.gestorMatricula = 0,
+  }) : super(key: key);
 
   @override
   State<DetalhesSolicitacaoPage> createState() =>
@@ -14,114 +22,263 @@ class DetalhesSolicitacaoPage extends StatefulWidget {
 }
 
 class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
-  List<Map<String, dynamic>> _localItens = [];
+  late List<Map<String, dynamic>> _localItens;
   late DateTime requestDate;
+
+  late String _statusSolicitacao;
+  late bool _isEditable;
+
+  // Controlador para a observação da solicitação
+  late TextEditingController _observacaoCtrl;
 
   @override
   void initState() {
     super.initState();
-    requestDate = DateTime.tryParse(widget.solicitacao["data_solicitacao"]) ??
-        DateTime.now();
-    if (widget.solicitacao["itens"] != null) {
-      _localItens = (widget.solicitacao["itens"] as List<dynamic>)
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
+
+    // Converte a data da solicitação; se inválido, usa DateTime.now()
+    requestDate =
+        DateTime.tryParse(widget.solicitacao["data_solicitacao"] ?? "") ??
+            DateTime.now();
+
+    // Itens da solicitação
+    final itens = widget.solicitacao["itens"];
+    if (itens is List) {
+      _localItens =
+          itens.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    } else {
+      _localItens = [];
     }
+
+    // Define status e verifica se pode editar
+    _statusSolicitacao = widget.solicitacao["status"]?.toString() ?? "";
+    _isEditable = _statusSolicitacao.toLowerCase().contains("edição");
+
+    // Observação
+    _observacaoCtrl = TextEditingController(
+      text: widget.solicitacao["observacao"]?.toString() ?? "",
+    );
+  }
+
+  @override
+  void dispose() {
+    _observacaoCtrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: _buildInfoSolicitacao()),
-          const Divider(),
-          Expanded(
-              child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildListaItens())),
-          Padding(
-              padding: const EdgeInsets.all(16.0), child: _buildBotoesAcao()),
-        ],
+      // Sem AppBar (como solicitado)
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoSolicitacao(),
+            const Divider(),
+            _buildListaItens(),
+            const SizedBox(height: 16),
+            _buildBotoesAcao(), // Botões de Aprovar e Reprovar
+          ],
+        ),
       ),
+    );
+  }
+
+  // Exemplo de método para salvar as alterações
+  void _salvarEdicao() {
+    widget.solicitacao["observacao"] = _observacaoCtrl.text;
+    // Aqui você pode enviar _localItens atualizado ao servidor, etc.
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Alterações salvas!")),
+    );
+  }
+
+  // Exemplo de método para Aprovar
+  void _aprovar() {
+    // Lógica de aprovação
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Solicitação Aprovada!")),
+    );
+  }
+
+  // Exemplo de método para Reprovar
+  void _reprovar() {
+    // Lógica de reprovação
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Solicitação Reprovada!")),
+    );
+  }
+
+  Widget _buildBotoesAcao() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: _aprovar,
+          child: const Text("Aprovar"),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: _reprovar,
+          child: const Text("Reprovar"),
+        ),
+      ],
     );
   }
 
   Widget _buildInfoSolicitacao() {
     final s = widget.solicitacao;
+    final id = s["id"]?.toString() ?? "";
+    final usuario = s["usuario"]?.toString() ?? "";
+    final dataSol = s["data_solicitacao"]?.toString() ?? "";
+    final totalVal = s["total"];
+    double totalDouble = 0;
+    if (totalVal != null) {
+      if (totalVal is double) {
+        totalDouble = totalVal;
+      } else {
+        totalDouble = double.tryParse(totalVal.toString()) ?? 0;
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildInfoRow("Nº Solicitação", s["id"].toString()),
-        _buildInfoRow("Usuário", s["usuario"]),
+        _buildInfoRow("Nº Solicitação", id),
+        _buildInfoRow("Usuário", usuario),
+        _buildInfoRow("Data da Solicitação", converterDataEHoras(dataSol)),
+        _buildInfoRow("Status", _statusSolicitacao),
+        _buildInfoRow("Total", "R\$ ${totalDouble.toStringAsFixed(2)}"),
         _buildInfoRow(
-            "Data da Solicitação", converterDataEHoras(s["data_solicitacao"])),
-        _buildInfoRow("Status", s["status"]),
-        _buildInfoRow("Total", "R\$ ${s["total"].toStringAsFixed(2)}"),
-        if (s["observacao"] != null)
-          _buildInfoRow("Observação", s["observacao"]),
+          "Gestor",
+          "${widget.gestorName} (${widget.gestorMatricula})",
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Observação:",
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        _isEditable
+            ? Container(
+                // Define uma altura fixa para impedir expansão ao dar Enter
+                height: 120,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: TextFormField(
+                  controller: _observacaoCtrl,
+                  maxLines: null,
+                  expands: true, // Permite rolagem interna em vez de expandir
+                  textAlignVertical: TextAlignVertical.top,
+                  decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    border: InputBorder.none, // Usamos o border externo
+                    hintText: "Digite uma observação...",
+                  ),
+                ),
+              )
+            : Text(
+                _observacaoCtrl.text,
+                style: const TextStyle(fontSize: 14),
+              ),
       ],
     );
   }
 
-  Widget _buildInfoRow(String label, String value) => Padding(
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        Text(value),
-      ]));
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildListaItens() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Itens da Solicitação",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const Text(
+          "Itens da Solicitação",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _localItens.length,
-          itemBuilder: (context, index) => _buildItemCard(_localItens[index]),
+        // Envolve a ListView em um Container (ou SizedBox) com altura limitada
+        Container(
+          height: 300, // Exemplo: altura para exibir ~2 itens e rolar o resto
+          child: ListView.builder(
+            itemCount: _localItens.length,
+            itemBuilder: (context, index) => _buildItemCard(_localItens[index]),
+          ),
         ),
       ],
     );
   }
 
   Widget _buildItemCard(Map<String, dynamic> item) {
-    final TextEditingController qtdCtrl =
-        TextEditingController(text: item["quantidade"].toString());
+    final qtdCtrl = TextEditingController(
+      text: item["quantidade"]?.toString() ?? "0",
+    );
+
     void _atualizarQuantidade() {
+      if (!_isEditable) return;
       final newQtd = double.tryParse(qtdCtrl.text) ?? 0;
       setState(() {
         item["quantidade"] = newQtd;
         final preco = item["preco_unitario"] as double?;
-        if (preco != null) item["subtotal"] = newQtd * preco;
+        if (preco != null) {
+          item["subtotal"] = newQtd * preco;
+        }
       });
     }
 
-    final bool isOutraUn = item["is_outra_unidade"] == true;
-    final String? dataLimiteStr = item["data_limite"] as String?;
-    // Puxa o nível de espera já calculado no cadastro
-    final String? nivelEspera = item["nivel_espera"];
+    final dataLimiteStr = item["data_limite"] as String?;
+    final nivelEspera = item["nivel_espera"];
     Color dotColor = Colors.grey;
     String urgencia = "Indefinido";
+
+    // Lógica de cor e texto para urgência
     if (nivelEspera != null && nivelEspera.isNotEmpty) {
       if (nivelEspera.toUpperCase() == "EMERGENCIAL") {
         dotColor = Colors.red;
         urgencia = "Emergente";
       } else if (nivelEspera.toUpperCase() == "URGENTE") {
-        dotColor = Colors.yellow;
+        dotColor = const Color.fromARGB(255, 202, 189, 70);
         urgencia = "Urgente";
       } else if (nivelEspera.toUpperCase() == "NORMAL") {
         dotColor = Colors.green;
         urgencia = "Normal";
       }
     } else if (dataLimiteStr != null) {
-      // Caso não haja o campo, calcular com base na data
       final deadline = DateTime.tryParse(dataLimiteStr) ?? DateTime.now();
       final diffDays = deadline.difference(requestDate).inDays;
       if (diffDays <= 0) {
@@ -135,154 +292,174 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
         urgencia = "Normal";
       }
     }
+
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Linha com bolinha e rótulo de urgência
-            Row(children: [
-              Container(
-                  width: 12,
-                  height: 12,
-                  decoration:
-                      BoxDecoration(color: dotColor, shape: BoxShape.circle)),
-              const SizedBox(width: 6),
-              Text(urgencia,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-            ]),
-            const SizedBox(height: 8),
-            // Linha com nome do produto e botão remover
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(item["material"] ?? 'Material não informado',
-                      style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87)),
-                ),
-                IconButton(
-                    icon: const Icon(Icons.close, color: Colors.grey),
-                    onPressed: () => setState(() => _localItens.remove(item))),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (isOutraUn)
-              Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                    color: Colors.deepPurple.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.swap_horiz, color: Colors.deepPurple),
-                  const SizedBox(width: 6),
-                  Flexible(
-                      child: Text("Transferência de Unidade: ${item["local"]}",
-                          style: const TextStyle(
-                              color: Colors.deepPurple,
-                              fontWeight: FontWeight.w600))),
-                ]),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+      elevation: 20,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Faixa no topo (height maior) com texto de urgência centralizado
+          Container(
+            height: 30,
+            decoration: BoxDecoration(
+              color: dotColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
               ),
-            const Divider(),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                _buildInfoColumn("Local", item["local"] ?? '-', 16),
-                _buildInfoColumn("Grupo", item["grupo"] ?? '-', 16),
-                if (dataLimiteStr != null)
-                  _buildInfoColumn(
-                      "Data Limite", converterDataEHoras(dataLimiteStr), 16),
-              ],
             ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Centraliza o texto da urgência em branco
+            child: Center(
+              child: Text(
+                urgencia,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          // Conteúdo do item
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text("Quantidade",
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey)),
-                  SizedBox(
-                      width: 80,
-                      child: TextFormField(
-                          controller: qtdCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
+                // Nome do material e botão remover (se editável)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item["material"] ?? 'Material não informado',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    if (_isEditable)
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                        onPressed: () {
+                          setState(() => _localItens.remove(item));
+                        },
+                      ),
+                  ],
+                ),
+                const Divider(),
+                // Local e Grupo um abaixo do outro, e Data Limite (se houver)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoColumn("Local", item["local"] ?? '-', 14),
+                    _buildInfoColumn("Grupo", item["grupo"] ?? '-', 14),
+                    if (dataLimiteStr != null)
+                      _buildInfoColumn(
+                        "Data Limite",
+                        converterDataEHoras(dataLimiteStr),
+                        14,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Linha com Quantidade (editável) e Preço Unitário
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Quantidade",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 80,
+                          child: TextFormField(
+                            controller: qtdCtrl,
+                            keyboardType: TextInputType.number,
+                            readOnly: !_isEditable,
+                            decoration: const InputDecoration(
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 4)),
-                          onEditingComplete: _atualizarQuantidade)),
-                ]),
-                _buildInfoColumn(
-                    "Preço Unitário",
-                    "R\$ ${item["preco_unitario"]?.toStringAsFixed(2) ?? '0.00'}",
-                    18),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: AppColorsComponents.primary),
-              child: Center(
-                  child: Text(
+                                horizontal: 6,
+                                vertical: 4,
+                              ),
+                            ),
+                            onEditingComplete: _atualizarQuantidade,
+                          ),
+                        ),
+                      ],
+                    ),
+                    _buildInfoColumn(
+                      "Preço Unitário",
+                      "R\$ ${item["preco_unitario"]?.toStringAsFixed(2) ?? '0.00'}",
+                      14,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Exibe o subtotal
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: AppColorsComponents.primary,
+                  ),
+                  child: Center(
+                    child: Text(
                       "Subtotal: R\$ ${item["subtotal"]?.toStringAsFixed(2) ?? '0.00'}",
                       style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColorsComponents.hashours))),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColorsComponents.hashours,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoColumn(String label, String value, double fontSize) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label,
+  Widget _buildInfoColumn(String label, String value, double fontSize) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4), // pequeno espaçamento
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
             style: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey)),
-        Text(value,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+            ),
+          ),
+          Text(
+            value,
             style: TextStyle(
-                fontSize: fontSize,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87)),
-      ]);
-
-  Widget _buildBotoesAcao() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        ButtonComponents(
-            textAlign: Alignment.center,
-            onPressed: () {},
-            text: 'Aprovar',
-            textColor: AppColorsComponents.background,
-            backgroundColor: AppColorsComponents.primary,
-            fontSize: 12,
-            padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12)),
-        ButtonComponents(
-            textAlign: Alignment.center,
-            onPressed: () {},
-            text: 'Reprovar',
-            textColor: AppColorsComponents.background,
-            backgroundColor: AppColorsComponents.error,
-            fontSize: 12,
-            padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12)),
-      ],
+              fontSize: fontSize,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
