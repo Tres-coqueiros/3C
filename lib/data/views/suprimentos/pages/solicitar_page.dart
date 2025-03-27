@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
 import 'package:senior/data/core/repository/exceptions_network.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
@@ -54,6 +55,12 @@ class _SolicitarPageState extends State<SolicitarPage> {
     fetchSolicitarMaterial();
     fetchMatricula();
     fetchGestor();
+  }
+
+  @override
+  void dispose() {
+    quantCtrl.dispose();
+    super.dispose();
   }
 
   void fetchGestor() async {
@@ -491,8 +498,6 @@ class _SolicitarPageState extends State<SolicitarPage> {
                 materialSelecionado = m['ID_MATERIAL'];
                 selectedLocais = getLocaisByMaterial(materialSelecionado!);
                 unidadeCtrl.text = m['UNIDADE'].toString();
-                final teste = m['UNIDADE'].toString();
-                print('unidade $teste');
                 groupCtrl.text = m['GRUPO'].toString();
                 materialCtrl.text = m['MATERIAL'].toString();
               });
@@ -528,7 +533,7 @@ class _SolicitarPageState extends State<SolicitarPage> {
             onItemSelected: (l) {
               setState(() {
                 localCtrl.text = l['LOCAIS'].toString();
-                quantCtrl.text = l['SALDO'].toString();
+                quantCtrl.text = l['QUANTIDADE'].toString();
                 pcoCtrl.text = l['PCOMEDIO'].toString();
               });
             },

@@ -11,6 +11,7 @@ class SolicitacoesListPage extends StatefulWidget {
 class _SolicitacoesListPageState extends State<SolicitacoesListPage> {
   final GetServices getServices = GetServices();
   List<Map<String, dynamic>> solicitacoes = [];
+  List<Map<String, dynamic>> ge = [];
   bool isLoading = true;
 
   @override
