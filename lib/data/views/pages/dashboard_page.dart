@@ -87,7 +87,7 @@ class _DashboardPage extends State<DashboardPage> {
     try {
       final matriculaResult = await getServices.getLogin();
       if (matriculaResult.isNotEmpty) {
-        usuarioLogado = matriculaResult[0]['nomfun'];
+        usuarioLogado = matriculaResult[0]['COLABORADOR'];
       }
       setState(() {
         agroMatriculas = matriculaResult;
@@ -220,7 +220,7 @@ class _DashboardPage extends State<DashboardPage> {
               _buildHeader(usuarioLogado),
               const SizedBox(height: 24),
               const SizedBox(height: 24),
-              _buildCalendarSection(),
+              _buildCalendarSection(), // CALENDÁRIO
               const SizedBox(height: 24),
               _buildAgroCarousel(),
               const SizedBox(height: 24),
@@ -400,78 +400,91 @@ class _DashboardPage extends State<DashboardPage> {
     );
   }
 
+  /// --- AQUI ESTÁ O CÓDIGO DO CALENDÁRIO MODIFICADO ---
   Widget _buildCalendarSection() {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Calendário',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+        child: TableCalendar(
+          // Intervalo de datas suportadas
+          firstDay: DateTime.utc(2020, 1, 1),
+          lastDay: DateTime.utc(2030, 12, 31),
+          focusedDay: _focusedDay,
+          calendarFormat: _calendarFormat,
+          // Dia selecionado e callback
+          selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+          onDaySelected: (selectedDay, focusedDay) {
+            setState(() {
+              _selectedDay = selectedDay;
+              _focusedDay = focusedDay;
+            });
+            _showAddReminderDialog(selectedDay);
+          },
+          onFormatChanged: (format) {
+            setState(() {
+              _calendarFormat = format;
+            });
+          },
+          onPageChanged: (focusedDay) {
+            setState(() {
+              _focusedDay = focusedDay;
+            });
+          },
+          // Carregamos feriados + lembretes
+          eventLoader: (day) {
+            final eventos = [
+              ...?_feriados[day],
+              ...?_lembretes[day],
+            ];
+            return eventos;
+          },
+          // Estilização do calendário
+          calendarStyle: CalendarStyle(
+            // Tira a cor de fundo do "hoje", deixa apenas negrito no texto
+            todayDecoration: const BoxDecoration(
+              color: Colors.transparent,
             ),
-            const SizedBox(height: 16),
-            TableCalendar(
-              firstDay: DateTime.utc(2020, 1, 1),
-              lastDay: DateTime.utc(2030, 12, 31),
-              focusedDay: _focusedDay,
-              calendarFormat: _calendarFormat,
-              selectedDayPredicate: (day) {
-                return isSameDay(_selectedDay, day);
-              },
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-                _showAddReminderDialog(selectedDay);
-              },
-              onFormatChanged: (format) {
-                setState(() {
-                  _calendarFormat = format;
-                });
-              },
-              onPageChanged: (focusedDay) {
-                setState(() {
-                  _focusedDay = focusedDay;
-                });
-              },
-              eventLoader: (day) {
-                final eventos = [
-                  ...?_feriados[day],
-                  ...?_lembretes[day],
-                ];
-                return eventos;
-              },
-              calendarStyle: CalendarStyle(
-                todayDecoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                selectedDecoration: BoxDecoration(
-                  color: Colors.blue,
-                  shape: BoxShape.circle,
-                ),
-                markerDecoration: BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                markersAlignment: Alignment.bottomCenter,
-                markerSize: 8,
-              ),
-              headerStyle: HeaderStyle(
-                formatButtonVisible: true,
-                titleCentered: true,
-              ),
+            todayTextStyle: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
             ),
-          ],
+
+            // Dia selecionado (círculo azul)
+            selectedDecoration: BoxDecoration(
+              color: Colors.blue,
+              shape: BoxShape.circle,
+            ),
+            selectedTextStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+
+            // Marcadores (pontinhos de evento)
+            markersAutoAligned: false,
+            markersOffset: const PositionedOffset(bottom: 6),
+            markersAlignment: Alignment.center,
+            markerSize: 6,
+            markerMargin: const EdgeInsets.symmetric(horizontal: 1.5),
+            markerDecoration: const BoxDecoration(
+              color: Colors.red,
+              shape: BoxShape.circle,
+            ),
+
+            // Dias fora do mês ainda visíveis
+            outsideDaysVisible: true,
+          ),
+          headerStyle: const HeaderStyle(
+            formatButtonVisible:
+                false, // Não exibe botão de formato (semana/mês)
+            titleCentered: true, // Centraliza o título (Mês/Ano)
+            leftChevronIcon: Icon(Icons.chevron_left, size: 28),
+            rightChevronIcon: Icon(Icons.chevron_right, size: 28),
+          ),
+          daysOfWeekStyle: const DaysOfWeekStyle(
+            weekendStyle: TextStyle(color: Colors.red),
+          ),
         ),
       ),
     );
