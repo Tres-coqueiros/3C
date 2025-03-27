@@ -1,7 +1,8 @@
+// detalhes_solicitacao_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/utils/app_utils.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
-import 'package:senior/data/views/widgets/components/button_components.dart';
 
 class DetalhesSolicitacaoPage extends StatefulWidget {
   final Map<String, dynamic> solicitacao;
@@ -21,106 +22,130 @@ class DetalhesSolicitacaoPage extends StatefulWidget {
 }
 
 class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
-  List<Map<String, dynamic>> _localItens = [];
+  late List<Map<String, dynamic>> _localItens;
   late DateTime requestDate;
+
+  late String _statusSolicitacao;
+  late bool _isEditable;
+
+  // Controlador para a observação da solicitação
+  late TextEditingController _observacaoCtrl;
 
   @override
   void initState() {
     super.initState();
-    requestDate = DateTime.tryParse(widget.solicitacao["data_solicitacao"]) ??
-        DateTime.now();
-    if (widget.solicitacao["itens"] != null) {
-      _localItens = (widget.solicitacao["itens"] as List<dynamic>)
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
+
+    // Converte a data da solicitação; se inválido, usa DateTime.now()
+    requestDate =
+        DateTime.tryParse(widget.solicitacao["data_solicitacao"] ?? "") ??
+            DateTime.now();
+
+    // Itens da solicitação
+    final itens = widget.solicitacao["itens"];
+    if (itens is List) {
+      _localItens =
+          itens.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    } else {
+      _localItens = [];
     }
+
+    // Define status e verifica se pode editar
+    _statusSolicitacao = widget.solicitacao["status"]?.toString() ?? "";
+    _isEditable = _statusSolicitacao.toLowerCase().contains("edição");
+
+    // Observação
+    _observacaoCtrl = TextEditingController(
+      text: widget.solicitacao["observacao"]?.toString() ?? "",
+    );
   }
 
-  void _showReprovarDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(
-            "Reprovar Solicitação",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: const Text(
-            "Você deseja devolver a solicitação para o solicitante ou excluir a solicitação?",
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Solicitação devolvida.")),
-                );
-              },
-              child: const Text("Devolver", style: TextStyle(fontSize: 16)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Solicitação excluída.")),
-                );
-              },
-              child: const Text("Excluir",
-                  style: TextStyle(fontSize: 16, color: Colors.red)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancelar", style: TextStyle(fontSize: 16)),
-            ),
-          ],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 8,
-        );
-      },
-    );
+  @override
+  void dispose() {
+    _observacaoCtrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _buildInfoSolicitacao(),
-          ),
-          const Divider(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildListaItens(),
+      // Sem AppBar (como solicitado)
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoSolicitacao(),
+            const Divider(),
+            _buildListaItens(),
+            const SizedBox(height: 16),
+            _buildBotoesAcao(), // Botões de Aprovar e Reprovar
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Exemplo de método para salvar as alterações
+  void _salvarEdicao() {
+    widget.solicitacao["observacao"] = _observacaoCtrl.text;
+    // Aqui você pode enviar _localItens atualizado ao servidor, etc.
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Alterações salvas!")),
+    );
+  }
+
+  // Exemplo de método para Aprovar
+  void _aprovar() {
+    // Lógica de aprovação
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Solicitação Aprovada!")),
+    );
+  }
+
+  // Exemplo de método para Reprovar
+  void _reprovar() {
+    // Lógica de reprovação
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Solicitação Reprovada!")),
+    );
+  }
+
+  Widget _buildBotoesAcao() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _buildBotoesAcao(),
+          onPressed: _aprovar,
+          child: const Text("Aprovar"),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-        ],
-      ),
+          onPressed: _reprovar,
+          child: const Text("Reprovar"),
+        ),
+      ],
     );
   }
 
   Widget _buildInfoSolicitacao() {
     final s = widget.solicitacao;
-
-    // Em vez de acessar diretamente, vamos converter com segurança:
     final id = s["id"]?.toString() ?? "";
     final usuario = s["usuario"]?.toString() ?? "";
     final dataSol = s["data_solicitacao"]?.toString() ?? "";
-    final status = s["status"]?.toString() ?? "";
-    final totalVal = s["total"]; // Pode ser double, string ou null
+    final totalVal = s["total"];
     double totalDouble = 0;
-
     if (totalVal != null) {
-      // Se for double, mantém; se for string, tenta converter; se não der certo, vira 0
       if (totalVal is double) {
         totalDouble = totalVal;
       } else {
@@ -128,20 +153,50 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
       }
     }
 
-    final observacao = s["observacao"]?.toString() ?? "";
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildInfoRow("Nº Solicitação", id),
         _buildInfoRow("Usuário", usuario),
         _buildInfoRow("Data da Solicitação", converterDataEHoras(dataSol)),
-        _buildInfoRow("Status", status),
+        _buildInfoRow("Status", _statusSolicitacao),
         _buildInfoRow("Total", "R\$ ${totalDouble.toStringAsFixed(2)}"),
-        if (observacao.isNotEmpty) _buildInfoRow("Observação", observacao),
-        // Aqui, se quiser exibir gestorName e gestorMatricula:
         _buildInfoRow(
-            "Gestor", "${widget.gestorName} (${widget.gestorMatricula})"),
+          "Gestor",
+          "${widget.gestorName} (${widget.gestorMatricula})",
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Observação:",
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        _isEditable
+            ? Container(
+                // Define uma altura fixa para impedir expansão ao dar Enter
+                height: 120,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: TextFormField(
+                  controller: _observacaoCtrl,
+                  maxLines: null,
+                  expands: true, // Permite rolagem interna em vez de expandir
+                  textAlignVertical: TextAlignVertical.top,
+                  decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    border: InputBorder.none, // Usamos o border externo
+                    hintText: "Digite uma observação...",
+                  ),
+                ),
+              )
+            : Text(
+                _observacaoCtrl.text,
+                style: const TextStyle(fontSize: 14),
+              ),
       ],
     );
   }
@@ -152,8 +207,17 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value),
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+              textAlign: TextAlign.right,
+            ),
+          ),
         ],
       ),
     );
@@ -168,19 +232,25 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _localItens.length,
-          itemBuilder: (context, index) => _buildItemCard(_localItens[index]),
+        // Envolve a ListView em um Container (ou SizedBox) com altura limitada
+        Container(
+          height: 300, // Exemplo: altura para exibir ~2 itens e rolar o resto
+          child: ListView.builder(
+            itemCount: _localItens.length,
+            itemBuilder: (context, index) => _buildItemCard(_localItens[index]),
+          ),
         ),
       ],
     );
   }
 
   Widget _buildItemCard(Map<String, dynamic> item) {
-    final qtdCtrl = TextEditingController(text: item["quantidade"].toString());
+    final qtdCtrl = TextEditingController(
+      text: item["quantidade"]?.toString() ?? "0",
+    );
+
     void _atualizarQuantidade() {
+      if (!_isEditable) return;
       final newQtd = double.tryParse(qtdCtrl.text) ?? 0;
       setState(() {
         item["quantidade"] = newQtd;
@@ -195,12 +265,14 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
     final nivelEspera = item["nivel_espera"];
     Color dotColor = Colors.grey;
     String urgencia = "Indefinido";
+
+    // Lógica de cor e texto para urgência
     if (nivelEspera != null && nivelEspera.isNotEmpty) {
       if (nivelEspera.toUpperCase() == "EMERGENCIAL") {
         dotColor = Colors.red;
         urgencia = "Emergente";
       } else if (nivelEspera.toUpperCase() == "URGENTE") {
-        dotColor = Colors.yellow;
+        dotColor = const Color.fromARGB(255, 202, 189, 70);
         urgencia = "Urgente";
       } else if (nivelEspera.toUpperCase() == "NORMAL") {
         dotColor = Colors.green;
@@ -220,176 +292,174 @@ class _DetalhesSolicitacaoPageState extends State<DetalhesSolicitacaoPage> {
         urgencia = "Normal";
       }
     }
+
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+      elevation: 20,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: dotColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  urgencia,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Faixa no topo (height maior) com texto de urgência centralizado
+          Container(
+            height: 30,
+            decoration: BoxDecoration(
+              color: dotColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    item["material"] ?? 'Material não informado',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
+            // Centraliza o texto da urgência em branco
+            child: Center(
+              child: Text(
+                urgencia,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
-                  onPressed: () => setState(() => _localItens.remove(item)),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 8),
-            const Divider(),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
+          ),
+          // Conteúdo do item
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInfoColumn("Local", item["local"] ?? '-', 16),
-                _buildInfoColumn("Grupo", item["grupo"] ?? '-', 16),
-                if (dataLimiteStr != null)
-                  _buildInfoColumn(
-                    "Data Limite",
-                    converterDataEHoras(dataLimiteStr),
-                    16,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text(
-                    "Quantidade",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  SizedBox(
-                    width: 80,
-                    child: TextFormField(
-                      controller: qtdCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                // Nome do material e botão remover (se editável)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item["material"] ?? 'Material não informado',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                       ),
-                      onEditingComplete: _atualizarQuantidade,
+                    ),
+                    if (_isEditable)
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                        onPressed: () {
+                          setState(() => _localItens.remove(item));
+                        },
+                      ),
+                  ],
+                ),
+                const Divider(),
+                // Local e Grupo um abaixo do outro, e Data Limite (se houver)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoColumn("Local", item["local"] ?? '-', 14),
+                    _buildInfoColumn("Grupo", item["grupo"] ?? '-', 14),
+                    if (dataLimiteStr != null)
+                      _buildInfoColumn(
+                        "Data Limite",
+                        converterDataEHoras(dataLimiteStr),
+                        14,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Linha com Quantidade (editável) e Preço Unitário
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Quantidade",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 80,
+                          child: TextFormField(
+                            controller: qtdCtrl,
+                            keyboardType: TextInputType.number,
+                            readOnly: !_isEditable,
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 4,
+                              ),
+                            ),
+                            onEditingComplete: _atualizarQuantidade,
+                          ),
+                        ),
+                      ],
+                    ),
+                    _buildInfoColumn(
+                      "Preço Unitário",
+                      "R\$ ${item["preco_unitario"]?.toStringAsFixed(2) ?? '0.00'}",
+                      14,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Exibe o subtotal
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: AppColorsComponents.primary,
+                  ),
+                  child: Center(
+                    child: Text(
+                      "Subtotal: R\$ ${item["subtotal"]?.toStringAsFixed(2) ?? '0.00'}",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColorsComponents.hashours,
+                      ),
                     ),
                   ),
-                ]),
-                _buildInfoColumn(
-                  "Preço Unitário",
-                  "R\$ ${item["preco_unitario"]?.toStringAsFixed(2) ?? '0.00'}",
-                  18,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: AppColorsComponents.primary,
-              ),
-              child: Center(
-                child: Text(
-                  "Subtotal: R\$ ${item["subtotal"]?.toStringAsFixed(2) ?? '0.00'}",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColorsComponents.hashours,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildInfoColumn(String label, String value, double fontSize) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4), // pequeno espaçamento
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+            ),
           ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: fontSize,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBotoesAcao() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        ButtonComponents(
-          textAlign: Alignment.center,
-          onPressed: () {},
-          text: 'Aprovar',
-          textColor: AppColorsComponents.background,
-          backgroundColor: AppColorsComponents.primary,
-          fontSize: 12,
-          padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12),
-        ),
-        ButtonComponents(
-          textAlign: Alignment.center,
-          onPressed: _showReprovarDialog,
-          text: 'Reprovar',
-          textColor: AppColorsComponents.background,
-          backgroundColor: AppColorsComponents.error,
-          fontSize: 12,
-          padding: const EdgeInsets.symmetric(horizontal: 37, vertical: 12),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

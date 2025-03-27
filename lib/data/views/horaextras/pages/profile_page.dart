@@ -1,6 +1,9 @@
+// profile_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:senior/data/core/interface/app_interface.dart';
 import 'package:senior/data/core/repository/api_repository.dart';
+import 'package:senior/data/views/suprimentos/pages/detalhes_solicitacao_page.dart';
 import 'package:senior/data/views/widgets/components/app_colors_components.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -16,27 +19,24 @@ class _ProfilePage extends State<ProfilePage> {
   List<Map<String, dynamic>> getLogin = [];
   String nameFun = "";
   String positionsFun = "";
-  int numFun = 0; // Ajustado para ser int
+  int numFun = 0;
   String gestor = "";
   int numGestor = 0;
 
+  bool _navegouAutomatico = false;
+
   @override
   void initState() {
-    super.initState(); // Correto: chama super.initState()
+    super.initState();
     fetchLogin();
   }
 
   void fetchLogin() async {
     try {
       final result = await getServices.getLogin();
-
       if (result.isNotEmpty) {
-        // Se tiver dados, pega o que existir ou usa default
         nameFun = result[0]['COLABORADOR']?.toString() ?? 'Desconhecido';
         positionsFun = result[0]['COL_CARGO']?.toString() ?? 'Desconhecido';
-
-        // Para int, se vier nulo ou string, tentamos converter.
-        // Se não conseguir, fica 0 (ou outro valor que você prefira)
         numFun = result[0]['COLID'] is int
             ? (result[0]['COLID'] as int)
             : int.tryParse(result[0]['COLID']?.toString() ?? '') ?? 0;
@@ -45,7 +45,6 @@ class _ProfilePage extends State<ProfilePage> {
             ? (result[0]['GESTORID'] as int)
             : int.tryParse(result[0]['GESTORID']?.toString() ?? '') ?? 0;
       }
-
       setState(() {
         getLogin = result;
       });
@@ -57,9 +56,8 @@ class _ProfilePage extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-          // Se quiser título ou customizar, faça aqui
-          ),
+      // Esta tela "ProfilePage" será rapidamente substituída (pushReplacement)
+      // assim que fetchLogin() terminar, então não haverá tela "em branco".
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -114,10 +112,7 @@ class _ProfilePage extends State<ProfilePage> {
         children: [
           const Text(
             'Informações Pessoais',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
           ListTile(
@@ -145,10 +140,10 @@ class _ProfilePage extends State<ProfilePage> {
             subtitle: Text(positionsFun),
           ),
           const SizedBox(height: 10),
-          const Text('Gestão',
-              style: TextStyle(
-                fontSize: 20,
-              )),
+          const Text(
+            'Gestão',
+            style: TextStyle(fontSize: 20),
+          ),
           ListTile(
             leading: Icon(
               Icons.person_pin,
